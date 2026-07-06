@@ -1,0 +1,151 @@
+## ---------------------------------------------------------------------------
+## Blazor / .NET
+## ---------------------------------------------------------------------------
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# .NET build / restore
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+.packages/
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# MSBuild binary & structured logs
+*.binlog
+
+# .NET Core
+*.userprefs
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache / options (still relevant for shared solutions)
+.vs/
+*.vspscc
+*.vssscc
+$tf/
+*.vsp
+*.psess
+*.vsps
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage/
+*.trx
+TestResults/
+BenchmarkDotNet.Artifacts/
+
+## ---------------------------------------------------------------------------
+## Blazor WebAssembly specific
+## ---------------------------------------------------------------------------
+
+# Compressed / published WASM assets
+wwwroot/_framework/
+*.br
+*.gz
+
+# Published output
+[Pp]ublish/
+publish/
+PublishScripts/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.pubxml.user
+
+# Compiled static web assets
+**/wwwroot/dist/
+**/wwwroot/lib/
+project.assets.json
+
+## ---------------------------------------------------------------------------
+## Secrets / configuration (do NOT commit)
+## ---------------------------------------------------------------------------
+
+# User secrets are stored outside the repo, but guard local overrides:
+appsettings.*.local.json
+appsettings.Development.json
+secrets.json
+*.pfx
+*.key
+
+## ---------------------------------------------------------------------------
+## VS Code
+## ---------------------------------------------------------------------------
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History extension
+.history/
+
+# Built-in temp
+*.code-workspace
+
+## ---------------------------------------------------------------------------
+## JetBrains Rider
+## ---------------------------------------------------------------------------
+
+# Rider / IntelliJ project files
+.idea/
+*.sln.iml
+
+# Rider auto-generated
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries/
+.idea/**/shelf/
+.idea/**/contentModel.xml
+.idea/.idea.*/
+
+# Rider build / cache
+_ReSharper.Caches/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## ---------------------------------------------------------------------------
+## OS / misc
+## ---------------------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+*.swp
+*.tmp
+*.bak
+node_modules/
