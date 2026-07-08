@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
+    <ProjectReference Include="..\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+    <ProjectReference Include="..\StudyHub.Logic.Integration\StudyHub.Logic.Integration.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
