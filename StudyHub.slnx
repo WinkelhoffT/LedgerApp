@@ -1,23 +1,22 @@
 <Solution>
-  <Folder Name="/src/" />
-  <Folder Name="/src/Data/">
-    <Project Path="src/Data/StudyHub.Data/StudyHub.Data.csproj" />
-  </Folder>
-  <Folder Name="/src/Infrastructure/">
-    <Project Path="src/Infrastructure/StudyHub.Infrastructure/StudyHub.Infrastructure.csproj" />
-  </Folder>
-  <Folder Name="/src/Logic/">
-    <Project Path="src/Logic/StudyHub.Logic.Business/StudyHub.Logic.Business.csproj" />
-    <Project Path="src/Logic/StudyHub.Logic.Domain/StudyHub.Logic.Domain.csproj" />
-    <Project Path="src/Logic/StudyHub.Logic.Integration/StudyHub.Logic.Integration.csproj" />
-  </Folder>
-  <Folder Name="/src/Shared/">
+  <Folder Name="/01_Shared/">
     <Project Path="src/Shared/StudyHub.Shared/StudyHub.Shared.csproj" />
   </Folder>
-  <Folder Name="/src/UI/">
+  <Folder Name="/02_Data/">
+    <Project Path="src/Data/StudyHub.Data/StudyHub.Data.csproj" />
+  </Folder>
+  <Folder Name="/03_Logic/">
+    <Project Path="src/Logic/StudyHub.Logic.Domain/StudyHub.Logic.Domain.csproj" />
+    <Project Path="src/Logic/StudyHub.Logic.Integration/StudyHub.Logic.Integration.csproj" />
+    <Project Path="src/Logic/StudyHub.Logic.Business/StudyHub.Logic.Business.csproj" />
+  </Folder>
+  <Folder Name="/04_UI/">
     <Project Path="src/UI/StudyHub.UI/StudyHub.UI.csproj" />
   </Folder>
-  <Folder Name="/tests/">
+  <Folder Name="/05_Infrastructure/">
+    <Project Path="src/Infrastructure/StudyHub.Infrastructure/StudyHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/06_Tests/">
     <Project Path="tests/StudyHub.Tests/StudyHub.Tests.csproj" />
   </Folder>
 </Solution>
