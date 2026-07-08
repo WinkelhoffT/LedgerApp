@@ -149,3 +149,12 @@ Desktop.ini
 *.tmp
 *.bak
 node_modules/
+
+## ---------------------------------------------------------------------------
+## Database files
+## ---------------------------------------------------------------------------
+
+# SQLite databases generated at runtime (e.g. from EF Core SQLite provider)
+*.db
+*.db-shm
+*.db-wal
