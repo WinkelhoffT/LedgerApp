@@ -1,0 +1,17 @@
+<MudText Typo="Typo.h4" Class="mb-4">@Title</MudText>
+
+<MudPaper Class="pa-8 d-flex flex-column align-center justify-center" Elevation="0" Outlined="true" Style="min-height: 300px;">
+    <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Secondary" Class="mb-4" />
+    <MudText Typo="Typo.body1" Color="Color.Secondary">@Message</MudText>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Construction;
+
+    [Parameter]
+    public string Message { get; set; } = "Diese Seite ist noch nicht implementiert.";
+}

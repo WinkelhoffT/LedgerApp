@@ -1,0 +1,43 @@
+@page "/"
+
+<PageTitle>Dashboard</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MetricCard Title="Datenbankstatus" Value="Online" Icon="@Icons.Material.Filled.Storage" Color="Color.Success" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MetricCard Title="Aktive Sessions" Value="128" Icon="@Icons.Material.Filled.People" Color="Color.Info" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MetricCard Title="Identity Provider" Value="nicht konfiguriert" Icon="@Icons.Material.Filled.Security" Color="Color.Warning" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-4 mt-6" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-2">Letzte Aktivität</MudText>
+
+    @for (var i = 0; i < _activity.Length; i++)
+    {
+        var entry = _activity[i];
+        <div class="d-flex justify-space-between align-center py-2">
+            <MudText>@entry.Text</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@entry.Time</MudText>
+        </div>
+        @if (i < _activity.Length - 1)
+        {
+            <MudDivider />
+        }
+    }
+</MudPaper>
+
+@code {
+    private readonly (string Text, string Time)[] _activity =
+    [
+        ("Neues Projekt \"Datenbank-Refactoring\" angelegt", "vor 5 Minuten"),
+        ("Team-Mitglied \"Alex\" hinzugefügt", "vor 2 Stunden"),
+        ("Dokument \"Architektur-Übersicht.pdf\" hochgeladen", "gestern, 18:42 Uhr")
+    ];
+}

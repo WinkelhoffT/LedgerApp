@@ -1,0 +1,31 @@
+<MudAppBar Elevation="1" Class="app-topbar">
+    <MudText Typo="Typo.h6" Class="app-topbar-brand">StudyHub</MudText>
+
+    <MudSpacer />
+
+    <MudTooltip Text="Suche">
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Inherit" Edge="Edge.End" aria-label="Suche" />
+    </MudTooltip>
+
+    <MudTooltip Text="Benachrichtigungen">
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" Edge="Edge.End" aria-label="Benachrichtigungen" />
+    </MudTooltip>
+
+    <MudTooltip Text="@(IsDarkMode ? "Zu Light Mode wechseln" : "Zu Dark Mode wechseln")">
+        <MudIconButton Icon="@(IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                        Color="Color.Inherit"
+                        Edge="Edge.End"
+                        OnClick="OnToggleDarkMode"
+                        aria-label="Darstellung umschalten" />
+    </MudTooltip>
+
+    <MudAvatar Color="Color.Secondary" Class="ml-3" title="Angemeldeter Benutzer (Platzhalter)">JD</MudAvatar>
+</MudAppBar>
+
+@code {
+    [Parameter]
+    public bool IsDarkMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleDarkMode { get; set; }
+}

@@ -1,0 +1,21 @@
+<MudPaper Class="metric-card pa-4" Elevation="2">
+    <div class="d-flex align-center justify-space-between">
+        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@Title</MudText>
+        <MudIcon Icon="@Icon" Color="@Color" Size="Size.Small" />
+    </div>
+    <MudText Typo="Typo.h4" Class="mt-2">@Value</MudText>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Info;
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Default;
+}
