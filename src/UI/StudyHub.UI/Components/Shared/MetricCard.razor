@@ -5,17 +5,3 @@
     </div>
     <MudText Typo="Typo.h4" Class="mt-2">@Value</MudText>
 </MudPaper>
-
-@code {
-    [Parameter, EditorRequired]
-    public string Title { get; set; } = string.Empty;
-
-    [Parameter, EditorRequired]
-    public string Value { get; set; } = string.Empty;
-
-    [Parameter]
-    public string Icon { get; set; } = Icons.Material.Filled.Info;
-
-    [Parameter]
-    public Color Color { get; set; } = Color.Default;
-}

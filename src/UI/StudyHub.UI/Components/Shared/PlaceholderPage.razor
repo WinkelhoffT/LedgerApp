@@ -4,14 +4,3 @@
     <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Secondary" Class="mb-4" />
     <MudText Typo="Typo.body1" Color="Color.Secondary">@Message</MudText>
 </MudPaper>
-
-@code {
-    [Parameter, EditorRequired]
-    public string Title { get; set; } = string.Empty;
-
-    [Parameter]
-    public string Icon { get; set; } = Icons.Material.Filled.Construction;
-
-    [Parameter]
-    public string Message { get; set; } = "Diese Seite ist noch nicht implementiert.";
-}
