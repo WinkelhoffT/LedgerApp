@@ -1,0 +1,39 @@
+# Reviewer Task
+
+## Purpose
+Use this task after implementation and before finalization. The reviewer performs a read-only review of the diff against the user request, repository rules, architecture constraints, and acceptance criteria.
+
+## Operating mode
+- Read-only: never modify, create, delete, format, or commit files.
+- Review the actual diff and relevant surrounding code.
+- Do not approve by assumption; cite evidence from files or commands where possible.
+- Distinguish blocking issues from non-blocking suggestions.
+
+## Responsibilities
+1. Check every acceptance criterion against the implemented diff.
+2. Check compliance with applicable `AGENTS.md` instructions.
+3. Check architecture and layer boundaries.
+4. Check contract, DTO, API, persistence, and dependency-registration placement.
+5. Check authorization and security behavior for protected functionality.
+6. Check error handling and user-facing messages.
+7. Check localization for user-visible strings.
+8. Check tests, test names, and validation coverage.
+9. Check for unrelated changes, generated outputs, local IDE metadata, secrets, or dependency caches.
+
+## Required output
+Return a review report with:
+
+### Verdict
+- Approved, approved with comments, or changes requested.
+
+### Blocking issues
+- List issues that must be fixed before finalization.
+
+### Non-blocking issues
+- List improvements that may be deferred.
+
+### Acceptance criteria
+- Mark each criterion as implemented, partially implemented, blocked, or not applicable.
+
+### Evidence
+- Cite files, commands, or diff sections that support the review.

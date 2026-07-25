@@ -2,44 +2,98 @@
 
 # Project
 
-Name: StudyHub
+This repository contains **StudyHub**.
 
-StudyHub is a Blazor Web App designed to help computer science students organize their studies and improve learning efficiency.
+StudyHub is a modular Blazor Web Application that serves as a personal learning companion for computer science students.
 
-The system is both:
-- a daily productivity tool
-- a portfolio project demonstrating modern .NET architecture
+The goal is to centralize every aspect of studying into a single application, including:
 
-Core focus areas:
+- Semester management
 - Course management
 - Study planning
 - Document management
+- Markdown notes
 - AI-assisted learning
 - Flashcard generation
-- Statistics & analytics
+- Learning analytics
+
+The application is intended both as a daily productivity tool and as a portfolio project demonstrating modern .NET software architecture.
 
 ---
 
-# Tech Stack
+# Documentation
 
-- .NET 10
-- Blazor Web App
-- ASP.NET Core Identity
-- Entity Framework Core
-- SQL Server
-- MudBlazor
-- Clean Architecture principles
-- MediatR (optional)
-- FluentValidation
-- Mapster
+Before implementing any feature, review the relevant documentation.
+
+Core documentation:
+
+- `CLAUDE.md` (this file)
+- `docs/architecture.md`
+- `docs/roadmap.md`
+- `docs/adrs/`
+
+If documentation conflicts with the current implementation, report the inconsistency instead of making assumptions.
 
 ---
 
-# Architecture Pattern
+# Development Workflow
 
-The project follows a **Composite Component Architecture Pattern** inspired by Clean Architecture.
+Every task should be classified before implementation.
 
-## High-Level Structure
+## Small
+
+Examples:
+
+- UI improvements
+- Bug fixes
+- Small refactorings
+- Validation changes
+
+These may be implemented directly.
+
+---
+
+## Medium
+
+Examples:
+
+- New CRUD feature
+- New domain object
+- New page
+- New business workflow
+
+Before implementation:
+
+1. Explain the planned architecture.
+2. Describe affected layers.
+3. Identify required contracts.
+4. Explain database impact.
+
+---
+
+## Large
+
+Examples:
+
+- AI integration
+- Authentication changes
+- File management
+- Search engine
+- OCR
+- Handwritten note import
+
+Before implementation:
+
+1. Propose an implementation plan.
+2. Wait for confirmation before writing code.
+
+---
+
+# Architecture
+
+The project follows a **Composite Component Architecture Pattern**.
+
+Projects:
 
 - Shared
 - Data
@@ -48,149 +102,215 @@ The project follows a **Composite Component Architecture Pattern** inspired by C
 - Infrastructure
 - Tests
 
-Each feature is composed of these layers and assembled via contracts.
+The Logic layer consists of:
+
+- Domain
+- Business
+- Integration
+
+Responsibilities:
+
+## Domain
+
+Contains:
+
+- Entities
+- Value Objects
+- Domain Rules
+
+No external dependencies.
 
 ---
 
-## Logic Layer
+## Business
 
-The Logic layer is divided into three sub-layers:
+Contains:
 
-### Domain
-- Core business models and rules
-- Pure business logic
-- No external dependencies
+- Use Cases
+- Application Workflows
+- Orchestration
+- Validation
 
-### Integration
-- External systems and APIs
-- Adapters and service clients
+Business coordinates Domain and Integration.
 
-### Business
-- Application use-cases
-- Orchestration of domain + integration logic
-- Coordinates workflows across features
-- Must NOT contain infrastructure details
+Business never accesses Infrastructure directly.
 
 ---
 
-## Contracts-First Principle
+## Integration
 
-All communication between layers is done via contracts (interfaces).
+Contains:
+
+- API Clients
+- AI Providers
+- External Services
+- Adapters
+
+---
+
+# Contracts First
+
+All communication between layers happens through contracts.
 
 Rules:
-- No direct instantiation of implementations in Business or UI layers
-- Depend only on abstractions
-- Implementations live in Infrastructure or Integration layer
 
-Benefits:
-- Testable architecture
-- Loose coupling
-- Replaceable services (AI, storage, APIs)
+- Never instantiate implementations directly.
+- Depend only on interfaces.
+- Infrastructure implements contracts.
+- UI communicates only with Business contracts.
 
 ---
 
-## UI Layer
+# Implementation Principles
 
-- Presentation only (Blazor)
-- No business logic
-- Calls Business layer via contracts
-- Razor components must remain thin
-- Backend/API endpoints are part of UI layer
+When implementing new features:
 
----
-
-## Data Layer
-
-- EF Core models and configurations
-- Persistence only
-- No business logic
-
----
-
-## Infrastructure Layer
-
-- External services (AI, email, storage, APIs)
-- Implements contracts defined in Logic layer
-
----
-
-# Coding Standards
-
-- Follow SOLID principles
-- Prefer composition over inheritance
-- Keep methods small and focused
-- Use dependency injection everywhere
-- Prefer async/await
-- Avoid static helper classes unless justified
-- Optimize for readability over cleverness
+- Build the smallest useful solution.
+- Do not over-engineer.
+- Preserve architecture.
+- Prefer readability over cleverness.
+- Keep methods focused.
+- Keep Razor components thin.
+- Move business logic into Business layer.
+- Keep Domain independent.
+- Avoid unnecessary abstractions.
+- Favor composition over inheritance.
 
 ---
 
 # Entity Framework
 
-- Code First approach
+- Code First
 - One migration per feature
-- Use IEntityTypeConfiguration for mapping
+- Configure entities using IEntityTypeConfiguration
 - Avoid lazy loading
-- Prefer explicit relationships
+- Keep persistence concerns out of Domain
 
 ---
 
-# UI Guidelines
+# UI
 
-- Use MudBlazor components
-- Keep Razor pages minimal
-- Move logic into services or Business layer
-- Ensure reusable components where possible
+Use MudBlazor whenever possible.
 
----
+Pages should:
 
-# Naming Conventions
+- contain presentation only
+- call Business contracts
+- avoid business logic
 
-- Classes: PascalCase
-- Methods: PascalCase
-- Private fields: _camelCase
-- Interfaces: IName
-- Async methods: suffix Async
+Backend API endpoints are considered part of the UI layer.
 
 ---
 
-# Testing Strategy
+# AI Features
 
-- Use xUnit
-- Test business logic thoroughly
-- Avoid UI testing unless necessary
-- Prefer unit tests over integration tests for logic
+AI should help users learn instead of replacing learning.
 
----
+Generated content should:
 
-# Git Workflow
+- preserve technical correctness
+- explain concepts
+- generate review questions
+- optionally generate Anki flashcards
 
-- Small, focused commits
-- One feature per branch
-- Descriptive commit messages
+Never generate solutions that encourage academic dishonesty.
 
 ---
 
-# AI Behavior Rules
+# Testing
 
-AI features must support learning, not replace it.
+Use xUnit.
 
-Generated content must:
-- be technically correct
-- include key concepts
-- encourage understanding
-- optionally generate flashcards and review questions
+Business logic should always be tested.
+
+When changing:
+
+- workflows
+- mappings
+- business rules
+- validation
+
+update or add tests accordingly.
 
 ---
 
-# Long-Term Vision (NOT implementation details)
+# Validation
 
-- Study planner
-- Course management system
-- Document library
-- Markdown-based notes
-- AI summaries & tutoring
-- Flashcard system (Anki export)
-- PDF/chat-based learning assistant
-- Learning analytics dashboard
+Before completing any implementation:
+
+- Ensure the solution builds.
+- Ensure all tests pass.
+- Fix compiler warnings introduced by the change.
+- Verify that architecture boundaries remain intact.
+
+Typical commands:
+
+```bash
+dotnet build
+dotnet test
+```
+
+---
+
+# Git
+
+- One feature per branch.
+- Small focused commits.
+- Clear commit messages.
+- No unrelated refactorings.
+
+---
+
+# Implementation Reports
+
+When completing a task, always provide:
+
+## What changed
+
+Summarize the implementation.
+
+## Why
+
+Explain the reasoning.
+
+## Architecture
+
+Explain which layers were affected.
+
+## Validation
+
+List executed build and test commands.
+
+## Risks
+
+Describe assumptions, limitations or future improvements.
+
+---
+
+# Long-Term Vision
+
+StudyHub should evolve into a complete learning platform.
+
+Planned milestones:
+
+- Semester Management
+- Course Management
+- Dashboard
+- Document Library
+- Markdown Notes
+- Study Sessions
+- Calendar
+- AI Summaries
+- Flashcard Generation
+- Anki Export
+- Search
+- Learning Analytics
+
+Future versions may include:
+
+- Handwritten note import
+- OCR
+- OneNote integration
+- Chat with documents (RAG)
+- Local LLM support
+- Cloud synchronization

@@ -1,0 +1,105 @@
+# Orchestrator Task
+
+## Purpose
+Use this task as the coordination entrypoint for medium and large implementation work. The orchestrator turns a user request into an ordered workflow across architecture, consolidation, implementation, review, and verification.
+
+## Dispatch
+Use the orchestrator before implementation when a request:
+- touches multiple projects, layers, or executables,
+- changes contracts, API behavior, persistence, authorization, frontend flows, dependency registration, or cross-project behavior,
+- includes many acceptance criteria,
+- requires ADR, architecture, or rule-catalog compliance,
+- is explicitly requested by the user.
+
+Small, isolated, low-risk changes may be implemented directly when they do not meet the criteria above.
+
+## Operating mode
+- Coordinate the work before coding starts.
+- Keep phases small, explicit, and reviewable.
+- Assign clear ownership for any implementation task.
+- Never allow a read-only task to modify files.
+- Track acceptance criteria from intake through verification.
+- Prefer existing repository patterns over new abstractions.
+- Avoid unrelated refactoring.
+
+## Workflow
+
+### 1. Intake
+- Restate the requested change and desired outcome.
+- Classify the change as small, medium, or large.
+- Identify acceptance criteria, affected layers, likely executable applications, and likely validation commands.
+- Decide which task roles are required.
+
+### 2. Architecture
+Dispatch the architect task for read-only analysis.
+
+Architect output must identify:
+- applicable rule IDs,
+- relevant architecture documents and ADRs,
+- existing implementation patterns,
+- existing APIs, contracts, DTOs, clients, and composition roots,
+- missing capabilities and blocked acceptance criteria,
+- architecture-compliant implementation blueprint,
+- authorization and security considerations,
+- required tests and validation commands.
+
+### 3. Consolidation
+Dispatch the consolidator task or perform consolidation locally.
+
+Consolidation output must:
+- merge architecture findings with the user request,
+- resolve contradictions or open questions,
+- define the final implementation plan,
+- define implementation ownership by file, module, or responsibility,
+- define the test and validation plan,
+- state assumptions that must be preserved during implementation.
+
+### 4. Implementation
+Dispatch one or more implementer tasks, or implement locally, based on the consolidated plan.
+
+Implementation must:
+- modify only files within assigned ownership,
+- follow repository instructions and applicable architecture rules,
+- keep public contracts backward compatible where practical,
+- add or update tests when behavior changes,
+- avoid generated outputs, local IDE metadata, secrets, and dependency caches,
+- report changed files and any deviations from the plan.
+
+### 5. Review
+Dispatch the reviewer task for read-only diff review.
+
+Review must check:
+- acceptance criteria coverage,
+- architecture and layer-boundary compliance,
+- authorization and security requirements,
+- DTO and contract placement,
+- exception and error-handling behavior,
+- localization and user-visible strings,
+- test coverage and naming,
+- unrelated changes or broad formatting edits.
+
+### 6. Verification
+Dispatch the verification task or run verification locally.
+
+Verification must:
+- run the required validation commands,
+- run startup checks for changed executable applications when applicable,
+- investigate failures before reporting them,
+- rerun checks after fixes when feasible,
+- classify unresolved failures as changed-code, untouched-code, or environment limitations.
+
+### 7. Finalization
+- Review the final diff for scope and generated files.
+- Ensure the working tree contains only intentional changes.
+- Commit the completed change on the current branch.
+- Prepare pull request notes with behavior changes, implementation changes, tests run, and any schema or contract/API changes.
+- Report remaining risks and human decisions.
+
+## Required output
+Return a concise orchestration report with:
+- selected workflow phases,
+- task assignments,
+- consolidated implementation plan,
+- validation plan,
+- final acceptance status,
+- unresolved risks or required human input.
