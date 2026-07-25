@@ -6,9 +6,9 @@
     <Project Path="src/Data/StudyHub.Data/StudyHub.Data.csproj" />
   </Folder>
   <Folder Name="/03_Logic/">
+    <Project Path="src/Logic/StudyHub.Logic.Business/StudyHub.Logic.Business.csproj" />
     <Project Path="src/Logic/StudyHub.Logic.Domain/StudyHub.Logic.Domain.csproj" />
     <Project Path="src/Logic/StudyHub.Logic.Integration/StudyHub.Logic.Integration.csproj" />
-    <Project Path="src/Logic/StudyHub.Logic.Business/StudyHub.Logic.Business.csproj" />
   </Folder>
   <Folder Name="/04_UI/">
     <Project Path="src/UI/StudyHub.UI/StudyHub.UI.csproj" />
@@ -16,7 +16,5 @@
   <Folder Name="/05_Infrastructure/">
     <Project Path="src/Infrastructure/StudyHub.Infrastructure/StudyHub.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/06_Tests/">
-    <Project Path="tests/StudyHub.Tests/StudyHub.Tests.csproj" />
-  </Folder>
+  <Folder Name="/06_Tests/" />
 </Solution>

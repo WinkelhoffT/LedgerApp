@@ -1,0 +1,10 @@
+@page "/flashcards"
+@inject IPageHeaderService PageHeader
+
+<PageTitle>Flashcards</PageTitle>
+
+<p>Flashcards — coming soon.</p>
+
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Flashcards", "Spaced repetition");
+}

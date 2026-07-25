@@ -1,5 +1,13 @@
-﻿@page "/not-found"
-@layout MainLayout
+@page "/not-found"
+@layout BlankLayout
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Seite nicht gefunden – StudyHub</PageTitle>
+
+<ErrorPageLayout Title="Seite nicht gefunden"
+                 Message="Die aufgerufene Seite existiert nicht oder wurde verschoben. Prüfe die Adresse oder kehre zum Dashboard zurück."
+                 ButtonText="Zurück zum Dashboard"
+                 ButtonHref="/">
+    <IconContent>
+        <text x="90" y="88" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">?</text>
+    </IconContent>
+</ErrorPageLayout>

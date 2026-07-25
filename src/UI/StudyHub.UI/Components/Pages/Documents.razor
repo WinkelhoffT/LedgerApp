@@ -1,0 +1,10 @@
+@page "/documents"
+@inject IPageHeaderService PageHeader
+
+<PageTitle>Document Library</PageTitle>
+
+<p>Documents — coming soon.</p>
+
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Document Library", "78 files across 6 courses");
+}

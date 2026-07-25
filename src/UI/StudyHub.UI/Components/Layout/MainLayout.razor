@@ -1,19 +1,32 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="app">
+    <aside class="sidebar @(SidebarState.IsOpen ? "open" : "")" id="sidebar">
         <NavMenu />
+    </aside>
+
+    <div class="overlay @(SidebarState.IsOpen ? "show" : "")" @onclick="() => SidebarState.Close()"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="icon-btn hamburger" type="button" aria-label="Navigation umschalten" @onclick="() => SidebarState.Toggle()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
+            </button>
+            <div>
+                <div class="page-title">@PageHeader.Title</div>
+                @if (!string.IsNullOrWhiteSpace(PageHeader.Subtitle))
+                {
+                    <div class="page-sub">@PageHeader.Subtitle</div>
+                }
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="content-wide">
+                @Body
+            </div>
+        </main>
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>

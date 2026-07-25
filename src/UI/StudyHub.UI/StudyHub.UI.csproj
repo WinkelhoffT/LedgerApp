@@ -14,4 +14,8 @@
     <ProjectReference Include="..\..\Data\StudyHub.Data\StudyHub.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="bootstrap" Version="5.3.8" />
+  </ItemGroup>
+
 </Project>
