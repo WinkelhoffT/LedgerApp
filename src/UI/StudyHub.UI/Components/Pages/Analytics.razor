@@ -1,0 +1,10 @@
+@page "/analytics"
+@inject IPageHeaderService PageHeader
+
+<PageTitle>Analytics</PageTitle>
+
+<p>Analytics — coming soon.</p>
+
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Analytics", "Your productivity at a glance");
+}

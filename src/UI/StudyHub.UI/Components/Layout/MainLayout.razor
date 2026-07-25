@@ -1,13 +1,15 @@
 @inherits LayoutComponentBase
 
 <div class="app">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar @(SidebarState.IsOpen ? "open" : "")" id="sidebar">
         <NavMenu />
     </aside>
 
+    <div class="overlay @(SidebarState.IsOpen ? "show" : "")" @onclick="() => SidebarState.Close()"></div>
+
     <div class="main">
         <header class="topbar">
-            <button class="icon-btn hamburger" type="button" aria-label="Navigation umschalten">
+            <button class="icon-btn hamburger" type="button" aria-label="Navigation umschalten" @onclick="() => SidebarState.Toggle()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
             </button>
             <div>

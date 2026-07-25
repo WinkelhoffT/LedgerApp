@@ -1,0 +1,10 @@
+@page "/calendar"
+@inject IPageHeaderService PageHeader
+
+<PageTitle>Calendar</PageTitle>
+
+<p>Calendar — coming soon.</p>
+
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Calendar", "November 2025");
+}

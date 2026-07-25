@@ -1,0 +1,10 @@
+@page "/courses"
+@inject IPageHeaderService PageHeader
+
+<PageTitle>Courses</PageTitle>
+
+<p>Courses — coming soon.</p>
+
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Courses", "6 active this semester");
+}

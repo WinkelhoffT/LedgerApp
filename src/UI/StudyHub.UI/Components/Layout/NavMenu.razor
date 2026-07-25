@@ -1,55 +1,37 @@
-﻿@implements IDisposable
-
-@inject NavigationManager NavigationManager
-
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">StudyHub.UI</a>
+<div class="brand">
+    <div class="brand-logo">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
     </div>
+    <div class="brand-name">Study<span>Hub</span></div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+<nav class="nav">
+    @foreach (var group in Groups)
+    {
+        if (group.Label is not null)
+        {
+            <div class="nav-section-label">@group.Label</div>
+        }
+        @foreach (var entry in group.Entries)
+        {
+            <NavLink class="nav-item" href="@entry.Href" Match="@(entry.Href == "/" ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">@((MarkupString)entry.IconPaths)</svg>
+                <span>@entry.Label</span>
+                @if (entry.ShowBadge)
+                {
+                    <span class="nav-badge">AI</span>
+                }
             </NavLink>
-        </div>
+        }
+    }
+</nav>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
+<div class="sidebar-foot">
+    <NavLink href="/settings" class="user-chip">
+        <div class="avatar">AK</div>
+        <div class="user-meta">
+            <b>Anna Keller</b>
+            <small>M.Sc. Computer Science</small>
         </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
+    </NavLink>
 </div>
-
-@code {
-    private string? currentUrl;
-
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}
-

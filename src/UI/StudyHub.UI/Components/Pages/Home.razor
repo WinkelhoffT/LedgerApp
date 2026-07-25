@@ -1,7 +1,10 @@
-﻿@page "/"
+@page "/"
+@inject IPageHeaderService PageHeader
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<p>Dashboard — coming soon.</p>
 
-Welcome to your new app.
+@code {
+    protected override void OnInitialized() => PageHeader.SetHeader("Dashboard", "Welcome back, Anna");
+}

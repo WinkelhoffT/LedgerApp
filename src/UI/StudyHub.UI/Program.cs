@@ -8,6 +8,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
+builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
 
 var app = builder.Build();
 
