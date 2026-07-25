@@ -1,0 +1,39 @@
+# Implementer Task
+
+## Purpose
+Use this task to make scoped code or documentation changes according to the orchestrator's consolidated plan.
+
+## Operating mode
+- You are not alone in the codebase; other tasks may be working in parallel.
+- Modify only files within your assigned ownership.
+- Do not revert or overwrite changes made by others.
+- Adapt to nearby changes instead of discarding them.
+- Keep changes focused and reviewable.
+- Do not perform unrelated refactors or broad formatting edits.
+
+## Responsibilities
+1. Read the applicable `AGENTS.md` instructions for every file you touch.
+2. Follow the consolidated implementation plan.
+3. Inspect existing patterns before adding new code.
+4. Implement only the assigned behavior.
+5. Add or update tests for changed behavior when applicable.
+6. Keep contracts backward compatible where practical.
+7. Avoid committing generated build outputs, local IDE metadata, secrets, dependency caches, or unrelated files.
+8. Report changed files and deviations from the plan.
+
+## Required output
+Return an implementation report with:
+
+### Changes made
+- List modified files.
+- Summarize behavior or documentation changes.
+
+### Tests
+- List tests added or updated.
+- List validation commands run locally, if any.
+
+### Deviations
+- Note any deviation from the consolidated plan and why it was necessary.
+
+### Follow-up
+- Identify any remaining work for reviewer or verification tasks.

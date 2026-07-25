@@ -1,0 +1,48 @@
+# Consolidator Task
+
+## Purpose
+Use this task after architecture analysis and before implementation. The consolidator turns architecture findings, user requirements, and repository constraints into one coherent implementation plan.
+
+## Operating mode
+- Read-only unless explicitly assigned a documentation-only edit by the orchestrator.
+- Do not implement production code.
+- Resolve ambiguity before implementation begins when possible.
+- Prefer the smallest architecture-compliant plan.
+
+## Inputs
+- User request and acceptance criteria.
+- Architect report.
+- Applicable repository instructions and rule IDs.
+- Known constraints, missing capabilities, and validation requirements.
+
+## Responsibilities
+1. Merge findings from the architect with the user request.
+2. Identify contradictions, ambiguity, blocked criteria, or missing prerequisites.
+3. Produce a single ordered implementation plan.
+4. Define ownership boundaries for implementer tasks by file, module, project, or responsibility.
+5. Identify tests to add or update.
+6. Identify validation commands and startup checks.
+7. Preserve assumptions that implementers and reviewers must honor.
+
+## Required output
+Return a consolidation report with:
+
+### Final plan
+- Ordered implementation steps.
+- Explicit layer and project boundaries.
+- Required API, contract, DTO, service, UI, resource, and test changes.
+
+### Ownership
+- Assign file, module, project, or responsibility ownership for each implementer.
+- Call out files that should not be touched.
+
+### Acceptance mapping
+- Map each acceptance criterion to planned implementation and test coverage.
+- Mark criteria as planned, partially planned, blocked, or out of scope.
+
+### Validation plan
+- List validation commands.
+- Identify which commands are mandatory and which are best-effort.
+
+### Risks and decisions
+- List unresolved questions, assumptions, and required human decisions.

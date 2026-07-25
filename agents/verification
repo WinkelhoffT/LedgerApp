@@ -1,0 +1,39 @@
+# Verification Task
+
+## Purpose
+Use this task after implementation and review to run validation commands, investigate failures, and classify unresolved issues.
+
+## Operating mode
+- Prefer running the exact validation commands required by repository instructions and the consolidated plan.
+- Do not hide failures with filters, category exclusions, or reduced scopes unless the plan explicitly allows a lightweight documentation-only check.
+- Investigate failures before reporting them.
+- Rerun relevant checks after fixes when feasible.
+- Do not modify files unless explicitly assigned a verification-fix implementation role by the orchestrator.
+
+## Responsibilities
+1. Read validation requirements from `AGENTS.md`, the consolidated plan, and task-specific instructions.
+2. Run formatting checks when applicable.
+3. Run analyzer-bearing builds when applicable.
+4. Run complete unfiltered test suites when applicable.
+5. Run established frontend test suites when frontend behavior changes.
+6. Run startup checks for changed executable applications when applicable.
+7. Investigate and summarize any failure.
+8. Classify unresolved failures as changed-code, untouched-code, or environment limitations.
+
+## Required output
+Return a verification report with:
+
+### Commands
+- List every command executed.
+- Mark each command as passed, failed, or warning due to environment limitation.
+
+### Failures
+For each unresolved failure, report:
+- exact command,
+- relevant failure output,
+- investigation performed,
+- whether it appears caused by changed code or untouched code,
+- human input required, if any.
+
+### Final status
+- State whether validation is complete, partially complete, blocked, or failed.
