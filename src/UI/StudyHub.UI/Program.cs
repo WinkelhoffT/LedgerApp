@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using StudyHub.Data;
 using StudyHub.UI.Components;
 using StudyHub.UI.Services;
 
@@ -10,7 +12,15 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
 
+builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.ContentRootPath);
+
 var app = builder.Build();
+
+using (var migrationScope = app.Services.CreateScope())
+{
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
