@@ -1,10 +1,133 @@
 @page "/courses"
+@using StudyHub.Logic.Business.Courses
+@inject ICourseManagement CourseManagement
 @inject IPageHeaderService PageHeader
 
 <PageTitle>Courses</PageTitle>
 
-<p>Courses — coming soon.</p>
+<div class="page-toolbar">
+    <label class="toggle-check">
+        <input type="checkbox" @bind="ShowArchived" />
+        Show archived
+    </label>
+    <button class="btn btn-primary" type="button" @onclick="OpenCreateDialog">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        New Course
+    </button>
+</div>
+
+@if (CourseList is null)
+{
+    <p class="placeholder-hint">Loading courses…</p>
+}
+else if (VisibleCourses.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">@(CourseList.Count == 0 ? "No courses yet" : "No archived courses")</div>
+        <div class="empty-state-text">
+            @(CourseList.Count == 0
+                ? "Create your first course to start organizing your studies."
+                : "Courses you archive will show up here.")
+        </div>
+        @if (CourseList.Count == 0)
+        {
+            <button class="btn btn-primary" type="button" @onclick="OpenCreateDialog">New Course</button>
+        }
+    </div>
+}
+else
+{
+    <div class="grid course-grid">
+        @foreach (var course in VisibleCourses)
+        {
+            <div class="card course-card @(course.IsArchived ? "is-archived" : "")">
+                <div class="course-card-head">
+                    <span class="course-swatch" style="background:@course.Color"></span>
+                    <span class="course-name">@course.Name</span>
+                    @if (course.IsArchived)
+                    {
+                        <span class="badge-archived">Archived</span>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(course.Description))
+                {
+                    <div class="course-desc">@course.Description</div>
+                }
+                <div class="course-card-actions">
+                    @if (course.IsArchived)
+                    {
+                        <button class="btn btn-secondary btn-sm" type="button" @onclick="() => RestoreAsync(course)">Restore</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline btn-sm" type="button" @onclick="() => OpenEditDialog(course)">Edit</button>
+                        <button class="btn btn-danger-outline btn-sm" type="button" @onclick="() => ArchiveAsync(course)">Archive</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<CourseFormDialog IsOpen="IsDialogOpen" EditingCourse="EditingCourse" OnClose="CloseDialog" OnSaved="HandleSavedAsync" />
 
 @code {
-    protected override void OnInitialized() => PageHeader.SetHeader("Courses", "6 active this semester");
+    private IReadOnlyList<CourseDto>? CourseList { get; set; }
+
+    private bool ShowArchived { get; set; }
+
+    private bool IsDialogOpen { get; set; }
+
+    private CourseDto? EditingCourse { get; set; }
+
+    private IReadOnlyList<CourseDto> VisibleCourses =>
+        CourseList is null
+            ? []
+            : CourseList.Where(c => ShowArchived || !c.IsArchived).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageHeader.SetHeader("Courses", "Manage the courses you're studying");
+        await LoadCoursesAsync();
+    }
+
+    private async Task LoadCoursesAsync()
+    {
+        CourseList = await CourseManagement.GetAllAsync();
+    }
+
+    private void OpenCreateDialog()
+    {
+        EditingCourse = null;
+        IsDialogOpen = true;
+    }
+
+    private void OpenEditDialog(CourseDto course)
+    {
+        EditingCourse = course;
+        IsDialogOpen = true;
+    }
+
+    private void CloseDialog()
+    {
+        IsDialogOpen = false;
+        EditingCourse = null;
+    }
+
+    private async Task HandleSavedAsync(CourseDto _)
+    {
+        await LoadCoursesAsync();
+    }
+
+    private async Task ArchiveAsync(CourseDto course)
+    {
+        await CourseManagement.ArchiveAsync(course.Id);
+        await LoadCoursesAsync();
+    }
+
+    private async Task RestoreAsync(CourseDto course)
+    {
+        await CourseManagement.RestoreAsync(course.Id);
+        await LoadCoursesAsync();
+    }
 }

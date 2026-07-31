@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
+using StudyHub.Infrastructure;
+using StudyHub.Logic.Business;
 using StudyHub.UI.Components;
 using StudyHub.UI.Services;
 
@@ -13,6 +15,8 @@ builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
 
 builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.ContentRootPath);
+builder.Services.AddStudyHubInfrastructure();
+builder.Services.AddStudyHubBusiness();
 
 var app = builder.Build();
 

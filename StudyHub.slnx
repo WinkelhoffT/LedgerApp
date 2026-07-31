@@ -16,5 +16,7 @@
   <Folder Name="/05_Infrastructure/">
     <Project Path="src/Infrastructure/StudyHub.Infrastructure/StudyHub.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/06_Tests/" />
+  <Folder Name="/06_Tests/">
+    <Project Path="tests/StudyHub.Tests/StudyHub.Tests.csproj" />
+  </Folder>
 </Solution>
