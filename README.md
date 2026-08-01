@@ -164,9 +164,8 @@ StudyHub/
 │   │   └── StudyHub.Logic.Business/    # Use-cases & orchestration
 │   ├── Infrastructure/
 │   │   └── StudyHub.Infrastructure/    # Implementations of external services
-│   ├── UI/
-│   │   └── StudyHub.UI/                # Blazor Server app (presentation only)
-│   └── Api/
+│   └── UI/
+│       ├── StudyHub.UI/                # Blazor Server app (presentation only)
 │       └── StudyHub.Api/               # ASP.NET Core Web API host (composition root + endpoints)
 ├── tests/
 │   └── StudyHub.Tests/                 # Automated tests (xUnit)
@@ -210,7 +209,7 @@ dotnet restore
 The database is owned by `StudyHub.Api` (not the UI). Its location is set via the
 `ConnectionStrings:DefaultConnection` configuration value:
 
-- **Production / Docker**: read from `src/Api/StudyHub.Api/appsettings.json` —
+- **Production / Docker**: read from `src/UI/StudyHub.Api/appsettings.json` —
   `Data Source=/app/data/StudyHub.db`, matching the container path bind-mounted from `./data` on
   the host (see [Running with Docker Compose](#running-with-docker-compose)).
 - **Development** (`dotnet run` locally): **not** stored in `appsettings.Development.json` — it's
@@ -219,7 +218,7 @@ The database is owned by `StudyHub.Api` (not the UI). Its location is set via th
 
   ```bash
   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Data Source=App_Data/StudyHub.db" \
-    --project src/Api/StudyHub.Api/StudyHub.Api.csproj
+    --project src/UI/StudyHub.Api/StudyHub.Api.csproj
   ```
 
   The path is resolved relative to the `StudyHub.Api` project directory, and the file/parent folder
@@ -236,13 +235,13 @@ The UI calls the Api over HTTP, so both processes need to run at the same time (
 terminals):
 
 ```bash
-dotnet run --project src/Api/StudyHub.Api/StudyHub.Api.csproj
+dotnet run --project src/UI/StudyHub.Api/StudyHub.Api.csproj
 dotnet run --project src/UI/StudyHub.UI/StudyHub.UI.csproj
 ```
 
-On first run this creates `src/Api/StudyHub.Api/App_Data/StudyHub.db` and applies all migrations.
+On first run this creates `src/UI/StudyHub.Api/App_Data/StudyHub.db` and applies all migrations.
 The UI's `appsettings.Development.json` points `Api:BaseAddress` at the Api's local dev URL
-(`http://localhost:5250/`, see `src/Api/StudyHub.Api/Properties/launchSettings.json`).
+(`http://localhost:5250/`, see `src/UI/StudyHub.Api/Properties/launchSettings.json`).
 
 ### Run the tests
 
@@ -289,7 +288,7 @@ rm -rf ./data
 docker compose up -d
 ```
 
-For a local (non-Docker) run, delete `src/Api/StudyHub.Api/App_Data/StudyHub.db` instead.
+For a local (non-Docker) run, delete `src/UI/StudyHub.Api/App_Data/StudyHub.db` instead.
 
 ## Migrations
 
@@ -308,7 +307,7 @@ Create a new migration:
 ```bash
 dotnet ef migrations add <MigrationName> \
   --project src/Data/StudyHub.Data/StudyHub.Data.csproj \
-  --startup-project src/Api/StudyHub.Api/StudyHub.Api.csproj
+  --startup-project src/UI/StudyHub.Api/StudyHub.Api.csproj
 ```
 
 Apply migrations manually (normally not needed — the app applies them automatically on startup):
@@ -316,7 +315,7 @@ Apply migrations manually (normally not needed — the app applies them automati
 ```bash
 dotnet ef database update \
   --project src/Data/StudyHub.Data/StudyHub.Data.csproj \
-  --startup-project src/Api/StudyHub.Api/StudyHub.Api.csproj
+  --startup-project src/UI/StudyHub.Api/StudyHub.Api.csproj
 ```
 
 Per [`CLAUDE.md`](./CLAUDE.md), keep one migration per feature.
