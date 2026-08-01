@@ -19,4 +19,7 @@
   <Folder Name="/06_Tests/">
     <Project Path="tests/StudyHub.Tests/StudyHub.Tests.csproj" />
   </Folder>
+  <Folder Name="/07_Api/">
+    <Project Path="src/Api/StudyHub.Api/StudyHub.Api.csproj" />
+  </Folder>
 </Solution>
