@@ -27,7 +27,7 @@
     <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Business\StudyHub.Logic.Business.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\StudyHub.Infrastructure\StudyHub.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
-    <ProjectReference Include="..\..\src\Api\StudyHub.Api\StudyHub.Api.csproj" />
+    <ProjectReference Include="..\..\src\UI\StudyHub.Api\StudyHub.Api.csproj" />
   </ItemGroup>
 
 </Project>
