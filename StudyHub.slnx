@@ -12,14 +12,12 @@
   </Folder>
   <Folder Name="/04_UI/">
     <Project Path="src/UI/StudyHub.UI/StudyHub.UI.csproj" />
+    <Project Path="src/UI/StudyHub.Api/StudyHub.Api.csproj" />
   </Folder>
   <Folder Name="/05_Infrastructure/">
     <Project Path="src/Infrastructure/StudyHub.Infrastructure/StudyHub.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/06_Tests/">
     <Project Path="tests/StudyHub.Tests/StudyHub.Tests.csproj" />
-  </Folder>
-  <Folder Name="/07_Api/">
-    <Project Path="src/Api/StudyHub.Api/StudyHub.Api.csproj" />
   </Folder>
 </Solution>
