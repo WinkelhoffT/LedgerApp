@@ -1,0 +1,132 @@
+@using StudyHub.Logic.Business.Semesters
+@using StudyHub.Logic.Domain.Semesters
+@inject ISemesterManagement SemesterManagement
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(EditingSemester is null ? "New Semester" : "Edit Semester")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="form-group">
+                        <label for="semester-name">Name</label>
+                        <input id="semester-name" class="form-control" maxlength="@Semester.NameMaxLength" @bind="Name" placeholder="e.g. Winter 2025/26" />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="semester-start">Start date</label>
+                            <input id="semester-start" type="date" class="form-control" @bind="StartDate" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="semester-end">End date</label>
+                            <input id="semester-end" type="date" class="form-control" @bind="EndDate" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@IsSaving">@(EditingSemester is null ? "Create Semester" : "Save Changes")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public SemesterDto? EditingSemester { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<SemesterDto> OnSaved { get; set; }
+
+    private string Name { get; set; } = string.Empty;
+
+    private DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    private DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddMonths(4));
+
+    private bool IsSaving { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    private SemesterDto? _lastLoadedSemester;
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen)
+        {
+            return;
+        }
+
+        if (EditingSemester == _lastLoadedSemester)
+        {
+            return;
+        }
+
+        _lastLoadedSemester = EditingSemester;
+        ErrorMessage = null;
+        Name = EditingSemester?.Name ?? string.Empty;
+        StartDate = EditingSemester?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
+        EndDate = EditingSemester?.EndDate ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(4));
+    }
+
+    private async Task SubmitAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var saved = EditingSemester is null
+                ? await SemesterManagement.CreateAsync(new CreateSemesterRequest(Name, StartDate, EndDate))
+                : await SemesterManagement.UpdateAsync(new UpdateSemesterRequest(EditingSemester.Id, Name, StartDate, EndDate));
+
+            await OnSaved.InvokeAsync(saved);
+            await Close();
+        }
+        catch (SemesterValidationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (DuplicateSemesterNameException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (SemesterArchivedException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        ErrorMessage = null;
+        _lastLoadedSemester = null;
+        await OnClose.InvokeAsync();
+    }
+}
