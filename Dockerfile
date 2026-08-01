@@ -14,7 +14,7 @@ WORKDIR /src
 COPY src/ src/
 
 RUN dotnet restore "src/UI/StudyHub.UI/StudyHub.UI.csproj"
-RUN dotnet restore "src/Api/StudyHub.Api/StudyHub.Api.csproj"
+RUN dotnet restore "src/UI/StudyHub.Api/StudyHub.Api.csproj"
 
 FROM build AS publish-ui
 
@@ -25,7 +25,7 @@ RUN dotnet publish "src/UI/StudyHub.UI/StudyHub.UI.csproj" \
 
 FROM build AS publish-api
 
-RUN dotnet publish "src/Api/StudyHub.Api/StudyHub.Api.csproj" \
+RUN dotnet publish "src/UI/StudyHub.Api/StudyHub.Api.csproj" \
     -c Release \
     -o /app/publish \
     --no-restore
