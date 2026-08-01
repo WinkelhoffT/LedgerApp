@@ -1,4 +1,6 @@
+using StudyHub.Logic.Business.Courses;
 using StudyHub.UI.Components;
+using StudyHub.UI.Courses;
 using StudyHub.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +11,9 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
+
+builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
 var app = builder.Build();
 

@@ -2,6 +2,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
+    <ProjectReference Include="..\..\Logic\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
   </ItemGroup>
 
   <PropertyGroup>

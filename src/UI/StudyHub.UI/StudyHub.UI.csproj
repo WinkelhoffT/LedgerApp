@@ -1,17 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>4981b898-f136-4260-baad-272bb3d6e3a8</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
     <ProjectReference Include="..\..\Logic\StudyHub.Logic.Business\StudyHub.Logic.Business.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\StudyHub.Infrastructure\StudyHub.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\Data\StudyHub.Data\StudyHub.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

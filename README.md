@@ -25,9 +25,11 @@ architecture clean enough to keep evolving without accumulating unmanageable com
 
 StudyHub is in early, active development. The solution currently contains the foundational
 project layout (Shared, Data, Logic, Infrastructure, UI, Tests) wired together per the target
-architecture, running on the default Blazor Web App template. Feature work (authentication,
-persistence, course/study management, UI, AI features) has not started yet — see
-[Features](#features) and [Roadmap](#roadmap) below for what's implemented versus planned.
+architecture, running on the default Blazor Web App template. The Data layer is wired up to a
+SQLite database via EF Core (Code First, no feature tables yet), and the app is prepared for
+Docker-based deployment. Feature work (authentication, course/study management, UI, AI features)
+has not started yet — see [Features](#features) and [Roadmap](#roadmap) below for what's
+implemented versus planned.
 
 ---
 
@@ -36,8 +38,14 @@ persistence, course/study management, UI, AI features) has not started yet — s
 ### Current Features
 
 - Solution scaffold following the target layered architecture (Shared, Data, Logic, Infrastructure,
-  UI, Tests projects, wired via project references).
-- Blazor Web App host project (Interactive Server render mode) running on .NET 10.
+  UI, Api, Tests projects, wired via project references).
+- A separate `StudyHub.Api` ASP.NET Core Web API project between the UI and the Data layer; the
+  Blazor UI calls it over HTTP instead of referencing Data/Infrastructure directly.
+- Blazor Server UI project (Interactive Server render mode) running on .NET 10.
+- SQLite persistence via EF Core (Code First), with the database file location configurable and
+  migrations applied automatically on Api startup.
+- Docker/Docker Compose deployment with separate UI and Api containers; the SQLite database is
+  persisted outside the Api container via a bind mount.
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -67,9 +75,10 @@ been implemented yet.
 
 - **.NET 10**
 - **Blazor Web App** (Interactive Server render mode)
+- **Entity Framework Core** — Code First
+- **SQLite** — persistence layer; the database is a single portable file
+- **Docker / Docker Compose** — containerized deployment
 - **ASP.NET Core Identity** *(planned)*
-- **Entity Framework Core** *(planned)* — Code First
-- **SQL Server** *(planned)* — primary target database
 - **MudBlazor** *(planned)* — component library for the UI layer
 - **xUnit** *(planned)* — unit testing
 - **FluentValidation** *(planned)*
@@ -77,6 +86,10 @@ been implemented yet.
 
 Items marked *(planned)* are part of the target stack described in [`CLAUDE.md`](./CLAUDE.md) but
 are not yet present in the codebase.
+
+> **Note:** This document previously listed SQL Server as the planned database. SQLite was adopted
+> instead for portability — the entire database is a single file that can be backed up, moved, or
+> shipped alongside a container without a separate database server.
 
 ---
 
@@ -108,10 +121,15 @@ The application core, split into three sub-layers:
 Implementations of external services (AI providers, email, storage, third-party APIs) that
 fulfill contracts defined in the Logic layer.
 
+**Api**
+A separate ASP.NET Core Web API host exposing REST endpoints over the Business layer's contracts.
+Owns the composition root (DI wiring for Data/Infrastructure/Business) and applies EF Core
+migrations at startup. Deployed as its own container, independent of the UI host.
+
 **UI**
-Presentation only, built with Blazor. Razor components stay thin and call into the Business layer
-through contracts; no business logic lives here. Backend/API endpoints are considered part of
-this layer.
+Presentation only, built with Blazor Server. Razor components stay thin and call into the Business
+layer's contracts; no business logic lives here. UI no longer talks to Data/Infrastructure
+directly — it calls the Api host over HTTP through an adapter that satisfies the same contracts.
 
 **Tests**
 Automated tests, primarily unit tests for business logic (xUnit).
@@ -139,18 +157,23 @@ StudyHub/
 │   ├── Shared/
 │   │   └── StudyHub.Shared/            # Cross-cutting shared types
 │   ├── Data/
-│   │   └── StudyHub.Data/              # EF Core models & persistence
+│   │   └── StudyHub.Data/              # ApplicationDbContext, EF Core migrations & persistence
 │   ├── Logic/
 │   │   ├── StudyHub.Logic.Domain/      # Core business models & rules
 │   │   ├── StudyHub.Logic.Integration/ # External system adapters/clients
 │   │   └── StudyHub.Logic.Business/    # Use-cases & orchestration
 │   ├── Infrastructure/
 │   │   └── StudyHub.Infrastructure/    # Implementations of external services
-│   └── UI/
-│       └── StudyHub.UI/                # Blazor Web App (presentation + API endpoints)
+│   ├── UI/
+│   │   └── StudyHub.UI/                # Blazor Server app (presentation only)
+│   └── Api/
+│       └── StudyHub.Api/               # ASP.NET Core Web API host (composition root + endpoints)
 ├── tests/
 │   └── StudyHub.Tests/                 # Automated tests (xUnit)
 ├── docs/                               # Architecture and reference documentation
+├── data/                               # SQLite database (bind-mounted, gitignored, Docker only)
+├── Dockerfile                          # Multi-stage build for both the UI and Api hosts
+├── docker-compose.yml                  # UI + Api containers and the database's persistent volume
 ├── StudyHub.slnx                       # Solution file
 └── CLAUDE.md                           # Architecture & coding guidelines
 ```
@@ -159,13 +182,15 @@ StudyHub/
 
 ## Getting Started
 
-> These steps reflect the current, minimal state of the project. Database setup and Identity
-> configuration will be filled in as those pieces are implemented.
+> These steps reflect the current, minimal state of the project. Identity/authentication and
+> feature-specific persistence will be filled in as those pieces are implemented.
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- SQL Server (or SQL Server LocalDB) *(planned — not required yet, as persistence is not wired up)*
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) — for running locally without Docker.
+- [Docker](https://www.docker.com/) and Docker Compose — for containerized deployment.
+- No separate database server is required. SQLite is embedded — the database is a single file
+  created automatically on first run.
 
 ### Clone the repository
 
@@ -182,25 +207,119 @@ dotnet restore
 
 ### Configure the database
 
-*Not yet applicable.* Entity Framework Core, migrations, and connection-string configuration have
-not been added to the project yet. This section will be updated once the Data layer is
-implemented.
+The database is owned by `StudyHub.Api` (not the UI). Its location is set via the
+`ConnectionStrings:DefaultConnection` configuration value:
 
-### Run the application
+- **Production / Docker**: read from `src/Api/StudyHub.Api/appsettings.json` —
+  `Data Source=/app/data/StudyHub.db`, matching the container path bind-mounted from `./data` on
+  the host (see [Running with Docker Compose](#running-with-docker-compose)).
+- **Development** (`dotnet run` locally): **not** stored in `appsettings.Development.json` — it's
+  kept in the [.NET Secret Manager](https://learn.microsoft.com/aspnet/core/security/app-secrets)
+  (user secrets), so it never ends up in source control even by accident. Set it once per machine:
+
+  ```bash
+  dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Data Source=App_Data/StudyHub.db" \
+    --project src/Api/StudyHub.Api/StudyHub.Api.csproj
+  ```
+
+  The path is resolved relative to the `StudyHub.Api` project directory, and the file/parent folder
+  are created automatically on first run if they don't exist. User secrets only apply when
+  `ASPNETCORE_ENVIRONMENT=Development` (the default for `dotnet run`) — Docker/Production always
+  uses the value from `appsettings.json`.
+
+Pending migrations are applied automatically at Api startup — there is no separate manual step for
+a fresh environment.
+
+### Run the application (locally, without Docker)
+
+The UI calls the Api over HTTP, so both processes need to run at the same time (in separate
+terminals):
 
 ```bash
+dotnet run --project src/Api/StudyHub.Api/StudyHub.Api.csproj
 dotnet run --project src/UI/StudyHub.UI/StudyHub.UI.csproj
 ```
 
-### Run the tests
+On first run this creates `src/Api/StudyHub.Api/App_Data/StudyHub.db` and applies all migrations.
+The UI's `appsettings.Development.json` points `Api:BaseAddress` at the Api's local dev URL
+(`http://localhost:5250/`, see `src/Api/StudyHub.Api/Properties/launchSettings.json`).
 
-*Not yet applicable.* A dedicated test project will be added under `tests/` as business logic is
-implemented, per the testing strategy in [`CLAUDE.md`](./CLAUDE.md). Once available, tests will
-run with:
+### Run the tests
 
 ```bash
 dotnet test
 ```
+
+---
+
+## Running with Docker Compose
+
+This is the recommended way to run StudyHub as a portable, self-contained deployment.
+
+```bash
+docker compose up --build -d
+```
+
+This builds two images — `studyhub-api` and `studyhub` — and starts both containers. The UI is
+published on <http://localhost:8080>; the Api container is only reachable from the UI container
+over the internal Docker network (`http://studyhub-api:8080/`), not published to the host. The UI
+container waits for the Api container to report healthy (via its `/health` endpoint) before
+starting, so migrations have finished by the time the UI accepts traffic.
+
+The SQLite database is stored at `/app/data/StudyHub.db` inside the `studyhub-api` container, which
+is bind-mounted to `./data/StudyHub.db` on the host (see `docker-compose.yml`). Because the database
+lives outside the container's writable layer, it **survives container recreation** (`docker compose
+down` / `docker compose up` again, or `docker compose up --build` after a code change).
+
+To stop the container without losing data:
+
+```bash
+docker compose down
+```
+
+### Resetting the database
+
+The database is just a file. To reset it, stop the container and delete the file (or the whole
+`data/` folder) on the host, then start the container again — it will be recreated with all
+migrations applied:
+
+```bash
+docker compose down
+rm -rf ./data
+docker compose up -d
+```
+
+For a local (non-Docker) run, delete `src/Api/StudyHub.Api/App_Data/StudyHub.db` instead.
+
+## Migrations
+
+Migrations live in `src/Data/StudyHub.Data/Migrations`. `StudyHub.Data` holds the `DbContext`;
+`StudyHub.Api` is the startup project used to resolve configuration/services for the EF Core
+tooling.
+
+Install the EF Core CLI tool once (if not already installed):
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+Create a new migration:
+
+```bash
+dotnet ef migrations add <MigrationName> \
+  --project src/Data/StudyHub.Data/StudyHub.Data.csproj \
+  --startup-project src/Api/StudyHub.Api/StudyHub.Api.csproj
+```
+
+Apply migrations manually (normally not needed — the app applies them automatically on startup):
+
+```bash
+dotnet ef database update \
+  --project src/Data/StudyHub.Data/StudyHub.Data.csproj \
+  --startup-project src/Api/StudyHub.Api/StudyHub.Api.csproj
+```
+
+Per [`CLAUDE.md`](./CLAUDE.md), keep one migration per feature.
 
 ---
 

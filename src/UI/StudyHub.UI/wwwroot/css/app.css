@@ -207,3 +207,54 @@ svg { display: block; }
   .content { padding: 18px; }
   .topbar { padding: 0 16px; }
 }
+
+/* ---------- Buttons (variants) ---------- */
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface); border-color: var(--border-strong); }
+.btn-outline { background: transparent; color: var(--text-2); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--surface-2); color: var(--text); }
+.btn-danger-outline { background: transparent; color: #dc2626; border: 1px solid #f3c9c9; }
+.btn-danger-outline:hover { background: #fef2f2; }
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+/* ---------- Page toolbar ---------- */
+.page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.toggle-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); font-weight: 500; }
+
+/* ---------- Course cards ---------- */
+.course-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.course-card { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.course-card.is-archived { opacity: .65; }
+.course-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.course-swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; margin-top: 4px; }
+.course-name { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.course-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; flex: 1; }
+.badge-archived {
+  margin-left: auto; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  background: var(--surface-2); color: var(--text-3); padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+}
+.course-card-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ---------- Empty state ---------- */
+.empty-state { text-align: center; padding: 56px 24px; color: var(--text-3); }
+.empty-state-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.empty-state-text { font-size: 13px; margin-bottom: 18px; }
+
+/* ---------- Modal dialog ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-panel {
+  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 0; }
+.modal-title { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.modal-body { padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 0 22px 20px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.color-field { display: flex; align-items: center; gap: 10px; }
+.color-field input[type="color"] { width: 42px; height: 38px; padding: 2px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+.form-error { font-size: 12.5px; color: #dc2626; background: #fef2f2; border: 1px solid #f3c9c9; border-radius: 8px; padding: 9px 12px; }
