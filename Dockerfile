@@ -6,10 +6,9 @@ ENV ASPNETCORE_URLS=http://+:8080
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY StudyHub.slnx .
 COPY src/ src/
 
-RUN dotnet restore "StudyHub.slnx"
+RUN dotnet restore "src/UI/StudyHub.UI/StudyHub.UI.csproj"
 
 RUN dotnet build "src/UI/StudyHub.UI/StudyHub.UI.csproj" \
     -c Release \

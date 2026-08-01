@@ -1,0 +1,133 @@
+@using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Domain.Courses
+@inject ICourseManagement CourseManagement
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(EditingCourse is null ? "New Course" : "Edit Course")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="form-group">
+                        <label for="course-name">Name</label>
+                        <input id="course-name" class="form-control" maxlength="@Course.NameMaxLength" @bind="Name" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course-description">Description</label>
+                        <textarea id="course-description" class="form-control" rows="3" maxlength="@Course.DescriptionMaxLength" @bind="Description"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course-color">Color</label>
+                        <div class="color-field">
+                            <input id="course-color" type="color" @bind="Color" />
+                            <span class="mono">@Color</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@IsSaving">@(EditingCourse is null ? "Create Course" : "Save Changes")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public CourseDto? EditingCourse { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<CourseDto> OnSaved { get; set; }
+
+    private string Name { get; set; } = string.Empty;
+
+    private string? Description { get; set; }
+
+    private string Color { get; set; } = "#2563eb";
+
+    private bool IsSaving { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    private CourseDto? _lastLoadedCourse;
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen)
+        {
+            return;
+        }
+
+        if (EditingCourse == _lastLoadedCourse)
+        {
+            return;
+        }
+
+        _lastLoadedCourse = EditingCourse;
+        ErrorMessage = null;
+        Name = EditingCourse?.Name ?? string.Empty;
+        Description = EditingCourse?.Description;
+        Color = EditingCourse?.Color ?? "#2563eb";
+    }
+
+    private async Task SubmitAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var saved = EditingCourse is null
+                ? await CourseManagement.CreateAsync(new CreateCourseRequest(Name, Description, Color))
+                : await CourseManagement.UpdateAsync(new UpdateCourseRequest(EditingCourse.Id, Name, Description, Color));
+
+            await OnSaved.InvokeAsync(saved);
+            await Close();
+        }
+        catch (CourseValidationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (DuplicateCourseNameException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (CourseArchivedException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        ErrorMessage = null;
+        _lastLoadedCourse = null;
+        await OnClose.InvokeAsync();
+    }
+}
