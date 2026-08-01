@@ -2,8 +2,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Data;
 
-namespace StudyHub.Data;
+namespace StudyHub.UI;
 
 public static class ServiceCollectionExtensions
 {
