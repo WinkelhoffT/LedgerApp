@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
 using StudyHub.Infrastructure;
 using StudyHub.Logic.Business;
+using StudyHub.UI;
 using StudyHub.UI.Components;
 using StudyHub.UI.Services;
 
