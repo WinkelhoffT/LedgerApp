@@ -9,6 +9,34 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        modelBuilder.Entity<Course>(builder =>
+        {
+            builder.ToTable("Courses");
+
+            builder.HasKey(c => c.Id);
+
+            builder.Property(c => c.Name)
+                .HasMaxLength(Course.NameMaxLength)
+                .IsRequired();
+
+            builder.Property(c => c.Description)
+                .HasMaxLength(Course.DescriptionMaxLength);
+
+            builder.Property(c => c.Color)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            builder.Property(c => c.IsArchived)
+                .IsRequired();
+
+            builder.Property(c => c.CreatedAt)
+                .IsRequired();
+
+            builder.Property(c => c.UpdatedAt)
+                .IsRequired();
+
+            builder.HasIndex(c => c.Name)
+                .IsUnique();
+        });
     }
 }
