@@ -1,12 +1,34 @@
 services:
-  studyhub:
+  studyhub-api:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+      target: final-api
+    expose:
+      - "8080"
     volumes:
       - ./data:/app/data
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  studyhub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Api__BaseAddress=http://studyhub-api:8080/
+    depends_on:
+      studyhub-api:
+        condition: service_healthy
     restart: unless-stopped

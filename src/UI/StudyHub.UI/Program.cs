@@ -1,9 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using StudyHub.Data;
-using StudyHub.Infrastructure;
-using StudyHub.Logic.Business;
-using StudyHub.UI;
+using StudyHub.Logic.Business.Courses;
 using StudyHub.UI.Components;
+using StudyHub.UI.Courses;
 using StudyHub.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,17 +12,10 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
 
-builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.ContentRootPath);
-builder.Services.AddStudyHubInfrastructure();
-builder.Services.AddStudyHubBusiness();
+builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
 var app = builder.Build();
-
-using (var migrationScope = app.Services.CreateScope())
-{
-    var dbContext = migrationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
-}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
