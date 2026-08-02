@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Business.Courses;
+using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Semesters;
 
 namespace StudyHub.Logic.Business;
@@ -10,6 +11,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ICourseManagement, CourseManagement>();
         services.AddScoped<ISemesterManagement, SemesterManagement>();
+        services.AddScoped<IDashboardManagement, DashboardManagement>();
 
         return services;
     }
