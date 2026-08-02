@@ -1,5 +1,6 @@
 using Moq;
 using StudyHub.Logic.Business.Semesters;
+using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Semesters;
@@ -10,11 +11,15 @@ public class SemesterManagementTests
     private static readonly DateOnly EndDate = new(2026, 3, 31);
 
     private readonly Mock<ISemesterRepository> _repository = new();
+    private readonly Mock<ICourseRepository> _courseRepository = new();
     private readonly SemesterManagement _sut;
 
     public SemesterManagementTests()
     {
-        _sut = new SemesterManagement(_repository.Object);
+        _sut = new SemesterManagement(_repository.Object, _courseRepository.Object);
+
+        _courseRepository.Setup(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default))
+            .ReturnsAsync([]);
     }
 
     [Fact]
@@ -88,6 +93,39 @@ public class SemesterManagementTests
 
         Assert.False(result.IsArchived);
         _repository.Verify(r => r.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ArchiveAsync_AlsoArchivesAllCoursesInSemester()
+    {
+        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var course1 = Course.Create("Algorithms", null, "#2563eb", semester.Id);
+        var course2 = Course.Create("Databases", null, "#16a34a", semester.Id);
+
+        _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
+        _courseRepository.Setup(r => r.GetBySemesterIdAsync(semester.Id, default))
+            .ReturnsAsync([course1, course2]);
+
+        await _sut.ArchiveAsync(semester.Id);
+
+        Assert.True(course1.IsArchived);
+        Assert.True(course2.IsArchived);
+    }
+
+    [Fact]
+    public async Task RestoreAsync_DoesNotRestoreCourses()
+    {
+        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        semester.Archive();
+        var course = Course.Create("Algorithms", null, "#2563eb", semester.Id);
+        course.Archive();
+
+        _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
+
+        await _sut.RestoreAsync(semester.Id);
+
+        Assert.True(course.IsArchived);
+        _courseRepository.Verify(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default), Times.Never);
     }
 
     [Fact]
