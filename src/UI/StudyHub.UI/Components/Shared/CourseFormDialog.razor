@@ -47,7 +47,7 @@
                             <option value="@Guid.Empty">Select a semester…</option>
                             @foreach (var semester in SelectableSemesters)
                             {
-                                <option value="@semester.Id">@semester.Name</option>
+                                <option value="@semester.Id">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
                             }
                         </select>
                     </div>
@@ -92,7 +92,7 @@
     private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
 
     private IEnumerable<SemesterDto> SelectableSemesters =>
-        Semesters.Where(s => !s.IsArchived || s.Id == EditingCourse?.SemesterId);
+        Semesters.OrderByDescending(s => s.UpdatedAt);
 
     protected override async Task OnParametersSetAsync()
     {
