@@ -1,0 +1,265 @@
+@page "/notes/new"
+@page "/notes/{Id:guid}"
+@rendermode InteractiveServer
+@using System.Text.RegularExpressions
+@using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Notes
+@using StudyHub.Logic.Domain.Notes
+@inject INoteManagement NoteManagement
+@inject ICourseManagement CourseManagement
+@inject NavigationManager NavigationManager
+@inject IPageHeaderService PageHeader
+@inject IJSRuntime JS
+
+<PageTitle>@(Id is null ? "New Note" : Title)</PageTitle>
+
+@if (!IsLoaded)
+{
+    <p class="placeholder-hint">Loading…</p>
+}
+else if (CourseList!.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">No courses yet</div>
+        <div class="empty-state-text">Notes belong to a course. Create your first course before adding notes.</div>
+        <a class="btn btn-primary" href="/courses">Go to Courses</a>
+    </div>
+}
+else
+{
+    <div class="note-editor-page">
+        <div class="note-editor-topline">
+            <a class="btn btn-outline btn-sm" href="/notes">&larr; Back to Notes</a>
+            <div class="note-editor-topline-actions">
+                <select class="form-control note-course-select" @bind="CourseId" disabled="@IsArchived">
+                    <option value="@Guid.Empty">Select a course…</option>
+                    @foreach (var course in CourseList)
+                    {
+                        <option value="@course.Id">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                    }
+                </select>
+                @if (!IsArchived)
+                {
+                    <button class="btn btn-primary btn-sm" type="button" @onclick="SaveAsync" disabled="@IsSaving">
+                        @(IsSaving ? "Saving…" : "Save")
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (ErrorMessage is not null)
+        {
+            <div class="form-error">@ErrorMessage</div>
+        }
+        @if (IsArchived)
+        {
+            <div class="note-readonly-banner">This note is archived and read-only.</div>
+        }
+
+        <input class="note-title-input" placeholder="Untitled" maxlength="@Note.TitleMaxLength" @bind="Title" disabled="@IsArchived" />
+
+        <div class="note-editor-blocks">
+            @foreach (var block in Blocks)
+            {
+                @if (block.IsCode)
+                {
+                    <div class="note-code-block" @key="block.Id">
+                        <input class="note-code-lang" placeholder="language" @bind="block.Language" disabled="@IsArchived" />
+                        <div class="note-code-editor">
+                            <pre class="note-code-highlight" aria-hidden="true"><code class="language-@NormalizeLanguage(block.Language)">@(block.Text)
+</code></pre>
+                            <textarea
+                                class="note-code-textarea"
+                                spellcheck="false"
+                                @bind="block.Text"
+                                @bind:event="oninput"
+                                disabled="@IsArchived"></textarea>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <textarea
+                        class="note-text-block"
+                        @key="block.Id"
+                        rows="@GetRows(block.Text)"
+                        @bind="block.Text"
+                        @bind:event="oninput"
+                        @bind:after="() => HandleTextChangedAsync(block)"
+                        disabled="@IsArchived"
+                        placeholder="Write in Markdown… type /code for a code block, /list for a bullet list"></textarea>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private const string CodeTrigger = "/code";
+    private const string ListTrigger = "/list";
+
+    private static readonly Regex FencedCodeBlockPattern = new(@"```(\S*)\r?\n(.*?)```", RegexOptions.Singleline);
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private IReadOnlyList<CourseDto>? CourseList { get; set; }
+
+    private NoteDto? EditingNote { get; set; }
+
+    private string Title { get; set; } = string.Empty;
+
+    private List<EditorBlock> Blocks { get; set; } = [new()];
+
+    private Guid CourseId { get; set; }
+
+    private bool IsArchived { get; set; }
+
+    private bool IsSaving { get; set; }
+
+    private bool IsLoaded { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CourseList = await CourseManagement.GetAllAsync();
+
+        if (Id is { } id)
+        {
+            EditingNote = await NoteManagement.GetByIdAsync(id);
+            Title = EditingNote.Title;
+            Blocks = ParseContent(EditingNote.Content);
+            CourseId = EditingNote.CourseId;
+            IsArchived = EditingNote.IsArchived;
+            PageHeader.SetHeader(Title, "Editing note");
+        }
+        else
+        {
+            PageHeader.SetHeader("New Note", "Capture what you're learning");
+        }
+
+        IsLoaded = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Blazor owns the plain-text content of the code block on every render; re-run Prism
+        // afterwards so it can re-wrap that text in highlighted spans. Blazor's own diffing
+        // simply overwrites those spans back to plain text on the next render, so the two never
+        // fight over the DOM.
+        await JS.InvokeVoidAsync("studyHubNotes.highlightAll");
+    }
+
+    private void HandleTextChangedAsync(EditorBlock block)
+    {
+        if (TryConsumeTrigger(block, CodeTrigger))
+        {
+            var index = Blocks.IndexOf(block);
+            Blocks.Insert(index + 1, new EditorBlock());
+            Blocks.Insert(index + 1, new EditorBlock { IsCode = true });
+            return;
+        }
+
+        if (TryConsumeTrigger(block, ListTrigger))
+        {
+            block.Text += "- ";
+        }
+    }
+
+    private static bool TryConsumeTrigger(EditorBlock block, string trigger)
+    {
+        if (!block.Text.EndsWith(trigger, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        block.Text = block.Text[..^trigger.Length];
+        return true;
+    }
+
+    private static string NormalizeLanguage(string language) =>
+        string.IsNullOrWhiteSpace(language) ? "none" : language.Trim().ToLowerInvariant();
+
+    private static int GetRows(string text) => Math.Max(2, text.Count(c => c == '\n') + 2);
+
+    private static List<EditorBlock> ParseContent(string content)
+    {
+        var blocks = new List<EditorBlock>();
+        var lastIndex = 0;
+
+        foreach (Match match in FencedCodeBlockPattern.Matches(content))
+        {
+            if (match.Index > lastIndex)
+            {
+                blocks.Add(new EditorBlock { Text = content[lastIndex..match.Index].Trim('\n') });
+            }
+
+            blocks.Add(new EditorBlock
+            {
+                IsCode = true,
+                Language = match.Groups[1].Value,
+                Text = match.Groups[2].Value.TrimEnd('\n'),
+            });
+
+            lastIndex = match.Index + match.Length;
+        }
+
+        if (lastIndex < content.Length)
+        {
+            blocks.Add(new EditorBlock { Text = content[lastIndex..].Trim('\n') });
+        }
+
+        return blocks.Count > 0 ? blocks : [new EditorBlock()];
+    }
+
+    private string SerializeBlocks() =>
+        string.Join(
+            "\n\n",
+            Blocks
+                .Where(b => b.IsCode || !string.IsNullOrWhiteSpace(b.Text))
+                .Select(b => b.IsCode ? $"```{b.Language}\n{b.Text}\n```" : b.Text));
+
+    private async Task SaveAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var content = SerializeBlocks();
+            var saved = EditingNote is null
+                ? await NoteManagement.CreateAsync(new CreateNoteRequest(Title, content, CourseId))
+                : await NoteManagement.UpdateAsync(new UpdateNoteRequest(EditingNote.Id, Title, content, CourseId));
+
+            NavigationManager.NavigateTo($"/notes/{saved.Id}");
+        }
+        catch (NoteValidationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (NoteArchivedException)
+        {
+            ErrorMessage = "This note is archived and cannot be edited.";
+        }
+        catch (CourseNotFoundException)
+        {
+            ErrorMessage = "The selected course could not be found.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private sealed class EditorBlock
+    {
+        public Guid Id { get; } = Guid.NewGuid();
+
+        public bool IsCode { get; set; }
+
+        public string Text { get; set; } = string.Empty;
+
+        public string Language { get; set; } = string.Empty;
+    }
+}
