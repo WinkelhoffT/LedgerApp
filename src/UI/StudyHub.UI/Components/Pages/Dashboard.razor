@@ -1,7 +1,61 @@
 @page "/"
+@using StudyHub.Logic.Business.Dashboard
 @inject IPageHeaderService PageHeader
+@inject IDashboardManagement DashboardManagement
 
 <PageTitle>Dashboard</PageTitle>
+
+<div class="card card-pad hero-card" style="margin-bottom:16px">
+    @if (Progress is null)
+    {
+        <p class="placeholder-hint">Loading semester progress…</p>
+    }
+    else if (!Progress.HasActiveSemester)
+    {
+        <div class="hero-empty">
+            <div class="empty-state-title">No active semester</div>
+            <div class="empty-state-text">Create and activate a semester to see your progress here.</div>
+            <a class="btn btn-primary" href="/semesters">Create Semester</a>
+        </div>
+    }
+    else
+    {
+        <div class="hero-head">
+            <div>
+                <div class="hero-name">@Progress.SemesterName</div>
+                <span class="hero-status">Active Semester</span>
+            </div>
+            <div class="hero-percent">@FormatPercent(Progress.PercentComplete)</div>
+        </div>
+
+        <div class="hero-progress-track">
+            <div class="hero-progress-fill" style="width:@(FormatPercent(Progress.PercentComplete))"></div>
+        </div>
+
+        <div class="hero-info-grid">
+            <div class="hero-info-tile">
+                <div class="hero-info-label">Start</div>
+                <div class="hero-info-val">@Progress.StartDate!.Value.ToString("dd MMMM yyyy")</div>
+            </div>
+            <div class="hero-info-tile">
+                <div class="hero-info-label">End</div>
+                <div class="hero-info-val">@Progress.EndDate!.Value.ToString("dd MMMM yyyy")</div>
+            </div>
+            <div class="hero-info-tile">
+                <div class="hero-info-label">Elapsed</div>
+                <div class="hero-info-val">@Progress.ElapsedDays days</div>
+            </div>
+            <div class="hero-info-tile">
+                <div class="hero-info-label">Remaining</div>
+                <div class="hero-info-val">@Progress.RemainingDays days</div>
+            </div>
+            <div class="hero-info-tile">
+                <div class="hero-info-label">Length</div>
+                <div class="hero-info-val">@Progress.TotalDays days</div>
+            </div>
+        </div>
+    }
+</div>
 
 <div class="grid stat-grid" style="margin-bottom:16px">
     @foreach (var stat in Stats)
@@ -39,7 +93,16 @@
 </div>
 
 @code {
-    protected override void OnInitialized() => PageHeader.SetHeader("Dashboard", "Welcome back, Anna");
+    private SemesterProgressDto? Progress { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageHeader.SetHeader("Dashboard", "Welcome back, Anna");
+        Progress = await DashboardManagement.GetSemesterProgressAsync();
+    }
+
+    private static string FormatPercent(double? percentComplete) =>
+        $"{percentComplete:0}%";
 
     private readonly record struct DashboardStat(string IconPaths, string Value, string Label);
 
@@ -48,7 +111,6 @@
         new(Icons.Clock, "24.5h", "Study time this week"),
         new(Icons.Flame, "18", "Day learning streak"),
         new(Icons.Check, "32", "Tasks completed"),
-        new(Icons.Target, "59%", "Semester progress"),
     ];
 
     private static class Icons
@@ -56,6 +118,5 @@
         public const string Clock = "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>";
         public const string Flame = "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>";
         public const string Check = "<path d=\"M20 6L9 17l-5-5\"/>";
-        public const string Target = "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/>";
     }
 }

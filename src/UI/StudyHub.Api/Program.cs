@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Api;
 using StudyHub.Api.Courses;
+using StudyHub.Api.Dashboard;
 using StudyHub.Api.Semesters;
 using StudyHub.Data;
 using StudyHub.Infrastructure;
@@ -36,6 +37,7 @@ app.UseExceptionHandler();
 app.MapHealthChecks("/health");
 app.MapCourseEndpoints();
 app.MapSemesterEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();
 
