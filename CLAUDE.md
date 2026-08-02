@@ -190,7 +190,7 @@ When implementing new features:
 
 # UI
 
-Use MudBlazor whenever possible.
+Use Bootstrap whenever possible.
 
 Pages should:
 
