@@ -89,6 +89,8 @@
 
     private CourseDto? _lastLoadedCourse;
 
+    private bool _semestersLoaded;
+
     private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
 
     private IEnumerable<SemesterDto> SelectableSemesters =>
@@ -101,12 +103,13 @@
             return;
         }
 
-        if (EditingCourse == _lastLoadedCourse)
+        if (_semestersLoaded && EditingCourse == _lastLoadedCourse)
         {
             return;
         }
 
         _lastLoadedCourse = EditingCourse;
+        _semestersLoaded = true;
         ErrorMessage = null;
         Name = EditingCourse?.Name ?? string.Empty;
         Description = EditingCourse?.Description;
@@ -160,6 +163,7 @@
     {
         ErrorMessage = null;
         _lastLoadedCourse = null;
+        _semestersLoaded = false;
         await OnClose.InvokeAsync();
     }
 }
