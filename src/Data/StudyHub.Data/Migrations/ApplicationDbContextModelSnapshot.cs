@@ -43,6 +43,9 @@ namespace StudyHub.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("SemesterId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -50,6 +53,8 @@ namespace StudyHub.Data.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("SemesterId");
 
                     b.ToTable("Courses", (string)null);
                 });
@@ -86,6 +91,15 @@ namespace StudyHub.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Semesters", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Courses.Course", b =>
+                {
+                    b.HasOne("StudyHub.Logic.Domain.Semesters.Semester", null)
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
