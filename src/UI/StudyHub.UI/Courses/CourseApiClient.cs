@@ -2,7 +2,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Logic.Business.Courses;
+using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.Courses;
+using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.UI.Courses;
 
@@ -71,6 +73,8 @@ public sealed class CourseApiClient(HttpClient httpClient) : ICourseManagement
             CourseErrorCodes.DuplicateCourseName => new DuplicateCourseNameException(GetString(problemDetails, "courseName") ?? string.Empty),
             CourseErrorCodes.CourseArchived => new CourseArchivedException(GetGuid(problemDetails, "courseId")),
             CourseErrorCodes.CourseValidationFailed => new CourseValidationException(problemDetails?.Detail ?? "Course validation failed."),
+            SemesterErrorCodes.SemesterNotFound => new SemesterNotFoundException(GetGuid(problemDetails, "semesterId")),
+            SemesterErrorCodes.SemesterArchived => new SemesterArchivedException(GetGuid(problemDetails, "semesterId")),
             _ => new HttpRequestException(
                 $"StudyHub.Api returned {(int)response.StatusCode} ({response.StatusCode}): {problemDetails?.Detail}",
                 inner: null,
