@@ -1,8 +1,9 @@
+using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Logic.Business.Semesters;
 
-public sealed class SemesterManagement(ISemesterRepository semesterRepository) : ISemesterManagement
+public sealed class SemesterManagement(ISemesterRepository semesterRepository, ICourseRepository courseRepository) : ISemesterManagement
 {
     public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -46,6 +47,12 @@ public sealed class SemesterManagement(ISemesterRepository semesterRepository) :
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
 
         semester.Archive();
+
+        var courses = await courseRepository.GetBySemesterIdAsync(id, cancellationToken);
+        foreach (var course in courses.Where(c => !c.IsArchived))
+        {
+            course.Archive();
+        }
 
         await semesterRepository.SaveChangesAsync(cancellationToken);
 
