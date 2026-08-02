@@ -1,6 +1,9 @@
 @using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Semesters
 @using StudyHub.Logic.Domain.Courses
+@using StudyHub.Logic.Domain.Semesters
 @inject ICourseManagement CourseManagement
+@inject ISemesterManagement SemesterManagement
 
 @if (IsOpen)
 {
@@ -37,6 +40,17 @@
                             <span class="mono">@Color</span>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label for="course-semester">Semester</label>
+                        <select id="course-semester" class="form-control" @bind="SemesterId">
+                            <option value="@Guid.Empty">Select a semester…</option>
+                            @foreach (var semester in SelectableSemesters)
+                            {
+                                <option value="@semester.Id">@semester.Name</option>
+                            }
+                        </select>
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -67,13 +81,20 @@
 
     private string Color { get; set; } = "#2563eb";
 
+    private Guid SemesterId { get; set; }
+
     private bool IsSaving { get; set; }
 
     private string? ErrorMessage { get; set; }
 
     private CourseDto? _lastLoadedCourse;
 
-    protected override void OnParametersSet()
+    private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
+
+    private IEnumerable<SemesterDto> SelectableSemesters =>
+        Semesters.Where(s => !s.IsArchived || s.Id == EditingCourse?.SemesterId);
+
+    protected override async Task OnParametersSetAsync()
     {
         if (!IsOpen)
         {
@@ -90,6 +111,9 @@
         Name = EditingCourse?.Name ?? string.Empty;
         Description = EditingCourse?.Description;
         Color = EditingCourse?.Color ?? "#2563eb";
+        SemesterId = EditingCourse?.SemesterId ?? Guid.Empty;
+
+        Semesters = await SemesterManagement.GetAllAsync();
     }
 
     private async Task SubmitAsync()
@@ -100,8 +124,8 @@
         try
         {
             var saved = EditingCourse is null
-                ? await CourseManagement.CreateAsync(new CreateCourseRequest(Name, Description, Color))
-                : await CourseManagement.UpdateAsync(new UpdateCourseRequest(EditingCourse.Id, Name, Description, Color));
+                ? await CourseManagement.CreateAsync(new CreateCourseRequest(Name, Description, Color, SemesterId))
+                : await CourseManagement.UpdateAsync(new UpdateCourseRequest(EditingCourse.Id, Name, Description, Color, SemesterId));
 
             await OnSaved.InvokeAsync(saved);
             await Close();
@@ -117,6 +141,14 @@
         catch (CourseArchivedException ex)
         {
             ErrorMessage = ex.Message;
+        }
+        catch (SemesterNotFoundException)
+        {
+            ErrorMessage = "The selected semester could not be found.";
+        }
+        catch (SemesterArchivedException)
+        {
+            ErrorMessage = "The selected semester is archived. Choose an active semester.";
         }
         finally
         {
