@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using StudyHub.Data.Notes;
 using StudyHub.Logic.Domain.Courses;
+using StudyHub.Logic.Domain.Notes;
 using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Data;
@@ -10,8 +12,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<Semester> Semesters => Set<Semester>();
 
+    public DbSet<Note> Notes => Set<Note>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new NoteConfiguration());
+
         modelBuilder.Entity<Course>(builder =>
         {
             builder.ToTable("Courses");
