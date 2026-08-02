@@ -1,10 +1,121 @@
 @page "/notes"
+@rendermode InteractiveServer
+@using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Notes
+@inject INoteManagement NoteManagement
+@inject ICourseManagement CourseManagement
+@inject NavigationManager NavigationManager
 @inject IPageHeaderService PageHeader
 
 <PageTitle>Notes</PageTitle>
 
-<p>Notes — coming soon.</p>
+<div class="page-toolbar">
+    <span></span>
+    <button class="btn btn-primary" type="button" @onclick="OpenCreateNote">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        New Note
+    </button>
+</div>
+
+@if (NoteList is null || CourseList is null)
+{
+    <p class="placeholder-hint">Loading notes…</p>
+}
+else if (CourseList.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">No courses yet</div>
+        <div class="empty-state-text">Notes belong to a course. Create your first course before adding notes.</div>
+        <a class="btn btn-primary" href="/courses">Go to Courses</a>
+    </div>
+}
+else if (NoteList.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">No notes yet</div>
+        <div class="empty-state-text">Create your first note to start capturing what you're learning.</div>
+        <button class="btn btn-primary" type="button" @onclick="OpenCreateNote">New Note</button>
+    </div>
+}
+else
+{
+    <div class="notes-groups">
+        @foreach (var group in NotesByCourse)
+        {
+            <div class="card card-pad notes-group">
+                <div class="notes-group-head">
+                    <span class="course-swatch" style="background:@group.Course.Color"></span>
+                    <span class="notes-group-title">@group.Course.Name</span>
+                </div>
+                @foreach (var note in group.Notes)
+                {
+                    <div class="note-row" @onclick="() => OpenNote(note)">
+                        <div class="note-row-main">
+                            <span class="note-row-title">@note.Title</span>
+                            @if (note.IsArchived)
+                            {
+                                <span class="badge-archived">Archived</span>
+                            }
+                        </div>
+                        <div class="note-row-meta">
+                            <span class="note-row-date">Updated @note.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                            @if (!note.IsArchived)
+                            {
+                                <button class="btn btn-danger-outline btn-sm" type="button" @onclick="() => ArchiveAsync(note)" @onclick:stopPropagation="true">Archive</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
 
 @code {
-    protected override void OnInitialized() => PageHeader.SetHeader("Notes", "44 notes");
+    private IReadOnlyList<NoteDto>? NoteList { get; set; }
+
+    private IReadOnlyList<CourseDto>? CourseList { get; set; }
+
+    private IReadOnlyList<CourseNotesGroup> NotesByCourse =>
+        NoteList is null || CourseList is null
+            ? []
+            : CourseList
+                .Where(c => NoteList.Any(n => n.CourseId == c.Id))
+                .OrderBy(c => c.Name)
+                .Select(c => new CourseNotesGroup(
+                    c,
+                    NoteList.Where(n => n.CourseId == c.Id).OrderByDescending(n => n.UpdatedAt).ToList()))
+                .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageHeader.SetHeader("Notes", "Your Markdown notes, organized by course");
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        NoteList = await NoteManagement.GetAllAsync();
+        CourseList = await CourseManagement.GetAllAsync();
+    }
+
+    private void OpenCreateNote()
+    {
+        if (CourseList is { Count: 0 })
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo("/notes/new");
+    }
+
+    private void OpenNote(NoteDto note) => NavigationManager.NavigateTo($"/notes/{note.Id}");
+
+    private async Task ArchiveAsync(NoteDto note)
+    {
+        await NoteManagement.ArchiveAsync(note.Id);
+        await LoadAsync();
+    }
+
+    private sealed record CourseNotesGroup(CourseDto Course, IReadOnlyList<NoteDto> Notes);
 }
