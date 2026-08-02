@@ -1,8 +1,11 @@
 using StudyHub.Logic.Business.Semesters;
+using StudyHub.Logic.Domain.SemesterProgress;
 
 namespace StudyHub.Logic.Business.Dashboard;
 
-public sealed class DashboardManagement(ISemesterManagement semesterManagement) : IDashboardManagement
+public sealed class DashboardManagement(
+    ISemesterManagement semesterManagement,
+    ISemesterProgressCalculator semesterProgressCalculator) : IDashboardManagement
 {
     public async Task<SemesterProgressDto> GetSemesterProgressAsync(CancellationToken cancellationToken = default)
     {
@@ -14,8 +17,22 @@ public sealed class DashboardManagement(ISemesterManagement semesterManagement) 
             .OrderByDescending(s => s.StartDate)
             .FirstOrDefault();
 
-        return activeSemester is null
-            ? SemesterProgressDto.Empty
-            : SemesterProgressCalculator.Calculate(activeSemester, today);
+        if (activeSemester is null)
+        {
+            return SemesterProgressDto.Empty;
+        }
+
+        var progress = semesterProgressCalculator.Calculate(activeSemester.StartDate, activeSemester.EndDate, today);
+
+        return new SemesterProgressDto(
+            HasActiveSemester: true,
+            SemesterId: activeSemester.Id,
+            SemesterName: activeSemester.Name,
+            StartDate: activeSemester.StartDate,
+            EndDate: activeSemester.EndDate,
+            TotalDays: progress.TotalDays,
+            ElapsedDays: progress.ElapsedDays,
+            RemainingDays: progress.RemainingDays,
+            PercentComplete: progress.PercentComplete);
     }
 }
