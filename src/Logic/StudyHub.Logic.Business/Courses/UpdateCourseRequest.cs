@@ -1,3 +1,3 @@
 namespace StudyHub.Logic.Business.Courses;
 
-public sealed record UpdateCourseRequest(Guid Id, string Name, string? Description, string Color);
+public sealed record UpdateCourseRequest(Guid Id, string Name, string? Description, string Color, Guid SemesterId);
