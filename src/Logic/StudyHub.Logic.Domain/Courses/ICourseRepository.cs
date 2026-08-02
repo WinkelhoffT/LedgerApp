@@ -4,6 +4,8 @@ public interface ICourseRepository
 {
     Task<IReadOnlyList<Course>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Course>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken = default);
+
     Task<Course?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsByNameAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default);

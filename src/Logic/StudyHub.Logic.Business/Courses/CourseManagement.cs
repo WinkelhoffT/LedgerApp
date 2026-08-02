@@ -1,8 +1,10 @@
+using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.Courses;
+using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Logic.Business.Courses;
 
-public sealed class CourseManagement(ICourseRepository courseRepository) : ICourseManagement
+public sealed class CourseManagement(ICourseRepository courseRepository, ISemesterRepository semesterRepository) : ICourseManagement
 {
     public async Task<IReadOnlyList<CourseDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -19,8 +21,9 @@ public sealed class CourseManagement(ICourseRepository courseRepository) : ICour
     public async Task<CourseDto> CreateAsync(CreateCourseRequest request, CancellationToken cancellationToken = default)
     {
         await EnsureNameIsUniqueAsync(request.Name, excludingId: null, cancellationToken);
+        await EnsureSemesterIsAssignableAsync(request.SemesterId, cancellationToken);
 
-        var course = Course.Create(request.Name, request.Description, request.Color);
+        var course = Course.Create(request.Name, request.Description, request.Color, request.SemesterId);
 
         await courseRepository.AddAsync(course, cancellationToken);
         await courseRepository.SaveChangesAsync(cancellationToken);
@@ -33,8 +36,9 @@ public sealed class CourseManagement(ICourseRepository courseRepository) : ICour
         var course = await GetExistingCourseAsync(request.Id, cancellationToken);
 
         await EnsureNameIsUniqueAsync(request.Name, request.Id, cancellationToken);
+        await EnsureSemesterIsAssignableAsync(request.SemesterId, cancellationToken);
 
-        course.Update(request.Name, request.Description, request.Color);
+        course.Update(request.Name, request.Description, request.Color, request.SemesterId);
 
         await courseRepository.SaveChangesAsync(cancellationToken);
 
@@ -75,11 +79,23 @@ public sealed class CourseManagement(ICourseRepository courseRepository) : ICour
         }
     }
 
+    private async Task EnsureSemesterIsAssignableAsync(Guid semesterId, CancellationToken cancellationToken)
+    {
+        var semester = await semesterRepository.GetByIdAsync(semesterId, cancellationToken)
+            ?? throw new SemesterNotFoundException(semesterId);
+
+        if (semester.IsArchived)
+        {
+            throw new SemesterArchivedException(semesterId);
+        }
+    }
+
     private static CourseDto ToDto(Course course) => new(
         course.Id,
         course.Name,
         course.Description,
         course.Color,
+        course.SemesterId,
         course.IsArchived,
         course.CreatedAt,
         course.UpdatedAt);

@@ -1,10 +1,130 @@
 @page "/semesters"
+@rendermode InteractiveServer
+@using StudyHub.Logic.Business.Semesters
+@inject ISemesterManagement SemesterManagement
 @inject IPageHeaderService PageHeader
 
 <PageTitle>Semesters</PageTitle>
 
-<p>Semesters — coming soon.</p>
+<div class="page-toolbar">
+    <label class="toggle-check">
+        <input type="checkbox" @bind="ShowArchived" />
+        Show archived
+    </label>
+    <button class="btn btn-primary" type="button" @onclick="OpenCreateDialog">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        New Semester
+    </button>
+</div>
+
+@if (SemesterList is null)
+{
+    <p class="placeholder-hint">Loading semesters…</p>
+}
+else if (VisibleSemesters.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">@(SemesterList.Count == 0 ? "No semesters yet" : "No archived semesters")</div>
+        <div class="empty-state-text">
+            @(SemesterList.Count == 0
+                ? "Create a semester to start organizing your courses, deadlines and study sessions."
+                : "Semesters you archive will show up here.")
+        </div>
+        @if (SemesterList.Count == 0)
+        {
+            <button class="btn btn-primary" type="button" @onclick="OpenCreateDialog">Add Semester</button>
+        }
+    </div>
+}
+else
+{
+    <div class="grid semester-grid">
+        @foreach (var semester in VisibleSemesters)
+        {
+            <div class="card semester-card @(semester.IsArchived ? "is-archived" : "")">
+                <div class="semester-card-head">
+                    <span class="semester-name">@semester.Name</span>
+                    @if (semester.IsArchived)
+                    {
+                        <span class="badge-archived">Archived</span>
+                    }
+                </div>
+                <div class="semester-dates">@semester.StartDate.ToString("MMM d, yyyy") – @semester.EndDate.ToString("MMM d, yyyy")</div>
+                <div class="semester-card-actions">
+                    @if (semester.IsArchived)
+                    {
+                        <button class="btn btn-secondary btn-sm" type="button" @onclick="() => RestoreAsync(semester)">Restore</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline btn-sm" type="button" @onclick="() => OpenEditDialog(semester)">Edit</button>
+                        <button class="btn btn-danger-outline btn-sm" type="button" @onclick="() => ArchiveAsync(semester)">Archive</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<SemesterFormDialog IsOpen="IsDialogOpen" EditingSemester="EditingSemester" OnClose="CloseDialog" OnSaved="HandleSavedAsync" />
 
 @code {
-    protected override void OnInitialized() => PageHeader.SetHeader("Semesters", "Manage your study terms");
+    private IReadOnlyList<SemesterDto>? SemesterList { get; set; }
+
+    private bool ShowArchived { get; set; }
+
+    private bool IsDialogOpen { get; set; }
+
+    private SemesterDto? EditingSemester { get; set; }
+
+    private IReadOnlyList<SemesterDto> VisibleSemesters =>
+        SemesterList is null
+            ? []
+            : SemesterList.Where(s => ShowArchived || !s.IsArchived).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageHeader.SetHeader("Semesters", "Manage your study terms");
+        await LoadSemestersAsync();
+    }
+
+    private async Task LoadSemestersAsync()
+    {
+        SemesterList = await SemesterManagement.GetAllAsync();
+    }
+
+    private void OpenCreateDialog()
+    {
+        EditingSemester = null;
+        IsDialogOpen = true;
+    }
+
+    private void OpenEditDialog(SemesterDto semester)
+    {
+        EditingSemester = semester;
+        IsDialogOpen = true;
+    }
+
+    private void CloseDialog()
+    {
+        IsDialogOpen = false;
+        EditingSemester = null;
+    }
+
+    private async Task HandleSavedAsync(SemesterDto _)
+    {
+        await LoadSemestersAsync();
+    }
+
+    private async Task ArchiveAsync(SemesterDto semester)
+    {
+        await SemesterManagement.ArchiveAsync(semester.Id);
+        await LoadSemestersAsync();
+    }
+
+    private async Task RestoreAsync(SemesterDto semester)
+    {
+        await SemesterManagement.RestoreAsync(semester.Id);
+        await LoadSemestersAsync();
+    }
 }

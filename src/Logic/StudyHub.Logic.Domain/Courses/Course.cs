@@ -17,13 +17,15 @@ public sealed class Course
 
     public string Color { get; private set; } = string.Empty;
 
+    public Guid SemesterId { get; private set; }
+
     public bool IsArchived { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static Course Create(string name, string? description, string color)
+    public static Course Create(string name, string? description, string color, Guid semesterId)
     {
         var course = new Course
         {
@@ -31,19 +33,19 @@ public sealed class Course
             CreatedAt = DateTime.UtcNow,
         };
 
-        course.SetDetails(name, description, color);
+        course.SetDetails(name, description, color, semesterId);
 
         return course;
     }
 
-    public void Update(string name, string? description, string color)
+    public void Update(string name, string? description, string color, Guid semesterId)
     {
         if (IsArchived)
         {
             throw new CourseArchivedException(Id);
         }
 
-        SetDetails(name, description, color);
+        SetDetails(name, description, color, semesterId);
     }
 
     public void Archive()
@@ -68,7 +70,7 @@ public sealed class Course
         UpdatedAt = DateTime.UtcNow;
     }
 
-    private void SetDetails(string name, string? description, string color)
+    private void SetDetails(string name, string? description, string color, Guid semesterId)
     {
         var trimmedName = name?.Trim() ?? string.Empty;
         if (trimmedName.Length == 0)
@@ -93,9 +95,15 @@ public sealed class Course
             throw new CourseValidationException("Course color is required.");
         }
 
+        if (semesterId == Guid.Empty)
+        {
+            throw new CourseValidationException("Course must be assigned to a semester.");
+        }
+
         Name = trimmedName;
         Description = string.IsNullOrEmpty(trimmedDescription) ? null : trimmedDescription;
         Color = trimmedColor;
+        SemesterId = semesterId;
         UpdatedAt = DateTime.UtcNow;
     }
 }

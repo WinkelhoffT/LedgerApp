@@ -1,6 +1,9 @@
 @page "/courses"
+@rendermode InteractiveServer
 @using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Semesters
 @inject ICourseManagement CourseManagement
+@inject ISemesterManagement SemesterManagement
 @inject IPageHeaderService PageHeader
 
 <PageTitle>Courses</PageTitle>
@@ -49,6 +52,7 @@ else
                         <span class="badge-archived">Archived</span>
                     }
                 </div>
+                <div class="course-semester">@GetSemesterName(course.SemesterId)</div>
                 @if (!string.IsNullOrWhiteSpace(course.Description))
                 {
                     <div class="course-desc">@course.Description</div>
@@ -74,6 +78,8 @@ else
 @code {
     private IReadOnlyList<CourseDto>? CourseList { get; set; }
 
+    private Dictionary<Guid, string> SemesterNamesById { get; set; } = [];
+
     private bool ShowArchived { get; set; }
 
     private bool IsDialogOpen { get; set; }
@@ -94,7 +100,13 @@ else
     private async Task LoadCoursesAsync()
     {
         CourseList = await CourseManagement.GetAllAsync();
+
+        var semesters = await SemesterManagement.GetAllAsync();
+        SemesterNamesById = semesters.ToDictionary(s => s.Id, s => s.Name);
     }
+
+    private string GetSemesterName(Guid semesterId) =>
+        SemesterNamesById.GetValueOrDefault(semesterId, "Unknown semester");
 
     private void OpenCreateDialog()
     {

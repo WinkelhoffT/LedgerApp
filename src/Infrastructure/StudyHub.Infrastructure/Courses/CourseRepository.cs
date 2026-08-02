@@ -11,6 +11,12 @@ public sealed class CourseRepository(ApplicationDbContext dbContext) : ICourseRe
             .OrderBy(c => c.Name)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Course>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken = default) =>
+        await dbContext.Courses
+            .Where(c => c.SemesterId == semesterId)
+            .OrderBy(c => c.Name)
+            .ToListAsync(cancellationToken);
+
     public Task<Course?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Courses.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 

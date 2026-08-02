@@ -7,6 +7,8 @@ namespace StudyHub.Tests.Infrastructure.Courses;
 
 public class CourseRepositoryTests
 {
+    private static readonly Guid SemesterId = Guid.NewGuid();
+
     private static ApplicationDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -21,7 +23,7 @@ public class CourseRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new CourseRepository(dbContext);
-        var course = Course.Create("Algorithms", "Description", "#2563eb");
+        var course = Course.Create("Algorithms", "Description", "#2563eb", SemesterId);
 
         await repository.AddAsync(course);
         await repository.SaveChangesAsync();
@@ -36,7 +38,7 @@ public class CourseRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new CourseRepository(dbContext);
-        var course = Course.Create("Algorithms", null, "#2563eb");
+        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
         await repository.AddAsync(course);
         await repository.SaveChangesAsync();
 
@@ -50,7 +52,7 @@ public class CourseRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new CourseRepository(dbContext);
-        var course = Course.Create("Algorithms", null, "#2563eb");
+        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
         await repository.AddAsync(course);
         await repository.SaveChangesAsync();
 
@@ -64,12 +66,27 @@ public class CourseRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new CourseRepository(dbContext);
-        await repository.AddAsync(Course.Create("Zoology", null, "#2563eb"));
-        await repository.AddAsync(Course.Create("Algorithms", null, "#2563eb"));
+        await repository.AddAsync(Course.Create("Zoology", null, "#2563eb", SemesterId));
+        await repository.AddAsync(Course.Create("Algorithms", null, "#2563eb", SemesterId));
         await repository.SaveChangesAsync();
 
         var all = await repository.GetAllAsync();
 
         Assert.Equal(["Algorithms", "Zoology"], all.Select(c => c.Name));
+    }
+
+    [Fact]
+    public async Task GetBySemesterIdAsync_ReturnsOnlyCoursesForThatSemester()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new CourseRepository(dbContext);
+        var otherSemesterId = Guid.NewGuid();
+        await repository.AddAsync(Course.Create("Algorithms", null, "#2563eb", SemesterId));
+        await repository.AddAsync(Course.Create("Zoology", null, "#2563eb", otherSemesterId));
+        await repository.SaveChangesAsync();
+
+        var courses = await repository.GetBySemesterIdAsync(SemesterId);
+
+        Assert.Equal(["Algorithms"], courses.Select(c => c.Name));
     }
 }

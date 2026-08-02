@@ -5,6 +5,7 @@ public sealed record CourseDto(
     string Name,
     string? Description,
     string Color,
+    Guid SemesterId,
     bool IsArchived,
     DateTime CreatedAt,
     DateTime UpdatedAt);
