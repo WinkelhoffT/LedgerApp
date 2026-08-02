@@ -29,6 +29,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasMaxLength(20)
                 .IsRequired();
 
+            builder.Property(c => c.SemesterId)
+                .IsRequired();
+
             builder.Property(c => c.IsArchived)
                 .IsRequired();
 
@@ -40,6 +43,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             builder.HasIndex(c => c.Name)
                 .IsUnique();
+
+            builder.HasIndex(c => c.SemesterId);
+
+            // Restrict, not Cascade: neither entity is ever hard-deleted (only archived),
+            // so a physical delete of a Semester should never silently take its Courses with it.
+            builder.HasOne<Semester>()
+                .WithMany()
+                .HasForeignKey(c => c.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Semester>(builder =>
