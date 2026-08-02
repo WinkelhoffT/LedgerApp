@@ -168,7 +168,7 @@ svg { display: block; }
 }
 .card-pad { padding: 20px; }
 
-.stat-grid { grid-template-columns: repeat(4, 1fr); }
+.stat-grid { grid-template-columns: repeat(3, 1fr); }
 .stat { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
 .stat-icon {
   width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
@@ -244,6 +244,32 @@ svg { display: block; }
 .semester-name { font-size: 15px; font-weight: 700; letter-spacing: -.01em; flex: 1; }
 .semester-dates { font-size: 13px; color: var(--text-2); }
 .semester-card-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ---------- Semester progress hero ---------- */
+.hero-card { padding: 26px 28px; }
+.hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.hero-name { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+.hero-status {
+  display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  background: var(--accent-softer); color: var(--accent); padding: 3px 9px; border-radius: 20px;
+}
+.hero-percent { font-size: 32px; font-weight: 700; letter-spacing: -.03em; color: var(--accent); line-height: 1; }
+
+.hero-progress-track {
+  width: 100%; height: 10px; border-radius: 20px; background: var(--surface-2);
+  border: 1px solid var(--border); overflow: hidden; margin-bottom: 22px;
+}
+.hero-progress-fill {
+  height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent), #6366f1);
+  transition: width .3s ease;
+}
+
+.hero-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
+.hero-info-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); margin-bottom: 4px; }
+.hero-info-val { font-size: 14px; font-weight: 600; color: var(--text); }
+
+.hero-empty { text-align: center; padding: 20px 24px; }
+.hero-empty .empty-state-title { font-size: 16px; }
 
 /* ---------- Empty state ---------- */
 .empty-state { text-align: center; padding: 56px 24px; color: var(--text-3); }
