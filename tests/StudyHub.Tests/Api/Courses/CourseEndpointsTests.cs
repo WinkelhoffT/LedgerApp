@@ -8,11 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StudyHub.Data;
 using StudyHub.Logic.Business.Courses;
+using StudyHub.Logic.Business.Semesters;
 
 namespace StudyHub.Tests.Api.Courses;
 
 public class CourseEndpointsTests
 {
+    private static readonly DateOnly StartDate = new(2025, 10, 1);
+    private static readonly DateOnly EndDate = new(2026, 3, 31);
+
     private static WebApplicationFactory<Program> CreateFactory()
     {
         var databaseName = Guid.NewGuid().ToString();
@@ -34,6 +38,14 @@ public class CourseEndpointsTests
         });
     }
 
+    private static async Task<Guid> CreateSemesterAsync(HttpClient client, string name = "Winter 2025/26")
+    {
+        var response = await client.PostAsJsonAsync("api/semesters", new CreateSemesterRequest(name, StartDate, EndDate));
+        response.EnsureSuccessStatusCode();
+        var semester = await response.Content.ReadFromJsonAsync<SemesterDto>();
+        return semester!.Id;
+    }
+
     [Fact]
     public async Task GetAll_WithNoCourses_ReturnsEmptyList()
     {
@@ -50,15 +62,17 @@ public class CourseEndpointsTests
     {
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
+        var semesterId = await CreateSemesterAsync(client);
 
         var createResponse = await client.PostAsJsonAsync(
-            "api/courses", new CreateCourseRequest("Algorithms", "Description", "#2563eb"));
+            "api/courses", new CreateCourseRequest("Algorithms", "Description", "#2563eb", semesterId));
         createResponse.EnsureSuccessStatusCode();
         var created = await createResponse.Content.ReadFromJsonAsync<CourseDto>();
 
         var fetched = await client.GetFromJsonAsync<CourseDto>($"api/courses/{created!.Id}");
 
         Assert.Equal("Algorithms", fetched!.Name);
+        Assert.Equal(semesterId, fetched.SemesterId);
     }
 
     [Fact]
@@ -66,12 +80,41 @@ public class CourseEndpointsTests
     {
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
+        var semesterId = await CreateSemesterAsync(client);
 
-        await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb"));
-        var response = await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb"));
+        await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+        var response = await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(CourseErrorCodes.DuplicateCourseName, await GetErrorCodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Create_WithUnknownSemester_Returns404WithErrorCode()
+    {
+        using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", Guid.NewGuid()));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(SemesterErrorCodes.SemesterNotFound, await GetErrorCodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Create_WithArchivedSemester_Returns409WithErrorCode()
+    {
+        using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var semesterId = await CreateSemesterAsync(client);
+        await client.PostAsync($"api/semesters/{semesterId}/archive", content: null);
+
+        var response = await client.PostAsJsonAsync(
+            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(SemesterErrorCodes.SemesterArchived, await GetErrorCodeAsync(response));
     }
 
     [Fact]
@@ -84,6 +127,23 @@ public class CourseEndpointsTests
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(CourseErrorCodes.CourseNotFound, await GetErrorCodeAsync(response));
+    }
+
+    [Fact]
+    public async Task ArchivingSemester_AlsoArchivesItsCourses()
+    {
+        using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var semesterId = await CreateSemesterAsync(client);
+
+        var createResponse = await client.PostAsJsonAsync(
+            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+        var course = await createResponse.Content.ReadFromJsonAsync<CourseDto>();
+
+        await client.PostAsync($"api/semesters/{semesterId}/archive", content: null);
+
+        var fetched = await client.GetFromJsonAsync<CourseDto>($"api/courses/{course!.Id}");
+        Assert.True(fetched!.IsArchived);
     }
 
     private static async Task<string?> GetErrorCodeAsync(HttpResponseMessage response)
