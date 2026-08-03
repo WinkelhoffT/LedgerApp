@@ -1,6 +1,7 @@
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Notes;
+using StudyHub.Logic.Business.Notes.Commands;
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.UI.Components;
 using StudyHub.UI.Courses;
@@ -17,6 +18,20 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
+
+builder.Services.AddSingleton<IMarkdownBlockParser, MarkdownBlockParser>();
+builder.Services.AddSingleton<ISlashTriggerDetector, SlashTriggerDetector>();
+builder.Services.AddSingleton<ISlashCommandRegistry, SlashCommandRegistry>();
+builder.Services.AddSingleton<ISlashCommand>(new HeadingSlashCommand(1));
+builder.Services.AddSingleton<ISlashCommand>(new HeadingSlashCommand(2));
+builder.Services.AddSingleton<ISlashCommand>(new HeadingSlashCommand(3));
+builder.Services.AddSingleton<ISlashCommand, QuoteSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, DividerSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, BulletListSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, NumberedListSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, TaskListSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, CodeBlockSlashCommand>();
+builder.Services.AddSingleton<ISlashCommand, TableSlashCommand>();
 
 builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
