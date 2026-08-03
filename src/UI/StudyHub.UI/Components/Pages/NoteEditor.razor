@@ -1,14 +1,18 @@
 @page "/notes/new"
 @page "/notes/{Id:guid}"
 @rendermode InteractiveServer
-@using System.Text.RegularExpressions
+@implements IDisposable
 @using StudyHub.Logic.Business.Courses
 @using StudyHub.Logic.Business.Notes
+@using StudyHub.Logic.Business.Notes.Commands
 @using StudyHub.Logic.Domain.Notes
 @inject INoteManagement NoteManagement
 @inject ICourseManagement CourseManagement
 @inject NavigationManager NavigationManager
 @inject IPageHeaderService PageHeader
+@inject IMarkdownBlockParser BlockParser
+@inject ISlashTriggerDetector TriggerDetector
+@inject ISlashCommandRegistry CommandRegistry
 @inject IJSRuntime JS
 
 <PageTitle>@(Id is null ? "New Note" : Title)</PageTitle>
@@ -69,6 +73,7 @@ else
                             <pre class="note-code-highlight" aria-hidden="true"><code class="language-@NormalizeLanguage(block.Language)">@(block.Text)
 </code></pre>
                             <textarea
+                                @ref="block.TextAreaElement"
                                 class="note-code-textarea"
                                 spellcheck="false"
                                 @bind="block.Text"
@@ -79,15 +84,48 @@ else
                 }
                 else
                 {
-                    <textarea
-                        class="note-text-block"
-                        @key="block.Id"
-                        rows="@GetRows(block.Text)"
-                        @bind="block.Text"
-                        @bind:event="oninput"
-                        @bind:after="() => HandleTextChangedAsync(block)"
-                        disabled="@IsArchived"
-                        placeholder="Write in Markdown… type /code for a code block, /list for a bullet list"></textarea>
+                    <div class="note-block-wrap" @key="block.Id">
+                        <textarea
+                            @ref="block.TextAreaElement"
+                            class="note-text-block"
+                            rows="@GetRows(block.Text)"
+                            @bind="block.Text"
+                            @bind:event="oninput"
+                            @bind:after="() => HandleTextChangedAsync(block)"
+                            disabled="@IsArchived"
+                            placeholder="Write in Markdown… type / for commands"></textarea>
+
+                        @if (PaletteState.IsOpen && _activeBlockId == block.Id)
+                        {
+                            <div class="slash-menu" style="top:@(_paletteTop.ToString(System.Globalization.CultureInfo.InvariantCulture))px; left:@(_paletteLeft.ToString(System.Globalization.CultureInfo.InvariantCulture))px;">
+                                @if (PaletteState.Results.Count == 0)
+                                {
+                                    <div class="slash-menu-empty">No commands found.</div>
+                                }
+                                else
+                                {
+                                    var indexed = PaletteState.Results.Select((command, index) => (Command: command, Index: index));
+                                    @foreach (var group in indexed.GroupBy(entry => entry.Command.Category))
+                                    {
+                                        <div class="slash-menu-group">
+                                            <div class="slash-menu-group-title">
+                                                <span>@CategoryIcon(group.Key)</span> @CategoryLabel(group.Key)
+                                            </div>
+                                            @foreach (var entry in group)
+                                            {
+                                                <div class="slash-menu-item @(entry.Index == PaletteState.SelectedIndex ? "selected" : "")"
+                                                     @onclick="() => SelectCommandAsync(block, entry.Index)"
+                                                     @onmouseenter="() => HoverCommand(entry.Index)">
+                                                    <span class="slash-menu-icon">@entry.Command.Icon</span>
+                                                    <span class="slash-menu-title">@entry.Command.Title</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
                 }
             }
         </div>
@@ -95,11 +133,6 @@ else
 }
 
 @code {
-    private const string CodeTrigger = "/code";
-    private const string ListTrigger = "/list";
-
-    private static readonly Regex FencedCodeBlockPattern = new(@"```(\S*)\r?\n(.*?)```", RegexOptions.Singleline);
-
     [Parameter]
     public Guid? Id { get; set; }
 
@@ -121,8 +154,26 @@ else
 
     private string? ErrorMessage { get; set; }
 
+    private SlashCommandPaletteState PaletteState { get; set; } = null!;
+
+    private DotNetObjectReference<NoteEditor>? _selfReference;
+
+    private Guid? _activeBlockId;
+
+    private int _triggerStart;
+
+    private double _paletteTop;
+
+    private double _paletteLeft;
+
+    private Guid? _pendingFocusBlockId;
+
+    private int _pendingFocusCaret;
+
     protected override async Task OnInitializedAsync()
     {
+        PaletteState = new SlashCommandPaletteState(CommandRegistry);
+
         CourseList = await CourseManagement.GetAllAsync();
 
         if (Id is { } id)
@@ -142,6 +193,14 @@ else
         IsLoaded = true;
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfReference = DotNetObjectReference.Create(this);
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // Blazor owns the plain-text content of the code block on every render; re-run Prism
@@ -149,66 +208,195 @@ else
         // simply overwrites those spans back to plain text on the next render, so the two never
         // fight over the DOM.
         await JS.InvokeVoidAsync("studyHubNotes.highlightAll");
+
+        if (_pendingFocusBlockId is { } blockId)
+        {
+            _pendingFocusBlockId = null;
+            var block = Blocks.FirstOrDefault(b => b.Id == blockId);
+            if (block is not null)
+            {
+                await JS.InvokeVoidAsync("studyHubNotes.focusAndSelect", block.TextAreaElement, _pendingFocusCaret, _pendingFocusCaret);
+            }
+        }
     }
 
-    private void HandleTextChangedAsync(EditorBlock block)
+    private async Task HandleTextChangedAsync(EditorBlock block)
     {
-        if (TryConsumeTrigger(block, CodeTrigger))
+        var caretIndex = await JS.InvokeAsync<int>("studyHubNotes.getCaretIndex", block.TextAreaElement);
+        var trigger = TriggerDetector.Detect(block.Text, caretIndex);
+
+        if (trigger is null)
         {
-            var index = Blocks.IndexOf(block);
-            Blocks.Insert(index + 1, new EditorBlock());
-            Blocks.Insert(index + 1, new EditorBlock { IsCode = true });
+            if (_activeBlockId == block.Id)
+            {
+                await ClosePaletteAsync(block);
+            }
+
             return;
         }
 
-        if (TryConsumeTrigger(block, ListTrigger))
+        _triggerStart = trigger.Start;
+
+        if (_activeBlockId != block.Id)
         {
-            block.Text += "- ";
+            if (_activeBlockId is { } previousBlockId)
+            {
+                var previousBlock = Blocks.FirstOrDefault(b => b.Id == previousBlockId);
+                if (previousBlock is not null)
+                {
+                    await JS.InvokeVoidAsync("studyHubNotes.setPaletteOpen", previousBlock.TextAreaElement, false);
+                }
+            }
+
+            _activeBlockId = block.Id;
+            PaletteState.Open(trigger.Query);
+
+            var coordinates = await JS.InvokeAsync<CaretCoordinates>("studyHubNotes.getCaretCoordinates", block.TextAreaElement);
+            _paletteTop = coordinates.Top + coordinates.Height + 6;
+            _paletteLeft = coordinates.Left;
+
+            await JS.InvokeVoidAsync("studyHubNotes.attachPaletteKeyHandler", block.TextAreaElement, _selfReference);
+            await JS.InvokeVoidAsync("studyHubNotes.setPaletteOpen", block.TextAreaElement, true);
+        }
+        else
+        {
+            PaletteState.SetQuery(trigger.Query);
         }
     }
 
-    private static bool TryConsumeTrigger(EditorBlock block, string trigger)
+    [JSInvokable]
+    public async Task OnPaletteKeyAsync(string key)
     {
-        if (!block.Text.EndsWith(trigger, StringComparison.OrdinalIgnoreCase))
+        if (_activeBlockId is not { } blockId)
         {
-            return false;
+            return;
         }
 
-        block.Text = block.Text[..^trigger.Length];
-        return true;
+        var block = Blocks.FirstOrDefault(b => b.Id == blockId);
+        if (block is null)
+        {
+            return;
+        }
+
+        switch (key)
+        {
+            case "ArrowDown":
+                PaletteState.MoveSelection(1);
+                break;
+            case "ArrowUp":
+                PaletteState.MoveSelection(-1);
+                break;
+            case "Escape":
+                await ClosePaletteAsync(block);
+                break;
+            case "Enter":
+            case "Tab":
+                await ApplyCommandAsync(block);
+                break;
+        }
+
+        StateHasChanged();
     }
+
+    private void HoverCommand(int index) => PaletteState.SetSelectedIndex(index);
+
+    private async Task SelectCommandAsync(EditorBlock block, int index)
+    {
+        PaletteState.SetSelectedIndex(index);
+        await ApplyCommandAsync(block);
+    }
+
+    private async Task ApplyCommandAsync(EditorBlock block)
+    {
+        var command = PaletteState.GetSelected();
+        if (command is null)
+        {
+            return;
+        }
+
+        var caretIndex = _triggerStart + 1 + PaletteState.Query.Length;
+        var textBefore = block.Text[.._triggerStart];
+        var textAfter = caretIndex <= block.Text.Length ? block.Text[caretIndex..] : string.Empty;
+
+        var insertion = command.Apply(textBefore);
+
+        await ClosePaletteAsync(block);
+
+        if (command.Id == CodeBlockSlashCommand.CommandId)
+        {
+            ApplyCodeBlockInsertion(block, textBefore, textAfter);
+            return;
+        }
+
+        block.Text = textBefore + insertion.Text + textAfter;
+        _pendingFocusBlockId = block.Id;
+        _pendingFocusCaret = textBefore.Length + insertion.CursorOffset;
+    }
+
+    private void ApplyCodeBlockInsertion(EditorBlock block, string textBefore, string textAfter)
+    {
+        var index = Blocks.IndexOf(block);
+        var newBlocks = new List<EditorBlock>();
+
+        if (textBefore.Length > 0)
+        {
+            newBlocks.Add(new EditorBlock { Text = textBefore });
+        }
+
+        var codeBlock = new EditorBlock { IsCode = true, Language = CodeBlockSlashCommand.DefaultLanguage };
+        newBlocks.Add(codeBlock);
+
+        if (textAfter.Length > 0)
+        {
+            newBlocks.Add(new EditorBlock { Text = textAfter });
+        }
+
+        Blocks.RemoveAt(index);
+        Blocks.InsertRange(index, newBlocks);
+
+        _pendingFocusBlockId = codeBlock.Id;
+        _pendingFocusCaret = 0;
+    }
+
+    private async Task ClosePaletteAsync(EditorBlock block)
+    {
+        _activeBlockId = null;
+        PaletteState.Close();
+        await JS.InvokeVoidAsync("studyHubNotes.setPaletteOpen", block.TextAreaElement, false);
+    }
+
+    private static string CategoryLabel(SlashCommandCategory category) => category switch
+    {
+        SlashCommandCategory.Text => "Text",
+        SlashCommandCategory.Lists => "Lists",
+        SlashCommandCategory.Code => "Code",
+        _ => category.ToString(),
+    };
+
+    private static string CategoryIcon(SlashCommandCategory category) => category switch
+    {
+        SlashCommandCategory.Text => "📝",
+        SlashCommandCategory.Lists => "📋",
+        SlashCommandCategory.Code => "💻",
+        _ => string.Empty,
+    };
 
     private static string NormalizeLanguage(string language) =>
         string.IsNullOrWhiteSpace(language) ? "none" : language.Trim().ToLowerInvariant();
 
     private static int GetRows(string text) => Math.Max(2, text.Count(c => c == '\n') + 2);
 
-    private static List<EditorBlock> ParseContent(string content)
+    private List<EditorBlock> ParseContent(string content)
     {
-        var blocks = new List<EditorBlock>();
-        var lastIndex = 0;
-
-        foreach (Match match in FencedCodeBlockPattern.Matches(content))
-        {
-            if (match.Index > lastIndex)
+        var segments = BlockParser.Split(content);
+        var blocks = segments
+            .Select(segment => new EditorBlock
             {
-                blocks.Add(new EditorBlock { Text = content[lastIndex..match.Index].Trim('\n') });
-            }
-
-            blocks.Add(new EditorBlock
-            {
-                IsCode = true,
-                Language = match.Groups[1].Value,
-                Text = match.Groups[2].Value.TrimEnd('\n'),
-            });
-
-            lastIndex = match.Index + match.Length;
-        }
-
-        if (lastIndex < content.Length)
-        {
-            blocks.Add(new EditorBlock { Text = content[lastIndex..].Trim('\n') });
-        }
+                IsCode = segment.IsCode,
+                Language = segment.Language,
+                Text = segment.Text,
+            })
+            .ToList();
 
         return blocks.Count > 0 ? blocks : [new EditorBlock()];
     }
@@ -252,6 +440,11 @@ else
         }
     }
 
+    public void Dispose()
+    {
+        _selfReference?.Dispose();
+    }
+
     private sealed class EditorBlock
     {
         public Guid Id { get; } = Guid.NewGuid();
@@ -261,5 +454,9 @@ else
         public string Text { get; set; } = string.Empty;
 
         public string Language { get; set; } = string.Empty;
+
+        public ElementReference TextAreaElement;
     }
+
+    private sealed record CaretCoordinates(double Top, double Left, double Height);
 }
