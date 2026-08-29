@@ -11,10 +11,22 @@ public partial class MainLayout : IDisposable
     [Inject]
     private ISidebarStateService SidebarState { get; set; } = default!;
 
+    [Inject]
+    private IThemeService Theme { get; set; } = default!;
+
     protected override void OnInitialized()
     {
         PageHeader.Changed += HandleStateChanged;
         SidebarState.Changed += HandleStateChanged;
+        Theme.Changed += HandleStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitializeAsync();
+        }
     }
 
     private void HandleStateChanged() => InvokeAsync(StateHasChanged);
@@ -23,5 +35,6 @@ public partial class MainLayout : IDisposable
     {
         PageHeader.Changed -= HandleStateChanged;
         SidebarState.Changed -= HandleStateChanged;
+        Theme.Changed -= HandleStateChanged;
     }
 }
