@@ -245,6 +245,18 @@ svg { display: block; }
 .semester-dates { font-size: 13px; color: var(--text-2); }
 .semester-card-actions { display: flex; gap: 8px; margin-top: 4px; }
 
+/* ---------- Document cards ---------- */
+.scope-select { max-width: 260px; }
+.document-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.document-card { padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+.document-card.is-archived { opacity: .65; }
+.document-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.document-name { font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; flex: 1; word-break: break-word; }
+.document-meta { font-size: 12.5px; color: var(--text-3); }
+.detail-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.detail-row span:first-child { color: var(--text-3); font-weight: 600; }
+.detail-row span:last-child { color: var(--text); }
+
 /* ---------- Semester progress hero ---------- */
 .hero-card { padding: 26px 28px; }
 .hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }

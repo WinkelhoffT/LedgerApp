@@ -1,9 +1,11 @@
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
+using StudyHub.Logic.Business.Documents;
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.UI.Components;
 using StudyHub.UI.Courses;
 using StudyHub.UI.Dashboard;
+using StudyHub.UI.Documents;
 using StudyHub.UI.Semesters;
 using StudyHub.UI.Services;
 
@@ -25,6 +27,9 @@ builder.Services.AddHttpClient<ISemesterManagement, SemesterApiClient>(client =>
 builder.Services.AddHttpClient<IDashboardManagement, DashboardApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
+builder.Services.AddHttpClient<IDocumentManagement, DocumentApiClient>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -42,5 +47,6 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.MapDocumentDownloadEndpoints();
 
 app.Run();
