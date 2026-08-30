@@ -26,21 +26,36 @@ Out of scope (future milestones per `docs/roadmap.md`):
 - Chat-with-documents (RAG).
 - Versioning of documents.
 
-## 3. Open Questions (require answers before implementation starts)
+## 3. Decisions and Open Questions
 
-- Where should file *content* live: on disk (path referenced from DB), in the
-  database (`byte[]`/`varbinary`), or in blob storage? The existing `Course`/
-  `Semester` features only persist metadata — there is no established
-  convention yet for binary content.
-- Allowed file types / max file size?
+### Decided
+
+- **File content storage: `byte[]` BLOB column in SQLite** (the project's
+  existing provider, confirmed in `StudyHub.Api/ServiceCollectionExtensions.cs`
+  via `UseSqlite`). No new database/storage service is introduced.
+  Rationale: single-file, local-first persistence fits the project's scope
+  (personal, single-user tool); SQLite's own benchmarks show BLOBs up to
+  roughly the low-tens-of-MB range perform comparably to or better than
+  filesystem storage. EF Core reads the whole BLOB into memory per
+  request — acceptable for typical course materials (scripts, PDFs, notes),
+  not intended for very large files (e.g. lecture video recordings).
+  Consequence: enforce a hard upload size cap (see below) rather than
+  building a separate storage abstraction now. If the project later needs
+  filesystem/blob storage (e.g. for cloud sync, multi-user), only
+  `IDocumentRepository`'s implementation changes — the `Domain`/`Business`
+  contracts stay the same.
+
+### Still open (require answers before implementation starts)
+
+- Allowed file types / max file size? (Proposed default: cap at 25 MB per
+  file, no type allow-list beyond a basic block-list — confirm.)
 - Is a document always attached to exactly one `Course`, or can it also stand
   alone (e.g. attached to a `Semester`, or unattached)?
 - Do we need soft-delete/archive semantics like `Course.IsArchived`, or a hard
   delete?
 
-These decisions affect the domain model, the `Infrastructure` storage
-component, and the database schema, so they should be settled before Domain
-work starts.
+These remaining decisions affect the domain model and database schema and
+should be settled before Domain work starts.
 
 ## 4. Architecture Impact
 
@@ -52,7 +67,7 @@ mirrored on the existing `Courses` and `Semesters` features:
 |---|---|---|
 | Domain | `StudyHub.Logic.Domain` | `Documents/Document.cs` (entity), `IDocumentRepository`, domain exceptions (e.g. `DocumentNotFoundException`, `DocumentValidationException`) |
 | Business | `StudyHub.Logic.Business` | `Documents/IDocumentManagement.cs`, `DocumentManagement.cs`, `DocumentDto`, `UploadDocumentRequest`, `DocumentErrorCodes` |
-| Infrastructure | `StudyHub.Infrastructure` | `Documents/DocumentRepository.cs`, file storage adapter (implementation depends on open question in §3) |
+| Infrastructure | `StudyHub.Infrastructure` | `Documents/DocumentRepository.cs` (EF Core repository; file content is persisted as a `byte[]` column, no separate storage adapter needed) |
 | Data | `StudyHub.Data` | `DbSet<Document>` + `IEntityTypeConfiguration<Document>` (or inline `OnModelCreating` per current convention), one EF Core migration |
 | UI (API) | `StudyHub.Api` | `Documents/DocumentEndpoints.cs` (upload, list, get by id, download), `DocumentExceptionHandler.cs` |
 | UI (Blazor) | `StudyHub.UI` | `Documents/DocumentApiClient.cs`, `Components/Pages/Documents.razor` (+ code-behind), upload dialog component, document details component |
@@ -66,10 +81,12 @@ the repository and the storage adapter behind their interfaces.
 
 - New table `Documents` (one EF Core migration, per `CLAUDE.md` "one migration
   per feature").
-- Expected columns (pending §3 decisions): `Id`, `CourseId` (FK, `Restrict`
-  delete like `Course` → `Semester`), `FileName`, `ContentType`, `SizeBytes`,
-  `StoragePath` or `Content`, `CreatedAt`, `UpdatedAt`.
+- Columns: `Id`, `CourseId` (FK, `Restrict` delete like `Course` → `Semester`),
+  `FileName`, `ContentType`, `SizeBytes`, `Content` (`byte[]`/BLOB),
+  `CreatedAt`, `UpdatedAt` (pending §3's remaining open questions on
+  file-type/size limits and archive semantics).
 - Index on `CourseId` for listing by course.
+- No schema/provider change needed — stays on the existing SQLite database.
 
 ## 6. Task Checklist
 
@@ -78,7 +95,8 @@ the repository and the storage adapter behind their interfaces.
 - [ ] File Upload — API endpoint accepting a document file + metadata,
       validated in `DocumentManagement` (size/type limits, course existence).
 - [ ] Speicherung (Storage) — `Document` domain entity, `IDocumentRepository`
-      + EF configuration/migration, storage adapter for the file content.
+      + EF configuration/migration; file content stored as a `byte[]` BLOB
+      column in the existing SQLite database (no new storage service).
 - [ ] Download — API endpoint streaming a stored document back by id.
 
 ### UI
@@ -101,6 +119,10 @@ the repository and the storage adapter behind their interfaces.
 - This plan assumes documents attach to a `Course` (mirroring the existing
   `Courses`/`Semesters` FK pattern); confirm before implementing if a
   different association is intended.
-- Storage mechanism is not yet decided (§3) — implementation should not start
-  on Storage/Download until this is confirmed, since it changes the
-  `Infrastructure` and `Data` layer shape significantly.
+- Storing content as BLOBs in SQLite means the `.db` file grows with every
+  upload; an upload size cap (proposed 25 MB, §3) is the main safeguard
+  against unbounded growth. No streaming download — content is loaded fully
+  into memory per request, acceptable for typical document sizes but not for
+  very large files.
+- Remaining open questions in §3 (size/type limits, association, archive vs.
+  hard delete) should be confirmed before Domain work starts.
