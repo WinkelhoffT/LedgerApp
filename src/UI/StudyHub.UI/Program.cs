@@ -15,6 +15,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
 builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
+builder.Services.AddScoped<IThemeService, ThemeService>();
 
 builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
