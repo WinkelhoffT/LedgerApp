@@ -26,9 +26,7 @@ Out of scope (future milestones per `docs/roadmap.md`):
 - Chat-with-documents (RAG).
 - Versioning of documents.
 
-## 3. Decisions and Open Questions
-
-### Decided
+## 3. Decisions
 
 - **File content storage: `byte[]` BLOB column in SQLite** (the project's
   existing provider, confirmed in `StudyHub.Api/ServiceCollectionExtensions.cs`
@@ -45,17 +43,20 @@ Out of scope (future milestones per `docs/roadmap.md`):
   `IDocumentRepository`'s implementation changes — the `Domain`/`Business`
   contracts stay the same.
 
-### Still open (require answers before implementation starts)
-
-- Allowed file types / max file size? (Proposed default: cap at 25 MB per
-  file, no type allow-list beyond a basic block-list — confirm.)
-- Is a document always attached to exactly one `Course`, or can it also stand
-  alone (e.g. attached to a `Semester`, or unattached)?
-- Do we need soft-delete/archive semantics like `Course.IsArchived`, or a hard
-  delete?
-
-These remaining decisions affect the domain model and database schema and
-should be settled before Domain work starts.
+- **Allowed file types: PDF and DOCX only** (`application/pdf`,
+  `application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
+  Upload is rejected for any other content type/extension. Max file size:
+  **25 MB per file** (assumption — flag if a different limit is needed).
+- **Association: a document belongs to either a `Course` or a `Semester`,
+  never both, never neither.** `Document` gets two nullable FKs (`CourseId`,
+  `SemesterId`) with an invariant — enforced both in the domain constructor
+  and as a DB check constraint — that exactly one is set.
+- **Soft delete**, mirroring the existing `Course`/`Semester` pattern: a
+  `Document.IsArchived` flag with `Archive()`/`Restore()` domain methods and
+  a `DocumentArchivedException` (same shape as `CourseArchivedException`).
+  `GetAllAsync`/list queries return archived documents too (as with
+  `Course`/`Semester` today) — filtering archived vs. active is a UI/Business
+  concern, not baked into the repository.
 
 ## 4. Architecture Impact
 
@@ -65,8 +66,8 @@ mirrored on the existing `Courses` and `Semesters` features:
 
 | Layer | Project | Additions |
 |---|---|---|
-| Domain | `StudyHub.Logic.Domain` | `Documents/Document.cs` (entity), `IDocumentRepository`, domain exceptions (e.g. `DocumentNotFoundException`, `DocumentValidationException`) |
-| Business | `StudyHub.Logic.Business` | `Documents/IDocumentManagement.cs`, `DocumentManagement.cs`, `DocumentDto`, `UploadDocumentRequest`, `DocumentErrorCodes` |
+| Domain | `StudyHub.Logic.Domain` | `Documents/Document.cs` (entity with `Archive()`/`Restore()`), `IDocumentRepository`, domain exceptions (`DocumentNotFoundException`, `DocumentValidationException`, `DocumentArchivedException`) |
+| Business | `StudyHub.Logic.Business` | `Documents/IDocumentManagement.cs`, `DocumentManagement.cs` (incl. `ArchiveAsync`/`RestoreAsync`, content-type/size validation), `DocumentDto`, `UploadDocumentRequest`, `DocumentErrorCodes` |
 | Infrastructure | `StudyHub.Infrastructure` | `Documents/DocumentRepository.cs` (EF Core repository; file content is persisted as a `byte[]` column, no separate storage adapter needed) |
 | Data | `StudyHub.Data` | `DbSet<Document>` + `IEntityTypeConfiguration<Document>` (or inline `OnModelCreating` per current convention), one EF Core migration |
 | UI (API) | `StudyHub.Api` | `Documents/DocumentEndpoints.cs` (upload, list, get by id, download), `DocumentExceptionHandler.cs` |
@@ -74,35 +75,43 @@ mirrored on the existing `Courses` and `Semesters` features:
 | Tests | `StudyHub.Tests` | Business-logic tests for `DocumentManagement` (upload validation, not-found, mapping) |
 
 Contracts-first: `UI` calls only `IDocumentManagement` (Business); `Business`
-calls only `IDocumentRepository` (Domain); `Infrastructure` implements both
-the repository and the storage adapter behind their interfaces.
+calls only `IDocumentRepository` (Domain); `Infrastructure` implements the
+repository (content lives in the same table, no separate storage adapter).
 
 ## 5. Database Impact
 
 - New table `Documents` (one EF Core migration, per `CLAUDE.md` "one migration
   per feature").
-- Columns: `Id`, `CourseId` (FK, `Restrict` delete like `Course` → `Semester`),
-  `FileName`, `ContentType`, `SizeBytes`, `Content` (`byte[]`/BLOB),
-  `CreatedAt`, `UpdatedAt` (pending §3's remaining open questions on
-  file-type/size limits and archive semantics).
-- Index on `CourseId` for listing by course.
+- Columns: `Id`, `CourseId` (nullable FK), `SemesterId` (nullable FK, both
+  `Restrict` delete — same reasoning as `Course` → `Semester` today: neither
+  parent is hard-deleted, only archived), `FileName`, `ContentType`
+  (restricted to PDF/DOCX at the Business layer), `SizeBytes`, `Content`
+  (`byte[]`/BLOB, capped at 25 MB), `IsArchived`, `CreatedAt`, `UpdatedAt`.
+- Check constraint enforcing exactly one of `CourseId`/`SemesterId` is set
+  (`HasCheckConstraint` in `OnModelCreating`, mirroring the mutual-exclusivity
+  invariant already enforced in the `Document` domain constructor).
+- Indexes on `CourseId` and `SemesterId` for listing by parent.
 - No schema/provider change needed — stays on the existing SQLite database.
 
 ## 6. Task Checklist
 
 ### Backend
 
-- [ ] File Upload — API endpoint accepting a document file + metadata,
-      validated in `DocumentManagement` (size/type limits, course existence).
-- [ ] Speicherung (Storage) — `Document` domain entity, `IDocumentRepository`
-      + EF configuration/migration; file content stored as a `byte[]` BLOB
-      column in the existing SQLite database (no new storage service).
+- [ ] File Upload — API endpoint accepting a document file + metadata
+      (either a `CourseId` or a `SemesterId`), validated in
+      `DocumentManagement` (PDF/DOCX only, ≤25 MB, parent existence,
+      exactly-one-parent invariant).
+- [ ] Speicherung (Storage) — `Document` domain entity (mutually-exclusive
+      `CourseId`/`SemesterId`, `IsArchived` + `Archive()`/`Restore()`),
+      `IDocumentRepository` + EF configuration/migration; file content
+      stored as a `byte[]` BLOB column in the existing SQLite database
+      (no new storage service).
 - [ ] Download — API endpoint streaming a stored document back by id.
 
 ### UI
 
 - [ ] Dokumentliste (Document list) — Blazor page/component listing documents
-      for a course, using `DocumentApiClient`.
+      for a course or a semester, using `DocumentApiClient`.
 - [ ] Upload Dialog — modal/component for selecting and uploading a file.
 - [ ] Dokumentdetails (Document details) — component showing metadata and a
       download action for a single document.
@@ -116,13 +125,14 @@ the repository and the storage adapter behind their interfaces.
 
 ## 8. Risks / Assumptions
 
-- This plan assumes documents attach to a `Course` (mirroring the existing
-  `Courses`/`Semesters` FK pattern); confirm before implementing if a
-  different association is intended.
 - Storing content as BLOBs in SQLite means the `.db` file grows with every
-  upload; an upload size cap (proposed 25 MB, §3) is the main safeguard
-  against unbounded growth. No streaming download — content is loaded fully
-  into memory per request, acceptable for typical document sizes but not for
-  very large files.
-- Remaining open questions in §3 (size/type limits, association, archive vs.
-  hard delete) should be confirmed before Domain work starts.
+  upload; the 25 MB upload cap is the main safeguard against unbounded
+  growth. No streaming download — content is loaded fully into memory per
+  request, acceptable for typical document sizes but not for very large
+  files.
+- The exactly-one-of-`CourseId`/`SemesterId` invariant needs enforcement at
+  two levels (domain constructor + DB check constraint) since nothing in the
+  existing codebase establishes a precedent for this kind of "belongs to one
+  of several parents" relationship — reviewed closely during implementation.
+- 25 MB is an assumed size cap, not one the user explicitly confirmed;
+  flag if a different limit is needed.
