@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Data;
 using StudyHub.Logic.Domain.Documents;
 
-namespace StudyHub.Infrastructure.Documents;
+namespace StudyHub.Data.Documents;
 
 public sealed class DocumentRepository(ApplicationDbContext dbContext) : IDocumentRepository
 {

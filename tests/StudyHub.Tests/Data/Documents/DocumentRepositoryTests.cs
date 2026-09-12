@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Infrastructure.Documents;
+using StudyHub.Data.Documents;
 using StudyHub.Logic.Domain.Documents;
 
-namespace StudyHub.Tests.Infrastructure.Documents;
+namespace StudyHub.Tests.Data.Documents;
 
 public class DocumentRepositoryTests
 {

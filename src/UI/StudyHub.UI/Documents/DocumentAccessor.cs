@@ -11,12 +11,7 @@ using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.UI.Documents;
 
-/// <summary>
-/// Adapter satisfying <see cref="IDocumentManagement"/> over HTTP against StudyHub.Api instead of
-/// running the use case in-process. Transport failures (connection errors, timeouts, malformed
-/// responses) are intentionally left untranslated and surface via Blazor's default error handling.
-/// </summary>
-public sealed class DocumentApiClient(HttpClient httpClient) : IDocumentManagement
+public sealed class DocumentAccessor(HttpClient httpClient) : IDocumentAccessor
 {
     public async Task<IReadOnlyList<DocumentDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -37,13 +32,6 @@ public sealed class DocumentApiClient(HttpClient httpClient) : IDocumentManageme
         using var response = await httpClient.GetAsync($"api/documents/by-semester/{semesterId}", cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         return (await response.Content.ReadFromJsonAsync<IReadOnlyList<DocumentDto>>(cancellationToken))!;
-    }
-
-    public async Task<DocumentDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        using var response = await httpClient.GetAsync($"api/documents/{id}", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        return (await response.Content.ReadFromJsonAsync<DocumentDto>(cancellationToken))!;
     }
 
     public async Task<DocumentContentDto> DownloadAsync(Guid id, CancellationToken cancellationToken = default)
