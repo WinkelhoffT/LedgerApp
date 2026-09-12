@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using StudyHub.Logic.Business.Courses;
-using StudyHub.UI.Courses;
-using StudyHub.UI.Semesters;
+using StudyHub.Logic.Integration.Courses;
+using StudyHub.Logic.Integration.Semesters;
+using StudyHub.Shared.Courses;
 using StudyHub.UI.Services;
 
 namespace StudyHub.UI.Components.Pages;

@@ -1,3 +1,5 @@
+using StudyHub.Shared.Semesters;
+
 namespace StudyHub.Logic.Business.Semesters;
 
 public interface ISemesterManagement

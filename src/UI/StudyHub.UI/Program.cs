@@ -1,8 +1,6 @@
+using StudyHub.Logic.Integration;
 using StudyHub.UI.Components;
-using StudyHub.UI.Courses;
-using StudyHub.UI.Dashboard;
 using StudyHub.UI.Documents;
-using StudyHub.UI.Semesters;
 using StudyHub.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,17 +14,7 @@ builder.Services.AddScoped<ISidebarStateHolder, SidebarStateHolder>();
 builder.Services.AddScoped<IThemeAccessor, ThemeAccessor>();
 builder.Services.AddScoped<IThemeStateHolder, ThemeStateHolder>();
 
-builder.Services.AddHttpClient<ICourseAccessor, CourseAccessor>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<ISemesterAccessor, SemesterAccessor>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<IDashboardAccessor, DashboardAccessor>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<IDocumentAccessor, DocumentAccessor>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
+builder.Services.AddStudyHubIntegration(builder.Configuration);
 
 var app = builder.Build();
 

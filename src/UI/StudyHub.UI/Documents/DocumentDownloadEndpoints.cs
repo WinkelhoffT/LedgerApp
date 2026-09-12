@@ -1,3 +1,5 @@
+using StudyHub.Logic.Integration.Documents;
+
 namespace StudyHub.UI.Documents;
 
 /// <summary>

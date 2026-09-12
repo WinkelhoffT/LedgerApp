@@ -6,28 +6,40 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
 
 ## Quick Repository Map
 
-- `src/Shared/StudyHub.Shared`: cross-cutting DTOs, exceptions, and options/configuration classes
-  genuinely shared across multiple layers/components.
-- `src/Data/StudyHub.Data`: `ApplicationDbContext`, EF Core migrations, and (target state)
-  repository implementations and `IEntityTypeConfiguration` classes.
+- `src/Shared/StudyHub.Shared/<Domain>/`: DTOs, request types, error-code classes, and exceptions
+  that cross the `StudyHub.Api` ↔ `StudyHub.Logic.Integration` ↔ `StudyHub.Logic.Business`
+  boundary (`CourseDto`, `CreateCourseRequest`, `CourseErrorCodes`, `CourseNotFoundException`,
+  `CourseArchivedException`, …) — see `CLAUDE.md`, "Contracts First". Also the intended home for
+  future Options/configuration classes.
+- `src/Data/StudyHub.Data`: `ApplicationDbContext`, EF Core migrations, and the repository
+  implementations (`CourseRepository`, `SemesterRepository`, `DocumentRepository`) plus their DI
+  registration (`ServiceCollectionExtensions.AddStudyHubDataRepositories`).
 - `src/Logic/StudyHub.Logic.Domain`: domain entities (`Course`, `Semester`, `Document`,
-  `SemesterProgress`), domain exceptions, and repository contracts (`ICourseRepository`,
-  `ISemesterRepository`, `IDocumentRepository`).
+  `SemesterProgress`), repository contracts (`ICourseRepository`, `ISemesterRepository`,
+  `IDocumentRepository`).
 - `src/Logic/StudyHub.Logic.Business`: use-case orchestration per domain (`CourseManagement`,
-  `SemesterManagement`, `DocumentManagement`, `DashboardManagement`), their DTOs, request types,
-  and business-level exceptions/error codes.
-- `src/Infrastructure/StudyHub.Infrastructure`: currently hosts the EF Core repository
-  implementations (`CourseRepository`, `SemesterRepository`, `DocumentRepository`); target state
-  (see `review.md`) moves these into `StudyHub.Data` and reserves `Infrastructure` for genuine
-  external-infrastructure concerns (file storage, email, AI provider adapters).
-- `src/UI/StudyHub.Api`: ASP.NET Core backend host. Currently Minimal API endpoint groups
-  (`*Endpoints.cs`) calling Business contracts directly; target state (see `CLAUDE.md`, "API
-  Layer") is Controllers calling a Business-layer orchestrator.
+  `SemesterManagement`, `DocumentManagement`, `DashboardManagement`), each with a
+  `Contracts/` subfolder holding its own Business-facing interface (`ICourseManagement`, …) —
+  these interfaces are Business-local, unlike the `Shared` DTOs/exceptions they use.
+- `src/Logic/StudyHub.Logic.Integration/<Domain>/`: Accessor classes `StudyHub.UI` uses to call
+  `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
+  `IDashboardAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
+  for HttpClient/DI registration. Depends only on `StudyHub.Shared` — never on `Logic.Business` or
+  `Logic.Domain` (LAY-7 in `docs/agent-rule-catalog.md`). Also the intended home for future AI
+  provider/external-service adapters.
+- `src/Infrastructure/StudyHub.Infrastructure`: currently empty (just a no-op
+  `ServiceCollectionExtensions`) — reserved for genuine external-infrastructure concerns (file
+  storage, email) that don't exist yet. Repositories used to live here; they moved to
+  `StudyHub.Data`.
+- `src/UI/StudyHub.Api`: ASP.NET Core backend host. Controllers (`SemesterController`,
+  `CourseController`, `DocumentController`, `DashboardController`) call a Business orchestrator;
+  `*ExceptionHandler` classes map Business/Domain exceptions to `ProblemDetails`.
 - `src/UI/StudyHub.UI`: Blazor Web App frontend — `Components/Pages`, `Components/Layout`,
-  per-domain API clients (`SemesterApiClient`, `CourseApiClient`, `DocumentApiClient`,
-  `DashboardApiClient`), and cross-page UI helpers under `Services/`.
+  `Components/Shared`, every component paired with a `.razor.cs` code-behind. Depends only on
+  `StudyHub.Shared` and `StudyHub.Logic.Integration` (never `Logic.Business`/`Logic.Domain`
+  directly). Cross-page UI helpers live under `Services/`.
 - `tests/StudyHub.Tests`: xUnit tests, mirroring the production layout
-  (`Api/`, `Infrastructure/`, `Logic/Business/`, `Logic/Domain/`).
+  (`Api/`, `Data/`, `Logic/Business/`, `Logic/Domain/`).
 - `docs/`: agent-facing context and project documentation.
 - `agents/`: task templates for a multi-agent orchestration workflow (architect, orchestrator,
   consolidator, implementer, reviewer, verification).
@@ -53,7 +65,7 @@ and courses.
 ## Technology Snapshot
 
 - Runtime: .NET 10.
-- Backend: ASP.NET Core, currently Minimal API endpoint groups in `StudyHub.Api`.
+- Backend: ASP.NET Core Controllers in `StudyHub.Api`.
 - Frontend: Blazor Web App (`StudyHub.UI`), Bootstrap for styling.
 - Data: EF Core, code-first migrations, SQLite provider (`Microsoft.Data.Sqlite` /
   `UseSqlite`).
@@ -64,34 +76,36 @@ and courses.
 - Follow the Composite Component layering described in `CLAUDE.md` ("Architecture") and
   `docs/architecture.md`: `Shared` / `Data` / `Logic{Domain, Business, Integration}` /
   `Infrastructure` / `UI` / `Tests`.
-- Business contracts (`ICourseManagement`, `ISemesterManagement`, `IDocumentManagement`,
-  `IDashboardManagement`) live in `StudyHub.Logic.Business` next to their DTOs and implementation;
-  target state (per `CLAUDE.md`, "Contracts First") separates contract types (interfaces, DTOs,
-  exceptions) from implementation, e.g. via a `Contracts/` subfolder per domain.
-  today (per `review.md`, gap 1.2) they are unstructured in the same folder as the implementation.
+- End-to-end flow: `StudyHub.UI` (Razor + code-behind) → Accessor (`Logic.Integration/<Domain>/`)
+  → Controller (`StudyHub.Api/<Domain>/`) → `*Management` orchestrator
+  (`Logic.Business/<Domain>/`) → Domain entity (`Logic.Domain/<Domain>/`) + Repository
+  (`Data/<Domain>/`).
+- Business-local contracts (`ICourseManagement`, `ISemesterManagement`, `IDocumentManagement`,
+  `IDashboardManagement`) live in `StudyHub.Logic.Business/<Domain>/Contracts/`, separate from the
+  `*Management` implementation.
 - Repository contracts live in `StudyHub.Logic.Domain/<Domain>/I<Domain>Repository.cs`;
-  implementations are currently in `StudyHub.Infrastructure/<Domain>/<Domain>Repository.cs`
-  (target: `StudyHub.Data`, see `CLAUDE.md`, "Entity Framework").
-- `StudyHub.Api`/`StudyHub.Infrastructure`/`StudyHub.Logic.Business`/`StudyHub.UI` each carry a
-  `ServiceCollectionExtensions` class for their own DI registration, composed from the relevant
-  host's `Program.cs`.
-- Frontend API clients (`SemesterApiClient`, `CourseApiClient`, `DocumentApiClient`,
-  `DashboardApiClient`) currently implement the full matching Business interface over HTTP; target
-  state (per `CLAUDE.md`, "UI Services and Frontend Integration") is small, purpose-specific
-  Accessor classes instead of one class per domain covering the whole contract.
-- UI cross-page helpers live in `StudyHub.UI/Services/` (`ThemeService`, `SidebarStateService`,
-  `PageHeaderService`); target state renames these away from the generic `Service` suffix
-  (`Accessor`, `Provider`, `StateHolder`, `Formatter`, …) and splits data access from
-  state/notification logic where a class currently does both (see `CLAUDE.md`, "UI Services and
-  Frontend Integration").
+  implementations live in `StudyHub.Data/<Domain>/<Domain>Repository.cs`.
+- `StudyHub.Data`/`StudyHub.Infrastructure`/`StudyHub.Logic.Business`/`StudyHub.Logic.Integration`/
+  `StudyHub.Api`/`StudyHub.UI` each carry their own `ServiceCollectionExtensions` for DI
+  registration, composed from the relevant host's `Program.cs` (`StudyHub.Api` and `StudyHub.UI`
+  are the two composition roots).
+- Frontend Accessors (`SemesterAccessor`, `CourseAccessor`, `DocumentAccessor`,
+  `DashboardAccessor`, all in `Logic.Integration/<Domain>/`) are narrow and purpose-specific —
+  shaped around what a page actually calls, not a 1:1 mirror of the Business interface. E.g.
+  `ISemesterAccessor` has 5 methods where `ISemesterManagement` has 6 (no `GetByIdAsync`, unused
+  by any page).
+- UI cross-page helpers live in `StudyHub.UI/Services/` (`ThemeAccessor`+`ThemeStateHolder`,
+  `SidebarStateHolder`, `PageHeaderStateHolder`) — role-based names, not the generic `Service`
+  suffix. `ThemeStateHolder` depends on `IThemeAccessor` for the underlying JS-interop calls,
+  keeping raw data access separate from state-holding/notification logic.
 
 ## Naming Reference
 
 ### Project and Component Naming
 
 - Project and namespace names use the `StudyHub` prefix (`StudyHub.Shared`, `StudyHub.Data`,
-  `StudyHub.Logic.Domain`, `StudyHub.Logic.Business`, `StudyHub.Infrastructure`, `StudyHub.Api`,
-  `StudyHub.UI`, `StudyHub.Tests`).
+  `StudyHub.Logic.Domain`, `StudyHub.Logic.Business`, `StudyHub.Logic.Integration`,
+  `StudyHub.Infrastructure`, `StudyHub.Api`, `StudyHub.UI`, `StudyHub.Tests`).
 - Test project uses a `Tests` suffix (`StudyHub.Tests`, a single project mirroring the production
   layout by folder rather than one test project per component).
 
@@ -99,32 +113,32 @@ and courses.
 
 - `Management`: Business-layer use-case orchestration for a domain (`CourseManagement`,
   `SemesterManagement`, `DocumentManagement`, `DashboardManagement`).
-- `Repository`: persistence contract (Domain layer) or EF Core-backed CRUD implementation
-  (Infrastructure today, Data at target state).
-- `Endpoints`: current Minimal API route-group registration class (`CourseEndpoints`, …); target
-  state replaces these with `Controller` classes (see `CLAUDE.md`, "API Layer").
-- `Controller`: target-state ASP.NET Core API endpoint class (not yet used in the codebase).
+- `Repository`: persistence contract (`Logic.Domain`) or EF Core-backed CRUD implementation
+  (`StudyHub.Data`).
+- `Controller`: ASP.NET Core API endpoint class in `StudyHub.Api` (`SemesterController`, …).
 - `ExceptionHandler`: maps domain/business exceptions to HTTP problem responses for one domain's
   endpoints (`CourseExceptionHandler`, `SemesterExceptionHandler`, `DocumentExceptionHandler`).
-- `ApiClient`: current frontend HTTP client implementing a full Business contract; target state
-  replaces these with narrower `Accessor` classes (see above).
-- `Accessor`: target-state role for narrow, purpose-specific frontend HTTP access.
-- `Dto`: data-transfer shape crossing the API/frontend boundary (`CourseDto`, `SemesterDto`,
-  `DocumentDto`, `SemesterProgressDto`, `DocumentContentDto`).
-- `Request`: business-layer input shape for a specific use case (`CreateCourseRequest`,
-  `UpdateSemesterRequest`, `UploadDocumentRequest`).
-- `ErrorCodes`: static class of business error-code constants for one domain (`CourseErrorCodes`,
-  `SemesterErrorCodes`, `DocumentErrorCodes`).
-- `Service`: generic bucket suffix currently used under `StudyHub.UI/Services/`; not to be used
-  for new classes (see `CLAUDE.md`, "UI Services and Frontend Integration").
+- `Accessor`: narrow, purpose-specific HTTP access role, used both for `Logic.Integration`'s
+  Api-calling classes (`SemesterAccessor`, …) and for a UI-local JS-interop wrapper
+  (`ThemeAccessor`).
+- `StateHolder`: holds in-memory UI state and raises a `Changed` event; no raw data access
+  (`PageHeaderStateHolder`, `SidebarStateHolder`, `ThemeStateHolder`).
+- `Dto`: data-transfer shape crossing the API/Integration/Business boundary (`CourseDto`,
+  `SemesterDto`, `DocumentDto`, `SemesterProgressDto`, `DocumentContentDto`) — lives in
+  `StudyHub.Shared`.
+- `Request`: input shape for a specific use case (`CreateCourseRequest`, `UpdateSemesterRequest`,
+  `UploadDocumentRequest`) — lives in `StudyHub.Shared`.
+- `ErrorCodes`: static class of error-code constants for one domain (`CourseErrorCodes`,
+  `SemesterErrorCodes`, `DocumentErrorCodes`) — lives in `StudyHub.Shared`.
+- `Service`: generic bucket suffix — not used anywhere in the codebase; do not introduce it for
+  new classes (see `CLAUDE.md`, "UI Services and Frontend Integration").
 
 ### DTO and Request Naming
 
-- Business DTOs use the `Dto` suffix.
-- Business use-case inputs use `Create<Domain>Request` / `Update<Domain>Request` /
-  `Upload<Domain>Request` naming.
-- Keep HTTP-specific request/response shapes in the API layer and map them into Business request
-  DTOs before entering Business/Domain logic.
+- DTOs use the `Dto` suffix; requests use `Create<Domain>Request` / `Update<Domain>Request` /
+  `Upload<Domain>Request` naming. Both live in `StudyHub.Shared/<Domain>/`.
+- Keep HTTP-specific request/response shapes (e.g. `IFormFile` binding) in the API layer and map
+  them into `Shared` request DTOs before entering Business/Domain logic.
 
 ## C# Convention Snapshot
 
@@ -133,17 +147,17 @@ and courses.
   trust nullability annotations and avoid redundant null checks that contradict the type system.
 - New entity identifiers use `Guid.NewGuid()` (see `Course`, `Semester`, `Document` constructors).
 - Domain invariants are enforced in entity constructors/methods, raising a dedicated
-  `*ValidationException` / `*ArchivedException` / `*NotFoundException` per domain.
+  `*ValidationException` / `*ArchivedException` / `*NotFoundException` per domain (defined in
+  `StudyHub.Shared`, since Accessors need to reconstruct them from `ProblemDetails`).
 
 ## Testing Snapshot
 
 - Run tests with `dotnet test` from the repository root (`StudyHub.slnx`).
-- `tests/StudyHub.Tests` mirrors the production namespace layout: `Api/<Domain>`,
-  `Infrastructure/<Domain>`, `Logic/Business/<Domain>`, `Logic/Domain/<Domain>`.
+- `tests/StudyHub.Tests` mirrors the production namespace layout: `Api/<Domain>`, `Data/<Domain>`,
+  `Logic/Business/<Domain>`, `Logic/Domain/<Domain>`.
 - Add tests close to the layer being changed: Business-logic behavior in
   `Logic/Business/<Domain>`, domain invariants in `Logic/Domain/<Domain>`, repository behavior in
-  `Infrastructure/<Domain>` (target: `Data/<Domain>`), endpoint/controller behavior in
-  `Api/<Domain>`.
+  `Data/<Domain>`, controller behavior in `Api/<Domain>`.
 - If EF Core entities or repository behavior changes, add a migration under
   `src/Data/StudyHub.Data/Migrations/` (one migration per feature, per `CLAUDE.md`).
 
@@ -158,23 +172,24 @@ and courses.
 
 ## Change Placement Guide
 
-- New API endpoint: current state — add a Minimal API route in
-  `src/UI/StudyHub.Api/<Domain>/<Domain>Endpoints.cs`; target state — add an action to a
-  `<Domain>Controller` in the same folder, calling a Business orchestrator (see `CLAUDE.md`,
-  "API Layer").
+- New API endpoint: add an action to a `<Domain>Controller` in
+  `src/UI/StudyHub.Api/<Domain>/`, calling a Business orchestrator (see `CLAUDE.md`, "API Layer").
 - New business use case: extend the relevant `I<Domain>Management`/`<Domain>Management` in
-  `src/Logic/StudyHub.Logic.Business/<Domain>/`, add a `Request`/`Dto` type as needed, and
-  register/adjust DI in `src/Logic/StudyHub.Logic.Business/ServiceCollectionExtensions.cs`.
+  `src/Logic/StudyHub.Logic.Business/<Domain>/`, add a `Request`/`Dto` type in
+  `src/Shared/StudyHub.Shared/<Domain>/` as needed, and register/adjust DI in
+  `src/Logic/StudyHub.Logic.Business/ServiceCollectionExtensions.cs`.
 - New domain rule/entity: add to `src/Logic/StudyHub.Logic.Domain/<Domain>/`, keep it free of
-  external dependencies, and extend the matching `I<Domain>Repository` contract if persistence is
-  affected.
+  external dependencies (besides `StudyHub.Shared` for any exception types it throws), and extend
+  the matching `I<Domain>Repository` contract if persistence is affected.
 - New persistence behavior: extend the repository in
-  `src/Infrastructure/StudyHub.Infrastructure/<Domain>/<Domain>Repository.cs` (target:
-  `src/Data/StudyHub.Data/<Domain>/`), update `ApplicationDbContext`/`IEntityTypeConfiguration`,
-  and add an EF Core migration under `src/Data/StudyHub.Data/Migrations/`.
+  `src/Data/StudyHub.Data/<Domain>/<Domain>Repository.cs`, update
+  `ApplicationDbContext`/`IEntityTypeConfiguration`, and add an EF Core migration under
+  `src/Data/StudyHub.Data/Migrations/`.
 - New frontend display behavior: update the relevant page under
   `src/UI/StudyHub.UI/Components/Pages/` with a matching `.razor.cs` code-behind, and extend the
-  domain's API client/accessor in `src/UI/StudyHub.UI/<Domain>/`.
-- Cross-layer shared DTO/exception/options type: place it in `src/Shared/StudyHub.Shared/`
-  instead of `StudyHub.Logic.Business`/`StudyHub.Logic.Domain` (see `CLAUDE.md`, "Contracts
-  First").
+  domain's Accessor in `src/Logic/StudyHub.Logic.Integration/<Domain>/` if it needs a new
+  operation.
+- New Api/Integration/Business-crossing DTO, request, error code, or exception: place it in
+  `src/Shared/StudyHub.Shared/<Domain>/` (see `CLAUDE.md`, "Contracts First") — not in
+  `StudyHub.Logic.Business`/`StudyHub.Logic.Domain`, since `Logic.Integration` cannot depend on
+  either.

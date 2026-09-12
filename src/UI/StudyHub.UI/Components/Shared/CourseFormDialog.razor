@@ -1,4 +1,4 @@
-@using StudyHub.Logic.Domain.Courses
+@using StudyHub.Shared.Courses
 
 @if (IsOpen)
 {
@@ -20,12 +20,12 @@
 
                     <div class="form-group">
                         <label for="course-name">Name</label>
-                        <input id="course-name" class="form-control" maxlength="@Course.NameMaxLength" @bind="Name" />
+                        <input id="course-name" class="form-control" maxlength="@CreateCourseRequest.NameMaxLength" @bind="Name" />
                     </div>
 
                     <div class="form-group">
                         <label for="course-description">Description</label>
-                        <textarea id="course-description" class="form-control" rows="3" maxlength="@Course.DescriptionMaxLength" @bind="Description"></textarea>
+                        <textarea id="course-description" class="form-control" rows="3" maxlength="@CreateCourseRequest.DescriptionMaxLength" @bind="Description"></textarea>
                     </div>
 
                     <div class="form-group">

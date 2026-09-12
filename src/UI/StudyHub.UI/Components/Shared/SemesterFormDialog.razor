@@ -1,4 +1,4 @@
-@using StudyHub.Logic.Domain.Semesters
+@using StudyHub.Shared.Semesters
 
 @if (IsOpen)
 {
@@ -20,7 +20,7 @@
 
                     <div class="form-group">
                         <label for="semester-name">Name</label>
-                        <input id="semester-name" class="form-control" maxlength="@Semester.NameMaxLength" @bind="Name" placeholder="e.g. Winter 2025/26" />
+                        <input id="semester-name" class="form-control" maxlength="@CreateSemesterRequest.NameMaxLength" @bind="Name" placeholder="e.g. Winter 2025/26" />
                     </div>
 
                     <div class="form-row">

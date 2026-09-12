@@ -1,3 +1,5 @@
+using StudyHub.Shared.Semesters;
+
 namespace StudyHub.Logic.Domain.Semesters;
 
 public sealed class Semester

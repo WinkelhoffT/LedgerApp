@@ -165,11 +165,16 @@ CoCo explicitly describes a separate **DataClasses project** in CrossCutting for
 
 **DataClasses placement convention** (issue 086; see also section 9.3)
 
-- **Component-local DTOs** live in a `Contracts/`-style area of the owning domain folder within
-  `StudyHub.Logic.Business` (e.g. `Courses/Contracts/`) — used only within that domain's own
-  contract surface (see `CLAUDE.md`, "Contracts First").
-- **Global DTOs** (truly shared across multiple components/layers) live in `StudyHub.Shared`
-  (CrossCutting).
+- **Component-local contracts** (interfaces exposed only by their own implementation, e.g.
+  `ISemesterManagement`) live in a `Contracts/`-style area of the owning domain folder within
+  `StudyHub.Logic.Business` (e.g. `Courses/Contracts/ICourseManagement.cs`) — see `CLAUDE.md`,
+  "Contracts First".
+- **Wire-level DTOs/requests/exceptions** (crossing the `StudyHub.Api` ↔ `Logic.Integration` ↔
+  `Logic.Business` boundary, e.g. `CourseDto`, `CreateCourseRequest`, `CourseArchivedException`)
+  live in `StudyHub.Shared/<Domain>/` (CrossCutting) — required since `Logic.Integration` must not
+  depend on `Logic.Business`/`Logic.Domain` (LAY-7). This is StudyHub's concrete instance of the
+  "Global DTOs" rule below: these types are shared across `Api`, `Business`, `Domain`, and
+  `Integration`, not domain-local to one project.
 - **Entities** (EF-tracked, ADR-02) live in `StudyHub.Logic.Domain/<Domain>/` and are reachable
   only from Domain Logic (`3_1`) — see ADR02-005 and section 8.1.
 
@@ -274,16 +279,19 @@ Purpose:
 
 This corresponds to **Integrationskomponenten**: outwardly it looks like calling a local component; internally it forwards to the external system.
 
-**StudyHub placement (`StudyHub.Logic.Integration`, per `CLAUDE.md` "Integration")**  
-Not yet present in the solution — added when the first real external integration (e.g. an AI
-provider) is implemented:
+**StudyHub placement (`StudyHub.Logic.Integration`, per `CLAUDE.md` "Integration")**
 
-- AI-provider adapters, other external-service clients, and generic external adapters live in
-  `StudyHub.Logic.Integration/<Provider-or-Service>/`.
-- Component names should resemble the external system/capability called (e.g. an adapter wrapping
-  a specific AI provider or flashcard-export target).
-- Do not confuse this layer with `StudyHub.UI`'s frontend Accessor classes (see `CLAUDE.md`, "UI
-  Services and Frontend Integration"), which call `StudyHub.Api`, not external systems.
+- `StudyHub.Logic.Integration/<Domain>/` hosts the Accessor classes `StudyHub.UI` uses to call
+  `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
+  `IDashboardAccessor`, …) — `StudyHub.Api` is a separate process, so from the UI's perspective
+  this is external access like any other. These accessors depend only on `StudyHub.Shared` (per
+  LAY-7 in `docs/agent-rule-catalog.md`: Integration must not depend on `Logic.Business` or
+  `Logic.Domain`), and are registered via `Logic.Integration`'s own
+  `ServiceCollectionExtensions.AddStudyHubIntegration`, called from `StudyHub.UI`'s `Program.cs`.
+- AI-provider adapters, other external-service clients, and generic external adapters (not yet
+  present in the solution — added when the first one is implemented) live alongside these under
+  `StudyHub.Logic.Integration/<Provider-or-Service>/`, named after the external system/capability
+  called (e.g. an adapter wrapping a specific AI provider or flashcard-export target).
 
 **Principle evaluation**
 

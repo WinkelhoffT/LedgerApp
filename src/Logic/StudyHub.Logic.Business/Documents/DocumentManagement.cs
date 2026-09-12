@@ -1,8 +1,9 @@
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Courses;
+using StudyHub.Shared.Documents;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Documents;
 

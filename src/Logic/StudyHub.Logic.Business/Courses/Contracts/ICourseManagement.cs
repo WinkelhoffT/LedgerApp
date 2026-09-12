@@ -1,3 +1,5 @@
+using StudyHub.Shared.Courses;
+
 namespace StudyHub.Logic.Business.Courses;
 
 public interface ICourseManagement

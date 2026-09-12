@@ -95,10 +95,12 @@ The project follows a **Composite Component Architecture Pattern**.
 
 > The codebase was migrated to the rules below (Controllers, Accessors, Razor code-behind,
 > repositories in `Data`) domain by domain (Semester, Course, Document, Dashboard) following the
-> gap analysis in `review.md`. `StudyHub.Shared` stays empty: nothing in the current codebase is
-> genuinely used across more than one domain (existing DTOs/exceptions are domain-local, per
-> "Contracts First" below); it's the intended home for the first cross-domain DTO, exception, or
-> Options/configuration class.
+> gap analysis in `review.md`. Accessors live in `StudyHub.Logic.Integration`, not in `StudyHub.UI`
+> itself — the UI depends on Integration's Accessor contracts, never talks to `StudyHub.Api` (an
+> HTTP call to a separate process) directly. DTOs, requests, error codes, and exceptions that cross
+> that Api/Integration/Business boundary live in `StudyHub.Shared`, since Integration must not
+> depend on `Logic.Business`/`Logic.Domain` (see "Layering" below) — Domain-only types (entities,
+> repository contracts) stay in `Logic.Domain`.
 
 Projects:
 
@@ -148,10 +150,16 @@ Business never accesses Infrastructure directly.
 
 Contains:
 
-- API Clients
+- Accessors calling `StudyHub.Api` on behalf of `StudyHub.UI` (see "UI Services and Frontend
+  Integration" below) — `StudyHub.Api` is a separate process, so from the UI's perspective calling
+  it is external access like any other.
 - AI Providers
 - External Services
 - Adapters
+
+Integration must not depend on `Logic.Domain` or `Logic.Business` (per `docs/agent-rule-catalog.md`
+rule LAY-7); it depends only on `Shared` for the DTOs/exceptions it needs. Business may depend on
+Integration (e.g. to orchestrate an external call as part of a workflow), never the other way round.
 
 ---
 
@@ -164,17 +172,25 @@ Rules:
 - Never instantiate implementations directly.
 - Depend only on interfaces.
 - Infrastructure implements contracts.
-- UI communicates only with Business contracts.
+- UI communicates only with Integration's Accessor contracts — never directly with `StudyHub.Api`,
+  `Logic.Business`, or `Logic.Domain`.
 
 Within each Logic component, keep the contract (interfaces, DTOs, exceptions) separated from its
 implementation, e.g. a `Contracts/` subfolder or namespace per domain, rather than mixing DTO,
-interface, exception, and implementation classes in the same folder.
+interface, exception, and implementation classes in the same folder. This applies to
+component-local contracts that only that component's own implementation exposes (e.g.
+`ISemesterManagement` in `Logic.Business`) — not to the wire-level DTOs/exceptions described below.
 
-Data classes, DTOs, and exceptions that are genuinely shared across multiple layers/components
-belong in `Shared` (`StudyHub.Shared`), not in `Logic.Business`/`Logic.Domain`. Options/configuration
-classes also belong in `Shared` (e.g. under a `Configuration` area). Keep component-local DTOs that
-are only used within one domain in that domain's contract area instead of promoting everything to
-`Shared`.
+DTOs, request/error-code types, and exceptions that cross the `StudyHub.Api` ↔ `Logic.Integration`
+↔ `Logic.Business` boundary (i.e. anything an Accessor constructs, throws, or catches) belong in
+`Shared` (`StudyHub.Shared/<Domain>/`), because Integration must not depend on `Logic.Business` or
+`Logic.Domain` (see "Integration" above). This includes both Business-level DTOs/requests
+(`CourseDto`, `CreateCourseRequest`, …) and the Domain-level invariant exceptions entities throw
+(`CourseArchivedException`, `CourseValidationException`, …) when an Accessor needs to reconstruct
+them from a `ProblemDetails` error code. Options/configuration classes also belong in `Shared`
+(e.g. under a `Configuration` area). Types genuinely local to one project (e.g. a Business
+orchestration interface, or a Domain entity) stay where they are — don't move everything to
+`Shared` on principle.
 
 ---
 
@@ -189,13 +205,17 @@ logic; that belongs in the Business orchestrator it calls.
 
 # UI Services and Frontend Integration
 
-- The UI talks to `StudyHub.Api` through small, purpose-specific Accessor classes, not through a
-  single class per domain that implements the full Business contract over HTTP. Avoid one "fat"
-  API client per aggregate (e.g. one class implementing `ISemesterManagement` end-to-end); prefer
-  narrower accessors that map to what a page actually needs.
-- Name UI helper classes by role (`Accessor`, `Provider`, `StateHolder`, `Formatter`, …) instead of
-  the generic `Service` suffix, and keep one class per class name to one responsibility. Do not mix
-  raw data access (HTTP calls, JS interop) with state-holding/notification logic in the same class.
+- `StudyHub.UI` never talks to `StudyHub.Api` directly. It depends on small, purpose-specific
+  Accessor interfaces/classes living in `StudyHub.Logic.Integration/<Domain>/`, injected into
+  Razor components like any other service. Avoid one "fat" accessor per aggregate that implements
+  the full Business contract over HTTP (e.g. one class implementing `ISemesterManagement`
+  end-to-end); prefer narrower accessors that map to what a page actually needs. HttpClient/DI
+  wiring for accessors lives in `Logic.Integration`'s own `ServiceCollectionExtensions`
+  (`AddStudyHubIntegration`), called from `StudyHub.UI`'s `Program.cs` composition root.
+- Name UI-local helper classes (JS interop wrappers, cross-page state) by role (`Accessor`,
+  `Provider`, `StateHolder`, `Formatter`, …) instead of the generic `Service` suffix, and keep one
+  class per class name to one responsibility. Do not mix raw data access (HTTP calls, JS interop)
+  with state-holding/notification logic in the same class.
 - Every Razor component gets a matching code-behind file (`Component.razor` + `Component.razor.cs`).
   Avoid `@code` blocks in `.razor` files.
 

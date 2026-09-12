@@ -1,3 +1,5 @@
+using StudyHub.Shared.Documents;
+
 namespace StudyHub.Logic.Business.Documents;
 
 public interface IDocumentManagement

@@ -1,3 +1,5 @@
+using StudyHub.Shared.Courses;
+
 namespace StudyHub.Logic.Domain.Courses;
 
 public sealed class Course

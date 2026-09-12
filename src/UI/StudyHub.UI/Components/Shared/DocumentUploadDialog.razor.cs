@@ -1,14 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Documents;
-using StudyHub.Logic.Business.Semesters;
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Documents;
-using StudyHub.Logic.Domain.Semesters;
-using StudyHub.UI.Courses;
+using StudyHub.Logic.Integration.Courses;
+using StudyHub.Logic.Integration.Documents;
+using StudyHub.Logic.Integration.Semesters;
+using StudyHub.Shared.Courses;
+using StudyHub.Shared.Documents;
+using StudyHub.Shared.Semesters;
 using StudyHub.UI.Documents;
-using StudyHub.UI.Semesters;
 
 namespace StudyHub.UI.Components.Shared;
 

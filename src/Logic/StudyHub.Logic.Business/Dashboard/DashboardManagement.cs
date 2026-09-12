@@ -1,5 +1,6 @@
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.SemesterProgress;
+using StudyHub.Shared.Dashboard;
 
 namespace StudyHub.Logic.Business.Dashboard;
 

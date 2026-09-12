@@ -1,3 +1,5 @@
+using StudyHub.Shared.Documents;
+
 namespace StudyHub.Logic.Domain.Documents;
 
 public sealed class Document

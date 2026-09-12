@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Documents;
-using StudyHub.Logic.Domain.Documents;
+using StudyHub.Shared.Documents;
 
 namespace StudyHub.Api.Documents;
 

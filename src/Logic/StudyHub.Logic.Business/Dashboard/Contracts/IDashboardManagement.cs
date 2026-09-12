@@ -1,3 +1,5 @@
+using StudyHub.Shared.Dashboard;
+
 namespace StudyHub.Logic.Business.Dashboard;
 
 public interface IDashboardManagement
