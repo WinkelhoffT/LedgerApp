@@ -93,13 +93,12 @@ Before implementation:
 
 The project follows a **Composite Component Architecture Pattern**.
 
-> The current implementation deviates from several rules below (Minimal APIs instead of
-> Controllers, one fat API client per domain instead of Accessors, `@code` instead of Razor
-> code-behind, repositories in `Infrastructure` instead of `Data`, an empty `Shared` project). See
-> `review.md` for the full gap analysis and the target end-to-end workflow
-> (Accessor → Controller → Orchestrator → Domain + Data). Treat the rules below as the target state
-> for new and refactored code; migrating existing code is a "Large" change per the workflow
-> classification above and needs a plan before implementation.
+> The codebase was migrated to the rules below (Controllers, Accessors, Razor code-behind,
+> repositories in `Data`) domain by domain (Semester, Course, Document, Dashboard) following the
+> gap analysis in `review.md`. `StudyHub.Shared` stays empty: nothing in the current codebase is
+> genuinely used across more than one domain (existing DTOs/exceptions are domain-local, per
+> "Contracts First" below); it's the intended home for the first cross-domain DTO, exception, or
+> Options/configuration class.
 
 Projects:
 
