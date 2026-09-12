@@ -1,6 +1,6 @@
 namespace StudyHub.UI.Services;
 
-public interface ISidebarStateService
+public interface ISidebarStateHolder
 {
     bool IsOpen { get; }
 

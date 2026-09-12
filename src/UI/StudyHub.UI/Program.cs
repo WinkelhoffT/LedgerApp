@@ -11,9 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
-builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
-builder.Services.AddScoped<IThemeService, ThemeService>();
+builder.Services.AddScoped<IPageHeaderStateHolder, PageHeaderStateHolder>();
+builder.Services.AddScoped<ISidebarStateHolder, SidebarStateHolder>();
+builder.Services.AddScoped<IThemeAccessor, ThemeAccessor>();
+builder.Services.AddScoped<IThemeStateHolder, ThemeStateHolder>();
 
 builder.Services.AddHttpClient<ICourseAccessor, CourseAccessor>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));

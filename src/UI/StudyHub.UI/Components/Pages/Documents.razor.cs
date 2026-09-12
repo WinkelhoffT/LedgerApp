@@ -21,7 +21,7 @@ public partial class Documents
     private ISemesterAccessor SemesterAccessor { get; set; } = default!;
 
     [Inject]
-    private IPageHeaderService PageHeader { get; set; } = default!;
+    private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
     private IReadOnlyList<DocumentDto>? DocumentList { get; set; }
 

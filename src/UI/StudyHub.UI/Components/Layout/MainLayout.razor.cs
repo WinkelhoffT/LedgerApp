@@ -6,13 +6,13 @@ namespace StudyHub.UI.Components.Layout;
 public partial class MainLayout : IDisposable
 {
     [Inject]
-    private IPageHeaderService PageHeader { get; set; } = default!;
+    private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
     [Inject]
-    private ISidebarStateService SidebarState { get; set; } = default!;
+    private ISidebarStateHolder SidebarState { get; set; } = default!;
 
     [Inject]
-    private IThemeService Theme { get; set; } = default!;
+    private IThemeStateHolder Theme { get; set; } = default!;
 
     protected override void OnInitialized()
     {

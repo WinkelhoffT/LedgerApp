@@ -11,7 +11,7 @@ public partial class Semesters
     private ISemesterAccessor SemesterAccessor { get; set; } = default!;
 
     [Inject]
-    private IPageHeaderService PageHeader { get; set; } = default!;
+    private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
     private IReadOnlyList<SemesterDto>? SemesterList { get; set; }
 

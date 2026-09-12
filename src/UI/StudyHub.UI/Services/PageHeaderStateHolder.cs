@@ -1,6 +1,6 @@
 namespace StudyHub.UI.Services;
 
-public sealed class PageHeaderService : IPageHeaderService
+public sealed class PageHeaderStateHolder : IPageHeaderStateHolder
 {
     public string? Title { get; private set; } = "StudyHub";
 

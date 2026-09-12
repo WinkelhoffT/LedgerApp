@@ -1,8 +1,6 @@
-using Microsoft.JSInterop;
-
 namespace StudyHub.UI.Services;
 
-public sealed class ThemeService(IJSRuntime jsRuntime) : IThemeService
+public sealed class ThemeStateHolder(IThemeAccessor themeAccessor) : IThemeStateHolder
 {
     private const string DefaultTheme = "dark";
 
@@ -12,14 +10,14 @@ public sealed class ThemeService(IJSRuntime jsRuntime) : IThemeService
 
     public async Task InitializeAsync()
     {
-        var current = await jsRuntime.InvokeAsync<string>("studyHubTheme.get");
+        var current = await themeAccessor.GetThemeAsync();
         SetTheme(current);
     }
 
     public async Task ToggleAsync()
     {
         var next = Theme == "dark" ? "light" : "dark";
-        await jsRuntime.InvokeVoidAsync("studyHubTheme.set", next);
+        await themeAccessor.SetThemeAsync(next);
         SetTheme(next);
     }
 

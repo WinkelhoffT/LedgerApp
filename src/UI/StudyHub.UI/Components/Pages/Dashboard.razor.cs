@@ -8,7 +8,7 @@ namespace StudyHub.UI.Components.Pages;
 public partial class Dashboard
 {
     [Inject]
-    private IPageHeaderService PageHeader { get; set; } = default!;
+    private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
     [Inject]
     private IDashboardAccessor DashboardAccessor { get; set; } = default!;

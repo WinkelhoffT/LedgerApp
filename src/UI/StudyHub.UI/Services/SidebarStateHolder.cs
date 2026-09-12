@@ -1,6 +1,6 @@
 namespace StudyHub.UI.Services;
 
-public sealed class SidebarStateService : ISidebarStateService
+public sealed class SidebarStateHolder : ISidebarStateHolder
 {
     public bool IsOpen { get; private set; }
 

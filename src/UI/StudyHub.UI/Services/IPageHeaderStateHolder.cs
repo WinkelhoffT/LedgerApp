@@ -1,6 +1,6 @@
 namespace StudyHub.UI.Services;
 
-public interface IPageHeaderService
+public interface IPageHeaderStateHolder
 {
     string? Title { get; }
 

@@ -1,6 +1,6 @@
 namespace StudyHub.UI.Services;
 
-public interface IThemeService
+public interface IThemeStateHolder
 {
     string Theme { get; }
 
