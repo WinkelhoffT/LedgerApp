@@ -40,7 +40,7 @@ public static class DocumentEndpoints
 
             var request = new UploadDocumentRequest(file.FileName, file.ContentType, buffer.ToArray(), courseId, semesterId);
             return await documentManagement.UploadAsync(request, cancellationToken);
-        });
+        }).DisableAntiforgery();
 
         group.MapPost("/{id:guid}/archive", (Guid id, IDocumentManagement documentManagement, CancellationToken cancellationToken)
             => documentManagement.ArchiveAsync(id, cancellationToken));
