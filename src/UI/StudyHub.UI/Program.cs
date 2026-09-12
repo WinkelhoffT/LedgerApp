@@ -1,7 +1,6 @@
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Documents;
-using StudyHub.Logic.Business.Semesters;
 using StudyHub.UI.Components;
 using StudyHub.UI.Courses;
 using StudyHub.UI.Dashboard;
@@ -22,7 +21,7 @@ builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
-builder.Services.AddHttpClient<ISemesterManagement, SemesterApiClient>(client =>
+builder.Services.AddHttpClient<ISemesterAccessor, SemesterAccessor>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
 builder.Services.AddHttpClient<IDashboardManagement, DashboardApiClient>(client =>

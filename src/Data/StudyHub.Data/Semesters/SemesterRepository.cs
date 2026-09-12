@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Data;
 using StudyHub.Logic.Domain.Semesters;
 
-namespace StudyHub.Infrastructure.Semesters;
+namespace StudyHub.Data.Semesters;
 
 public sealed class SemesterRepository(ApplicationDbContext dbContext) : ISemesterRepository
 {

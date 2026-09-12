@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Infrastructure.Semesters;
+using StudyHub.Data.Semesters;
 using StudyHub.Logic.Domain.Semesters;
 
-namespace StudyHub.Tests.Infrastructure.Semesters;
+namespace StudyHub.Tests.Data.Semesters;
 
 public class SemesterRepositoryTests
 {

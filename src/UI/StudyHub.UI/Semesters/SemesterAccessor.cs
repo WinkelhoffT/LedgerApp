@@ -6,25 +6,13 @@ using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.UI.Semesters;
 
-/// <summary>
-/// Adapter satisfying <see cref="ISemesterManagement"/> over HTTP against StudyHub.Api instead of
-/// running the use case in-process. Transport failures (connection errors, timeouts, malformed
-/// responses) are intentionally left untranslated and surface via Blazor's default error handling.
-/// </summary>
-public sealed class SemesterApiClient(HttpClient httpClient) : ISemesterManagement
+public sealed class SemesterAccessor(HttpClient httpClient) : ISemesterAccessor
 {
     public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.GetAsync("api/semesters", cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         return (await response.Content.ReadFromJsonAsync<IReadOnlyList<SemesterDto>>(cancellationToken))!;
-    }
-
-    public async Task<SemesterDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        using var response = await httpClient.GetAsync($"api/semesters/{id}", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        return (await response.Content.ReadFromJsonAsync<SemesterDto>(cancellationToken))!;
     }
 
     public async Task<SemesterDto> CreateAsync(CreateSemesterRequest request, CancellationToken cancellationToken = default)
