@@ -1,4 +1,3 @@
-using StudyHub.Logic.Business.Dashboard;
 using StudyHub.UI.Components;
 using StudyHub.UI.Courses;
 using StudyHub.UI.Dashboard;
@@ -22,7 +21,7 @@ builder.Services.AddHttpClient<ICourseAccessor, CourseAccessor>(client =>
 builder.Services.AddHttpClient<ISemesterAccessor, SemesterAccessor>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
-builder.Services.AddHttpClient<IDashboardManagement, DashboardApiClient>(client =>
+builder.Services.AddHttpClient<IDashboardAccessor, DashboardAccessor>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
 
 builder.Services.AddHttpClient<IDocumentAccessor, DocumentAccessor>(client =>

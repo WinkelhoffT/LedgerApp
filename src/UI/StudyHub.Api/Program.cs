@@ -40,7 +40,6 @@ app.UseExceptionHandler();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
-app.MapDashboardEndpoints();
 
 app.Run();
 
