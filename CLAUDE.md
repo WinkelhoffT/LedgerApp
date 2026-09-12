@@ -34,6 +34,15 @@ Core documentation:
 
 If documentation conflicts with the current implementation, report the inconsistency instead of making assumptions.
 
+> **Known inconsistency (see `review.md`):** `docs/roadmap.md` and `docs/adrs/` do not currently
+> exist, and `docs/architecture.md`, `docs/agent-context.md`, and `docs/agent-rule-catalog.md`
+> describe a different project (domain terms, tech stack, and project name do not match StudyHub).
+> `docs/agent-rule-catalog.md` and the `agents/*` task files also reference an `AGENTS.md` file that
+> does not exist in this repository. Until this is resolved, treat this `CLAUDE.md` as the
+> authoritative, StudyHub-specific source; consult the other `docs/` files only for general
+> architectural patterns (Contract/Implementation split, Controller/Accessor/Orchestrator naming,
+> layer boundaries), not for StudyHub-specific facts.
+
 ---
 
 # Development Workflow
@@ -92,6 +101,14 @@ Before implementation:
 # Architecture
 
 The project follows a **Composite Component Architecture Pattern**.
+
+> The current implementation deviates from several rules below (Minimal APIs instead of
+> Controllers, one fat API client per domain instead of Accessors, `@code` instead of Razor
+> code-behind, repositories in `Infrastructure` instead of `Data`, an empty `Shared` project). See
+> `review.md` for the full gap analysis and the target end-to-end workflow
+> (Accessor → Controller → Orchestrator → Domain + Data). Treat the rules below as the target state
+> for new and refactored code; migrating existing code is a "Large" change per the workflow
+> classification above and needs a plan before implementation.
 
 Projects:
 
@@ -159,6 +176,39 @@ Rules:
 - Infrastructure implements contracts.
 - UI communicates only with Business contracts.
 
+Within each Logic component, keep the contract (interfaces, DTOs, exceptions) separated from its
+implementation, e.g. a `Contracts/` subfolder or namespace per domain, rather than mixing DTO,
+interface, exception, and implementation classes in the same folder.
+
+Data classes, DTOs, and exceptions that are genuinely shared across multiple layers/components
+belong in `Shared` (`StudyHub.Shared`), not in `Logic.Business`/`Logic.Domain`. Options/configuration
+classes also belong in `Shared` (e.g. under a `Configuration` area). Keep component-local DTOs that
+are only used within one domain in that domain's contract area instead of promoting everything to
+`Shared`.
+
+---
+
+# API Layer
+
+Use ASP.NET Core Controllers, not Minimal API endpoint groups, for `StudyHub.Api`. Controllers stay
+thin (routing, model binding, status codes) and call an orchestrator from the Business layer —
+never a repository or the Domain layer directly. Do not let a controller action embed workflow
+logic; that belongs in the Business orchestrator it calls.
+
+---
+
+# UI Services and Frontend Integration
+
+- The UI talks to `StudyHub.Api` through small, purpose-specific Accessor classes, not through a
+  single class per domain that implements the full Business contract over HTTP. Avoid one "fat"
+  API client per aggregate (e.g. one class implementing `ISemesterManagement` end-to-end); prefer
+  narrower accessors that map to what a page actually needs.
+- Name UI helper classes by role (`Accessor`, `Provider`, `StateHolder`, `Formatter`, …) instead of
+  the generic `Service` suffix, and keep one class per class name to one responsibility. Do not mix
+  raw data access (HTTP calls, JS interop) with state-holding/notification logic in the same class.
+- Every Razor component gets a matching code-behind file (`Component.razor` + `Component.razor.cs`).
+  Avoid `@code` blocks in `.razor` files.
+
 ---
 
 # Implementation Principles
@@ -185,6 +235,9 @@ When implementing new features:
 - Configure entities using IEntityTypeConfiguration
 - Avoid lazy loading
 - Keep persistence concerns out of Domain
+- Repositories belong in the `Data` project (`StudyHub.Data`), alongside `ApplicationDbContext` and
+  migrations — not in `Infrastructure`. Reserve `Infrastructure` for actual external-infrastructure
+  concerns (file storage, email, AI provider adapters, etc.).
 
 ---
 
