@@ -12,7 +12,7 @@ Use this task to make scoped code or documentation changes according to the orch
 - Do not perform unrelated refactors or broad formatting edits.
 
 ## Responsibilities
-1. Read the applicable `AGENTS.md` instructions for every file you touch.
+1. Read the applicable `CLAUDE.md` instructions for every file you touch.
 2. Follow the consolidated implementation plan.
 3. Inspect existing patterns before adding new code.
 4. Implement only the assigned behavior.

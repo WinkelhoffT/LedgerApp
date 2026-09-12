@@ -29,19 +29,10 @@ Core documentation:
 
 - `CLAUDE.md` (this file)
 - `docs/architecture.md`
-- `docs/roadmap.md`
-- `docs/adrs/`
+- `docs/agent-context.md`
+- `docs/agent-rule-catalog.md`
 
 If documentation conflicts with the current implementation, report the inconsistency instead of making assumptions.
-
-> **Known inconsistency (see `review.md`):** `docs/roadmap.md` and `docs/adrs/` do not currently
-> exist, and `docs/architecture.md`, `docs/agent-context.md`, and `docs/agent-rule-catalog.md`
-> describe a different project (domain terms, tech stack, and project name do not match StudyHub).
-> `docs/agent-rule-catalog.md` and the `agents/*` task files also reference an `AGENTS.md` file that
-> does not exist in this repository. Until this is resolved, treat this `CLAUDE.md` as the
-> authoritative, StudyHub-specific source; consult the other `docs/` files only for general
-> architectural patterns (Contract/Implementation split, Controller/Accessor/Orchestrator naming,
-> layer boundaries), not for StudyHub-specific facts.
 
 ---
 

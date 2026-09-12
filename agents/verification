@@ -11,7 +11,7 @@ Use this task after implementation and review to run validation commands, invest
 - Do not modify files unless explicitly assigned a verification-fix implementation role by the orchestrator.
 
 ## Responsibilities
-1. Read validation requirements from `AGENTS.md`, the consolidated plan, and task-specific instructions.
+1. Read validation requirements from `CLAUDE.md`, the consolidated plan, and task-specific instructions.
 2. Run formatting checks when applicable.
 3. Run analyzer-bearing builds when applicable.
 4. Run complete unfiltered test suites when applicable.
