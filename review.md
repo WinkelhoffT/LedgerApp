@@ -14,16 +14,16 @@ inconsistency instead of making assumptions") wird dieser Befund hier gemeldet s
 aufgelöst:
 
 - `CLAUDE.md` listet `docs/roadmap.md` und `docs/adrs/` als Kern-Dokumentation – **beide existieren
-  nicht** im Repository.
+  nicht** im Repository. Die Listung rausschmeißen. 
 - `docs/agent-rule-catalog.md` nennt sich selbst `Canonical source: AGENTS.md`, und **alle**
   Dateien unter `agents/` (`architect`, `orchestrator`, `reviewer`, `implementer`, `consolidator`,
   `verification`) verlangen explizit "Read the nearest applicable `AGENTS.md` files" – eine
-  `AGENTS.md`-Datei existiert **nirgends** im Repository.
+  `AGENTS.md`-Datei existiert **nirgends** im Repository. Überall wo eine AGENTS.md verwendet wird, soll die CLAUDE md referenziert werden. 
 - `docs/architecture.md`, `docs/agent-context.md` und `docs/agent-rule-catalog.md` beschreiben
   augenscheinlich ein **anderes Projekt**: Namensraum `Polipol.PA.*` / `Aplauncher`, Projektname
   "AppLauncher", Domänenbegriffe `Application`/`Group`/`ApplicationGroup` (SID-basierte
   Zugriffsgruppen), WPF-Frontend, MSTest, `Guid.CreateVersion7()`. Nichts davon trifft auf StudyHub
-  zu (Blazor, Semester/Kurse/Dokumente, xUnit, wie in `CLAUDE.md` beschrieben).
+  zu (Blazor, Semester/Kurse/Dokumente, xUnit, wie in `CLAUDE.md` beschrieben). Das soll in der Tat zu unserem Projektnamen geändert werden.
 
 **Interessant dabei:** Genau diese "fremden" Dokumente beschreiben bereits sehr genau die Zielarchitektur,
 die im Folgenden gefordert wird (Controller statt Minimal APIs, Accessor-Namensmuster, Contract/
@@ -36,7 +36,7 @@ niedergeschriebenen Regeln.
 **Offene Entscheidung (siehe Abschnitt 4):** Sollen diese Dateien als generischer Firmenstandard
 bestehen bleiben und lediglich um StudyHub-spezifische/aktuelle Inhalte ergänzt werden (`agent-context.md`,
 fehlende `AGENTS.md`, `roadmap.md`, `adrs/`), oder sollen sie ersetzt werden? Diese Entscheidung wurde
-hier bewusst nicht eigenmächtig getroffen.
+hier bewusst nicht eigenmächtig getroffen.Ja, das sind Dateien von anderen Projekten. Sie sollen hier in der StudyHub Domäne Verwendung finden. Also die ensprechenden Fragmente aus alten Projekten mit StudyHub spezifischen Informationen ersetzen.
 
 ---
 
@@ -182,11 +182,11 @@ Schritt grün bleiben.
 
 1. Sollen `docs/architecture.md`, `docs/agent-context.md` und `docs/agent-rule-catalog.md` an
    StudyHub angepasst werden (Domänenbegriffe, Tech-Stack), oder ist der aktuelle Inhalt bewusst ein
-   generischer, projektübergreifender Firmenstandard, der so bleiben soll?
+   generischer, projektübergreifender Firmenstandard, der so bleiben soll? Die sollen angepasst werden
 2. Soll eine `AGENTS.md`-Datei angelegt werden? Sie wird von `docs/agent-rule-catalog.md` als
    kanonische Quelle und von allen `agents/*`-Dateien als Pflichtlektüre referenziert, existiert aber
-   nicht.
+   nicht. ALle referenzen an eine agents md sollen mit claude md ersetzt werden.
 3. Sollen `docs/roadmap.md` und `docs/adrs/` (von `CLAUDE.md` als Kern-Dokumentation gelistet)
-   nachgezogen werden?
+   nachgezogen werden? nein, die listing wegmachen
 4. In welcher Reihenfolge/mit welchem Umfang soll die eigentliche Code-Umstellung (Abschnitt 1–2)
-   angegangen werden?
+   angegangen werden? entscheide du das.
