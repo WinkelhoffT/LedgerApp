@@ -3,10 +3,12 @@
 @using StudyHub.Logic.Business.Courses
 @using StudyHub.Logic.Business.Documents
 @using StudyHub.Logic.Business.Semesters
+@using StudyHub.UI.Courses
 @using StudyHub.UI.Documents
+@using StudyHub.UI.Semesters
 @inject IDocumentManagement DocumentManagement
-@inject ICourseManagement CourseManagement
-@inject ISemesterManagement SemesterManagement
+@inject ICourseAccessor CourseAccessor
+@inject ISemesterAccessor SemesterAccessor
 @inject IPageHeaderService PageHeader
 
 <PageTitle>Documents</PageTitle>
@@ -116,10 +118,10 @@ else
     {
         PageHeader.SetHeader("Documents", "Course materials, scripts, and notes you've uploaded");
 
-        Courses = await CourseManagement.GetAllAsync();
+        Courses = await CourseAccessor.GetAllAsync();
         CourseNamesById = Courses.ToDictionary(c => c.Id, c => c.Name);
 
-        Semesters = await SemesterManagement.GetAllAsync();
+        Semesters = await SemesterAccessor.GetAllAsync();
         SemesterNamesById = Semesters.ToDictionary(s => s.Id, s => s.Name);
 
         await LoadDocumentsAsync();

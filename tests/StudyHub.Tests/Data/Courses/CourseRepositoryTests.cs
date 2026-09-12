@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Infrastructure.Courses;
+using StudyHub.Data.Courses;
 using StudyHub.Logic.Domain.Courses;
 
-namespace StudyHub.Tests.Infrastructure.Courses;
+namespace StudyHub.Tests.Data.Courses;
 
 public class CourseRepositoryTests
 {

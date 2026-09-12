@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Data;
 using StudyHub.Logic.Domain.Courses;
 
-namespace StudyHub.Infrastructure.Courses;
+namespace StudyHub.Data.Courses;
 
 public sealed class CourseRepository(ApplicationDbContext dbContext) : ICourseRepository
 {

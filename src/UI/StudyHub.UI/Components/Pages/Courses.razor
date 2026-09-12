@@ -1,9 +1,4 @@
 @page "/courses"
-@using StudyHub.Logic.Business.Courses
-@using StudyHub.Logic.Business.Semesters
-@inject ICourseManagement CourseManagement
-@inject ISemesterManagement SemesterManagement
-@inject IPageHeaderService PageHeader
 
 <PageTitle>Courses</PageTitle>
 
@@ -73,72 +68,3 @@ else
 }
 
 <CourseFormDialog IsOpen="IsDialogOpen" EditingCourse="EditingCourse" OnClose="CloseDialog" OnSaved="HandleSavedAsync" />
-
-@code {
-    private IReadOnlyList<CourseDto>? CourseList { get; set; }
-
-    private Dictionary<Guid, string> SemesterNamesById { get; set; } = [];
-
-    private bool ShowArchived { get; set; }
-
-    private bool IsDialogOpen { get; set; }
-
-    private CourseDto? EditingCourse { get; set; }
-
-    private IReadOnlyList<CourseDto> VisibleCourses =>
-        CourseList is null
-            ? []
-            : CourseList.Where(c => ShowArchived || !c.IsArchived).ToList();
-
-    protected override async Task OnInitializedAsync()
-    {
-        PageHeader.SetHeader("Courses", "Manage the courses you're studying");
-        await LoadCoursesAsync();
-    }
-
-    private async Task LoadCoursesAsync()
-    {
-        CourseList = await CourseManagement.GetAllAsync();
-
-        var semesters = await SemesterManagement.GetAllAsync();
-        SemesterNamesById = semesters.ToDictionary(s => s.Id, s => s.Name);
-    }
-
-    private string GetSemesterName(Guid semesterId) =>
-        SemesterNamesById.GetValueOrDefault(semesterId, "Unknown semester");
-
-    private void OpenCreateDialog()
-    {
-        EditingCourse = null;
-        IsDialogOpen = true;
-    }
-
-    private void OpenEditDialog(CourseDto course)
-    {
-        EditingCourse = course;
-        IsDialogOpen = true;
-    }
-
-    private void CloseDialog()
-    {
-        IsDialogOpen = false;
-        EditingCourse = null;
-    }
-
-    private async Task HandleSavedAsync(CourseDto _)
-    {
-        await LoadCoursesAsync();
-    }
-
-    private async Task ArchiveAsync(CourseDto course)
-    {
-        await CourseManagement.ArchiveAsync(course.Id);
-        await LoadCoursesAsync();
-    }
-
-    private async Task RestoreAsync(CourseDto course)
-    {
-        await CourseManagement.RestoreAsync(course.Id);
-        await LoadCoursesAsync();
-    }
-}

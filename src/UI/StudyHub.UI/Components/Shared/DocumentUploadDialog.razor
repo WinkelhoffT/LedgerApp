@@ -5,10 +5,12 @@
 @using StudyHub.Logic.Domain.Courses
 @using StudyHub.Logic.Domain.Documents
 @using StudyHub.Logic.Domain.Semesters
+@using StudyHub.UI.Courses
 @using StudyHub.UI.Documents
+@using StudyHub.UI.Semesters
 @inject IDocumentManagement DocumentManagement
-@inject ICourseManagement CourseManagement
-@inject ISemesterManagement SemesterManagement
+@inject ICourseAccessor CourseAccessor
+@inject ISemesterAccessor SemesterAccessor
 
 @if (IsOpen)
 {
@@ -126,8 +128,8 @@
         }
 
         _optionsLoaded = true;
-        Courses = await CourseManagement.GetAllAsync();
-        Semesters = await SemesterManagement.GetAllAsync();
+        Courses = await CourseAccessor.GetAllAsync();
+        Semesters = await SemesterAccessor.GetAllAsync();
     }
 
     private void HandleFileSelected(InputFileChangeEventArgs e)
