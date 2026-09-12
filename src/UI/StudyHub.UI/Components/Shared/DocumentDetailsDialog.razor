@@ -1,0 +1,91 @@
+@using StudyHub.Logic.Business.Documents
+@using StudyHub.UI.Documents
+@inject IDocumentManagement DocumentManagement
+
+@if (IsOpen && Document is not null)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@Document.FileName</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                @if (Document.IsArchived)
+                {
+                    <span class="badge-archived">Archived</span>
+                }
+
+                <div class="detail-row"><span>Type</span><span>@Document.ContentType</span></div>
+                <div class="detail-row"><span>Size</span><span>@FileSizeFormatter.Format(Document.SizeBytes)</span></div>
+                <div class="detail-row"><span>Belongs to</span><span>@ParentName</span></div>
+                <div class="detail-row"><span>Uploaded</span><span>@Document.CreatedAt.ToLocalTime().ToString("g")</span></div>
+                <div class="detail-row"><span>Last updated</span><span>@Document.UpdatedAt.ToLocalTime().ToString("g")</span></div>
+            </div>
+
+            <div class="modal-footer">
+                @if (Document.IsArchived)
+                {
+                    <button class="btn btn-secondary" type="button" @onclick="RestoreAsync" disabled="@IsProcessing">Restore</button>
+                }
+                else
+                {
+                    <button class="btn btn-danger-outline" type="button" @onclick="ArchiveAsync" disabled="@IsProcessing">Archive</button>
+                }
+                <a class="btn btn-primary" href="documents/@Document.Id/download">Download</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public DocumentDto? Document { get; set; }
+
+    [Parameter]
+    public string ParentName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<DocumentDto> OnChanged { get; set; }
+
+    private bool IsProcessing { get; set; }
+
+    private async Task ArchiveAsync()
+    {
+        if (Document is null)
+        {
+            return;
+        }
+
+        IsProcessing = true;
+        var updated = await DocumentManagement.ArchiveAsync(Document.Id);
+        IsProcessing = false;
+
+        await OnChanged.InvokeAsync(updated);
+    }
+
+    private async Task RestoreAsync()
+    {
+        if (Document is null)
+        {
+            return;
+        }
+
+        IsProcessing = true;
+        var updated = await DocumentManagement.RestoreAsync(Document.Id);
+        IsProcessing = false;
+
+        await OnChanged.InvokeAsync(updated);
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

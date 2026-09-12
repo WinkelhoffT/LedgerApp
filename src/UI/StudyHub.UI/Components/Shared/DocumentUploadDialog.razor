@@ -1,0 +1,214 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Documents
+@using StudyHub.Logic.Business.Semesters
+@using StudyHub.Logic.Domain.Courses
+@using StudyHub.Logic.Domain.Documents
+@using StudyHub.Logic.Domain.Semesters
+@using StudyHub.UI.Documents
+@inject IDocumentManagement DocumentManagement
+@inject ICourseManagement CourseManagement
+@inject ISemesterManagement SemesterManagement
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">Upload Document</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="form-group">
+                        <label for="document-file">File (PDF or DOCX, max @FileSizeFormatter.Format(MaxFileSizeBytes))</label>
+                        <InputFile id="document-file" class="form-control" accept=".pdf,.docx" OnChange="HandleFileSelected" />
+                        @if (SelectedFile is not null)
+                        {
+                            <span class="mono">@SelectedFile.Name (@FileSizeFormatter.Format(SelectedFile.Size))</span>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="document-assignment">Belongs to</label>
+                        <select id="document-assignment" class="form-control" @bind="AssignmentKind">
+                            <option value="@AssignmentTarget.Course">Course</option>
+                            <option value="@AssignmentTarget.Semester">Semester</option>
+                        </select>
+                    </div>
+
+                    @if (AssignmentKind == AssignmentTarget.Course)
+                    {
+                        <div class="form-group">
+                            <label for="document-course">Course</label>
+                            <select id="document-course" class="form-control" @bind="CourseId">
+                                <option value="@Guid.Empty">Select a course…</option>
+                                @foreach (var course in SelectableCourses)
+                                {
+                                    <option value="@course.Id">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-group">
+                            <label for="document-semester">Semester</label>
+                            <select id="document-semester" class="form-control" @bind="SemesterId">
+                                <option value="@Guid.Empty">Select a semester…</option>
+                                @foreach (var semester in SelectableSemesters)
+                                {
+                                    <option value="@semester.Id">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@(IsSaving || SelectedFile is null)">Upload</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private enum AssignmentTarget { Course, Semester }
+
+    private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<DocumentDto> OnSaved { get; set; }
+
+    private AssignmentTarget AssignmentKind { get; set; } = AssignmentTarget.Course;
+
+    private Guid CourseId { get; set; }
+
+    private Guid SemesterId { get; set; }
+
+    private IBrowserFile? SelectedFile { get; set; }
+
+    private bool IsSaving { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    private bool _optionsLoaded;
+
+    private IReadOnlyList<CourseDto> Courses { get; set; } = [];
+
+    private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
+
+    private IEnumerable<CourseDto> SelectableCourses => Courses.OrderByDescending(c => c.UpdatedAt);
+
+    private IEnumerable<SemesterDto> SelectableSemesters => Semesters.OrderByDescending(s => s.UpdatedAt);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsOpen || _optionsLoaded)
+        {
+            return;
+        }
+
+        _optionsLoaded = true;
+        Courses = await CourseManagement.GetAllAsync();
+        Semesters = await SemesterManagement.GetAllAsync();
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        ErrorMessage = null;
+        SelectedFile = e.File;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (SelectedFile is null)
+        {
+            ErrorMessage = "Choose a file to upload.";
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            await using var stream = SelectedFile.OpenReadStream(MaxFileSizeBytes);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+
+            var courseId = AssignmentKind == AssignmentTarget.Course && CourseId != Guid.Empty ? CourseId : (Guid?)null;
+            var semesterId = AssignmentKind == AssignmentTarget.Semester && SemesterId != Guid.Empty ? SemesterId : (Guid?)null;
+
+            var request = new UploadDocumentRequest(SelectedFile.Name, SelectedFile.ContentType, buffer.ToArray(), courseId, semesterId);
+
+            var saved = await DocumentManagement.UploadAsync(request);
+
+            await OnSaved.InvokeAsync(saved);
+            await Close();
+        }
+        catch (IOException)
+        {
+            ErrorMessage = $"The selected file exceeds the maximum allowed size of {FileSizeFormatter.Format(MaxFileSizeBytes)}.";
+        }
+        catch (UnsupportedDocumentTypeException)
+        {
+            ErrorMessage = "Only PDF and DOCX files can be uploaded.";
+        }
+        catch (DocumentTooLargeException)
+        {
+            ErrorMessage = $"The selected file exceeds the maximum allowed size of {FileSizeFormatter.Format(MaxFileSizeBytes)}.";
+        }
+        catch (DocumentValidationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (CourseNotFoundException)
+        {
+            ErrorMessage = "Select a course.";
+        }
+        catch (CourseArchivedException)
+        {
+            ErrorMessage = "The selected course is archived. Choose an active course.";
+        }
+        catch (SemesterNotFoundException)
+        {
+            ErrorMessage = "Select a semester.";
+        }
+        catch (SemesterArchivedException)
+        {
+            ErrorMessage = "The selected semester is archived. Choose an active semester.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        ErrorMessage = null;
+        SelectedFile = null;
+        CourseId = Guid.Empty;
+        SemesterId = Guid.Empty;
+        AssignmentKind = AssignmentTarget.Course;
+        _optionsLoaded = false;
+        await OnClose.InvokeAsync();
+    }
+}

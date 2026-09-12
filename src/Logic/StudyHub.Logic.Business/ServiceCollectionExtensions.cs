@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
+using StudyHub.Logic.Business.Documents;
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.SemesterProgress;
 
@@ -13,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICourseManagement, CourseManagement>();
         services.AddScoped<ISemesterManagement, SemesterManagement>();
         services.AddScoped<IDashboardManagement, DashboardManagement>();
+        services.AddScoped<IDocumentManagement, DocumentManagement>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
 
         return services;

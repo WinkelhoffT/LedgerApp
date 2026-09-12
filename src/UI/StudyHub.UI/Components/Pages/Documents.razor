@@ -1,10 +1,169 @@
 @page "/documents"
+@rendermode InteractiveServer
+@using StudyHub.Logic.Business.Courses
+@using StudyHub.Logic.Business.Documents
+@using StudyHub.Logic.Business.Semesters
+@using StudyHub.UI.Documents
+@inject IDocumentManagement DocumentManagement
+@inject ICourseManagement CourseManagement
+@inject ISemesterManagement SemesterManagement
 @inject IPageHeaderService PageHeader
 
-<PageTitle>Document Library</PageTitle>
+<PageTitle>Documents</PageTitle>
 
-<p>Documents — coming soon.</p>
+<div class="page-toolbar">
+    <select class="form-control scope-select" @bind="SelectedScope" @bind:after="LoadDocumentsAsync">
+        <option value="all">All documents</option>
+        @if (Courses.Count > 0)
+        {
+            <optgroup label="Courses">
+                @foreach (var course in Courses)
+                {
+                    <option value="course:@course.Id">@course.Name</option>
+                }
+            </optgroup>
+        }
+        @if (Semesters.Count > 0)
+        {
+            <optgroup label="Semesters">
+                @foreach (var semester in Semesters)
+                {
+                    <option value="semester:@semester.Id">@semester.Name</option>
+                }
+            </optgroup>
+        }
+    </select>
+
+    <label class="toggle-check">
+        <input type="checkbox" @bind="ShowArchived" />
+        Show archived
+    </label>
+
+    <button class="btn btn-primary" type="button" @onclick="OpenUploadDialog">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        Upload Document
+    </button>
+</div>
+
+@if (DocumentList is null)
+{
+    <p class="placeholder-hint">Loading documents…</p>
+}
+else if (VisibleDocuments.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">@(DocumentList.Count == 0 ? "No documents yet" : "No archived documents")</div>
+        <div class="empty-state-text">
+            @(DocumentList.Count == 0
+                ? "Upload your first document to attach it to a course or semester."
+                : "Documents you archive will show up here.")
+        </div>
+        @if (DocumentList.Count == 0)
+        {
+            <button class="btn btn-primary" type="button" @onclick="OpenUploadDialog">Upload Document</button>
+        }
+    </div>
+}
+else
+{
+    <div class="grid document-grid">
+        @foreach (var document in VisibleDocuments)
+        {
+            <div class="card document-card @(document.IsArchived ? "is-archived" : "")" @onclick="() => OpenDetailsDialog(document)">
+                <div class="document-card-head">
+                    <span class="document-name">@document.FileName</span>
+                    @if (document.IsArchived)
+                    {
+                        <span class="badge-archived">Archived</span>
+                    }
+                </div>
+                <div class="document-meta">@FileSizeFormatter.Format(document.SizeBytes) · @GetParentName(document)</div>
+            </div>
+        }
+    </div>
+}
+
+<DocumentUploadDialog IsOpen="IsUploadDialogOpen" OnClose="CloseUploadDialog" OnSaved="HandleUploadedAsync" />
+<DocumentDetailsDialog IsOpen="IsDetailsDialogOpen" Document="SelectedDocument" ParentName="@(SelectedDocument is null ? string.Empty : GetParentName(SelectedDocument))" OnClose="CloseDetailsDialog" OnChanged="HandleChangedAsync" />
 
 @code {
-    protected override void OnInitialized() => PageHeader.SetHeader("Document Library", "78 files across 6 courses");
+    private IReadOnlyList<DocumentDto>? DocumentList { get; set; }
+
+    private IReadOnlyList<CourseDto> Courses { get; set; } = [];
+
+    private Dictionary<Guid, string> CourseNamesById { get; set; } = [];
+
+    private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
+
+    private Dictionary<Guid, string> SemesterNamesById { get; set; } = [];
+
+    private string SelectedScope { get; set; } = "all";
+
+    private bool ShowArchived { get; set; }
+
+    private bool IsUploadDialogOpen { get; set; }
+
+    private bool IsDetailsDialogOpen { get; set; }
+
+    private DocumentDto? SelectedDocument { get; set; }
+
+    private IReadOnlyList<DocumentDto> VisibleDocuments =>
+        DocumentList is null
+            ? []
+            : DocumentList.Where(d => ShowArchived || !d.IsArchived).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageHeader.SetHeader("Documents", "Course materials, scripts, and notes you've uploaded");
+
+        Courses = await CourseManagement.GetAllAsync();
+        CourseNamesById = Courses.ToDictionary(c => c.Id, c => c.Name);
+
+        Semesters = await SemesterManagement.GetAllAsync();
+        SemesterNamesById = Semesters.ToDictionary(s => s.Id, s => s.Name);
+
+        await LoadDocumentsAsync();
+    }
+
+    private async Task LoadDocumentsAsync()
+    {
+        DocumentList = SelectedScope switch
+        {
+            "all" => await DocumentManagement.GetAllAsync(),
+            var scope when scope.StartsWith("course:", StringComparison.Ordinal)
+                => await DocumentManagement.GetByCourseIdAsync(Guid.Parse(scope["course:".Length..])),
+            var scope when scope.StartsWith("semester:", StringComparison.Ordinal)
+                => await DocumentManagement.GetBySemesterIdAsync(Guid.Parse(scope["semester:".Length..])),
+            _ => await DocumentManagement.GetAllAsync(),
+        };
+    }
+
+    private string GetParentName(DocumentDto document) =>
+        document.CourseId is { } courseId
+            ? CourseNamesById.GetValueOrDefault(courseId, "Unknown course")
+            : SemesterNamesById.GetValueOrDefault(document.SemesterId ?? Guid.Empty, "Unknown semester");
+
+    private void OpenUploadDialog() => IsUploadDialogOpen = true;
+
+    private void CloseUploadDialog() => IsUploadDialogOpen = false;
+
+    private async Task HandleUploadedAsync(DocumentDto _) => await LoadDocumentsAsync();
+
+    private void OpenDetailsDialog(DocumentDto document)
+    {
+        SelectedDocument = document;
+        IsDetailsDialogOpen = true;
+    }
+
+    private void CloseDetailsDialog()
+    {
+        IsDetailsDialogOpen = false;
+        SelectedDocument = null;
+    }
+
+    private async Task HandleChangedAsync(DocumentDto updated)
+    {
+        SelectedDocument = updated;
+        await LoadDocumentsAsync();
+    }
 }
