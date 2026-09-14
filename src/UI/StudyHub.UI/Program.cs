@@ -1,12 +1,6 @@
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Dashboard;
-using StudyHub.Logic.Business.Documents;
-using StudyHub.Logic.Business.Semesters;
+using StudyHub.Logic.Integration;
 using StudyHub.UI.Components;
-using StudyHub.UI.Courses;
-using StudyHub.UI.Dashboard;
 using StudyHub.UI.Documents;
-using StudyHub.UI.Semesters;
 using StudyHub.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,21 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<IPageHeaderService, PageHeaderService>();
-builder.Services.AddScoped<ISidebarStateService, SidebarStateService>();
-builder.Services.AddScoped<IThemeService, ThemeService>();
+builder.Services.AddScoped<IPageHeaderStateHolder, PageHeaderStateHolder>();
+builder.Services.AddScoped<ISidebarStateHolder, SidebarStateHolder>();
+builder.Services.AddScoped<IThemeAccessor, ThemeAccessor>();
+builder.Services.AddScoped<IThemeStateHolder, ThemeStateHolder>();
 
-builder.Services.AddHttpClient<ICourseManagement, CourseApiClient>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<ISemesterManagement, SemesterApiClient>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<IDashboardManagement, DashboardApiClient>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
-
-builder.Services.AddHttpClient<IDocumentManagement, DocumentApiClient>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Api:BaseAddress"]!));
+builder.Services.AddStudyHubIntegration(builder.Configuration);
 
 var app = builder.Build();
 

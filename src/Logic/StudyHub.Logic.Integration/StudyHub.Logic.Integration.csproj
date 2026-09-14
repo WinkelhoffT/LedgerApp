@@ -2,7 +2,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
-    <ProjectReference Include="..\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <PropertyGroup>

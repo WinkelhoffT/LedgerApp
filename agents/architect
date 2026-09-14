@@ -14,7 +14,7 @@ The issue workflow orchestrator dispatches this subagent when a change needs an 
 - Do not make speculative architecture decisions without citing repository evidence.
 
 ## Responsibilities
-1. Read the nearest applicable `AGENTS.md` files.
+1. Read the nearest applicable `CLAUDE.md` files.
 2. Read the agent rule catalog referenced by repository instructions.
 3. Read `docs/architecture.md` and all ADRs relevant to the requested change, including ADRs for:
    - frontend architecture,

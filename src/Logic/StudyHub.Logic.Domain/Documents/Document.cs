@@ -1,10 +1,9 @@
+using StudyHub.Shared.Documents;
+
 namespace StudyHub.Logic.Domain.Documents;
 
-public sealed class Document
+public sealed record Document
 {
-    public const int FileNameMaxLength = 260;
-    public const int ContentTypeMaxLength = 200;
-
     private Document()
     {
     }
@@ -72,9 +71,9 @@ public sealed class Document
             throw new DocumentValidationException("Document file name is required.");
         }
 
-        if (trimmedFileName.Length > FileNameMaxLength)
+        if (trimmedFileName.Length > UploadDocumentRequest.FileNameMaxLength)
         {
-            throw new DocumentValidationException($"Document file name must not exceed {FileNameMaxLength} characters.");
+            throw new DocumentValidationException($"Document file name must not exceed {UploadDocumentRequest.FileNameMaxLength} characters.");
         }
 
         var trimmedContentType = contentType?.Trim() ?? string.Empty;

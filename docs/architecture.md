@@ -165,12 +165,18 @@ CoCo explicitly describes a separate **DataClasses project** in CrossCutting for
 
 **DataClasses placement convention** (issue 086; see also section 9.3)
 
-- **Component-local DTOs** live in `<Component>.Contract/DataClasses/` — used only within that
-  component's own contract surface.
-- **Global DTOs** (truly shared across multiple components/layers) live in
-  `Polipol.PA.DataClasses` (CrossCutting).
-- **Entities** (EF-tracked, ADR-02) live in `Polipol.PA.DataStoring.Contract/DataClasses/` and
-  are reachable only from Domain Logic (`3_1`) — see ADR02-005 and section 8.1.
+- **Component-local contracts** (interfaces exposed only by their own implementation, e.g.
+  `ISemesterOrchestrator`) live in a `Contracts/`-style area of the owning domain folder within
+  `StudyHub.Logic.Business` (e.g. `Courses/Contracts/ICourseOrchestrator.cs`) — see `CLAUDE.md`,
+  "Contracts First".
+- **Wire-level DTOs/requests/exceptions** (crossing the `StudyHub.Api` ↔ `Logic.Integration` ↔
+  `Logic.Business` boundary, e.g. `CourseDto`, `CreateCourseRequest`, `CourseArchivedException`)
+  live in `StudyHub.Shared/<Domain>/` (CrossCutting) — required since `Logic.Integration` must not
+  depend on `Logic.Business`/`Logic.Domain` (LAY-7). This is StudyHub's concrete instance of the
+  "Global DTOs" rule below: these types are shared across `Api`, `Business`, `Domain`, and
+  `Integration`, not domain-local to one project.
+- **Entities** (EF-tracked, ADR-02) live in `StudyHub.Logic.Domain/<Domain>/` and are reachable
+  only from Domain Logic (`3_1`) — see ADR02-005 and section 8.1.
 
 **Principle evaluation**
 
@@ -184,11 +190,11 @@ CoCo explicitly describes a separate **DataClasses project** in CrossCutting for
 
 Contains **data persistence for system-owned data**:
 
-- Repository contracts in `Polipol.PA.DataStoring.Contract`
-- Repository implementations and EF configurations in `Polipol.PA.DataStoring`
-- Entity types live in **`Polipol.PA.DataStoring.Contract.DataClasses`** (public; see ADR-02)
-- `EntityTypeConfiguration` files (fluent API mapping) live in the implementation
-- Data migrations (if applicable)
+- Repository contracts in `StudyHub.Logic.Domain/<Domain>/I<Domain>Repository.cs`
+- Repository implementations and EF configurations in `StudyHub.Data/<Domain>/`
+- Entity types live in **`StudyHub.Logic.Domain/<Domain>/`** (public; see ADR-02)
+- `EntityTypeConfiguration` files (fluent API mapping) live in `StudyHub.Data`
+- Data migrations in `StudyHub.Data/Migrations/` (if applicable)
 
 **Company rule (ADR-02):**
 
@@ -273,14 +279,19 @@ Purpose:
 
 This corresponds to **Integrationskomponenten**: outwardly it looks like calling a local component; internally it forwards to the external system.
 
-**Company-specific placement rules (solution folders)**  
-Integration logic is further organized under `3_Logic/3_2_IntegrationLogic`:
+**StudyHub placement (`StudyHub.Logic.Integration`, per `CLAUDE.md` "Integration")**
 
-- `3_Logic/3_2_IntegrationLogic/3_2_1_SAP` → integrations that call SAP APIs.
-  - Component names should resemble the SAP endpoint called (e.g., `Polipol.PA.UnitInformation`).
-- `3_Logic/3_2_IntegrationLogic/3_2_2_Backend` → integrations used by frontends to call backend APIs.
-  - Components in this folder must use the suffix `Access` (e.g., `Polipol.PA.DemandBasedPlanningAccess`).
-- `3_Logic/3_2_IntegrationLogic` (root) → other integrations not covered by SAP or backend API access.
+- `StudyHub.Logic.Integration/<Domain>/` hosts the Accessor classes `StudyHub.UI` uses to call
+  `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
+  `IDashboardAccessor`, …) — `StudyHub.Api` is a separate process, so from the UI's perspective
+  this is external access like any other. These accessors depend only on `StudyHub.Shared` (per
+  LAY-7 in `docs/agent-rule-catalog.md`: Integration must not depend on `Logic.Business` or
+  `Logic.Domain`), and are registered via `Logic.Integration`'s own
+  `ServiceCollectionExtensions.AddStudyHubIntegration`, called from `StudyHub.UI`'s `Program.cs`.
+- AI-provider adapters, other external-service clients, and generic external adapters (not yet
+  present in the solution — added when the first one is implemented) live alongside these under
+  `StudyHub.Logic.Integration/<Provider-or-Service>/`, named after the external system/capability
+  called (e.g. an adapter wrapping a specific AI provider or flashcard-export target).
 
 **Principle evaluation**
 
@@ -425,7 +436,7 @@ Implementation should contain:
 - All classes in the implementation are `internal` by default.
 - Only explicit boundary classes may be `public` (e.g., DI registration helper).
 - **Exception 1 (Options):** Options types required by a component may be `public` so the calling project can configure/bind them.
-- **Exception 2 (Entities, ADR-02):** EF entities and their owned value objects in `Polipol.PA.DataStoring.Contract.DataClasses` are `public` so Domain Logic (3_1) can consume them for mutation paths via `IxxxRepository.GetForMutation`. Business Logic (3_3) and Integration Logic (3_2) must NOT consume entity types — see ADR02-005.
+- **Exception 2 (Entities, ADR-02):** EF entities and their owned value objects in `StudyHub.Logic.Domain` are `public` so Domain Logic (3_1) can consume them for mutation paths via `IxxxRepository.GetForMutation`. Business Logic (3_3) and Integration Logic (3_2) must NOT consume entity types — see ADR02-005.
 
 CoCo 2.0 explicitly recommends keeping implementation classes **internal** and exposing only a minimal creation mechanism to avoid unintended direct usage. The entity exception is a targeted relaxation of this rule for the specific case where the entity IS the domain object (rich domain methods + invariant guards) — see ADR-02.
 
@@ -536,7 +547,7 @@ If external data must be stored internally (caching, history, reporting), then:
 3. Read methods do NOT need a transaction wrap.
 4. Cross-aggregate orchestrations rely on the **reentrant** `ExecuteInTransaction` model: nested calls participate in the outer transaction (verified by `Database.CurrentTransaction is not null` check).
 
-**`IUnitOfWork.Flush(CancellationToken)`** exists for the rare case where a single logical operation needs to flush mid-transaction so subsequent reads see prior writes within the same transaction (used by `Polipol.PA.Rules.TransformationRuleExecutor.RunFor` between rule iterations). It does NOT commit. Use sparingly with an explanatory comment.
+**`IUnitOfWork.Flush(CancellationToken)`** exists for the rare case where a single logical operation needs to flush mid-transaction so subsequent reads see prior writes within the same transaction (e.g. a multi-step orchestration in `StudyHub.Logic.Business` that must see its own prior writes between steps). It does NOT commit. Use sparingly with an explanatory comment.
 
 **`IUnitOfWork.Save(CancellationToken)`** is preserved for backwards compatibility but is not used in production code. It will be removed in a follow-up.
 
@@ -611,7 +622,7 @@ To prevent accidental coupling to implementation types:
 - All implementation classes are `internal` by default.
 - Only the minimum required boundary types are `public`.
 - **Exception 1 (Options):** Options types required by a component may be `public` so the calling project can configure/bind them.
-- **Exception 2 (Entities, ADR-02):** EF entities and their owned value objects in `Polipol.PA.DataStoring.Contract.DataClasses` are `public`. They may be consumed only by Domain Logic (3_1). See ADR02-003, ADR02-005.
+- **Exception 2 (Entities, ADR-02):** EF entities and their owned value objects in `StudyHub.Logic.Domain` are `public`. They may be consumed only by Domain Logic (3_1). See ADR02-003, ADR02-005.
 
 CoCo 2.0 emphasizes keeping classes hidden so the system does not depend on implementation details. The entity exception preserves this principle for the layers that don't need entity access (Business, Integration, UI all consume DTOs).
 
@@ -700,47 +711,45 @@ Too much in CrossCutting increases global coupling.
 ### 14.1 Solution Folder Layout Example
 
     src/
-      1_CrossCutting/
-        Company.Product.DataClasses/
-      2_Data/
-        Company.Product.CustomerData.Contract/
-        Company.Product.CustomerData.Implementation/
-      3_Logic/
-        Company.Product.CustomerDomain.Contract/
-        Company.Product.CustomerDomain.Implementation/
-        Company.Product.CrmIntegration.Contract/
-        Company.Product.CrmIntegration.Implementation/
-        Company.Product.CustomerWorkflows.Contract/
-        Company.Product.CustomerWorkflows.Implementation/
-      4_UI/
-        Company.Product.Api/
-      5_Tests/
-        Company.Product.CustomerDomain.Tests/
-        Company.Product.CrmIntegration.IntegrationTests/
+      Shared/
+        StudyHub.Shared/
+      Data/
+        StudyHub.Data/
+      Logic/
+        StudyHub.Logic.Domain/
+        StudyHub.Logic.Business/
+        StudyHub.Logic.Integration/
+      Infrastructure/
+        StudyHub.Infrastructure/
+      UI/
+        StudyHub.Api/
+        StudyHub.UI/
+    tests/
+      StudyHub.Tests/
 
 ---
 
 ### 14.2 Minimal Contract Shape
 
-    // CustomerDomain.Contract
-    public interface ICustomerManager
+    // StudyHub.Logic.Business/Courses (Contract)
+    public interface ICourseOrchestrator
     {
-      Task<CustomerDto> GetById(CustomerId id, CancellationToken ct);
-      Task<CustomerDto> Create(CustomerCreateDto dto, CancellationToken ct);
+      Task<CourseDto> GetByIdAsync(Guid id, CancellationToken ct);
+      Task<CourseDto> CreateAsync(CreateCourseRequest request, CancellationToken ct);
     }
 
 ---
 
 ### 14.3 Minimal Implementation + DI Registration
 
-    // CustomerDomain.Implementation
-    internal sealed class CustomerManager : ICustomerManager { /* ... */ }
+    // StudyHub.Logic.Business/Courses (Implementation)
+    internal sealed class CourseOrchestrator : ICourseOrchestrator { /* ... */ }
 
     public static class ServiceCollectionExtensions
     {
-      public static IServiceCollection AddCustomerDomain(this IServiceCollection services)
+      public static IServiceCollection AddCourseOrchestrator(this IServiceCollection services)
       {
-        services.AddTransient<ICustomerManager, CustomerManager>();
+        services.AddTransient<ICourseOrchestrator, CourseOrchestrator>();
 
         return services;
       }
@@ -763,7 +772,7 @@ Use this list in reviews:
 - [ ] Does persistence live in `2_Data`, not in workflows or UI?
 - [ ] Are external calls encapsulated in `3_Logic/Integration`?
 - [ ] Are workflows separated from domain components?
-- [ ] Are entity types (from `Polipol.PA.DataStoring.Contract.DataClasses`) consumed only by Domain Logic (3_1) — never by Business Logic, Integration Logic, or UI? (ADR02-005)
+- [ ] Are entity types (from `StudyHub.Logic.Domain`) consumed only by Domain Logic (3_1) — never by Business Logic, Integration Logic, or UI? (ADR02-005)
 
 ### Encapsulation
 
@@ -828,7 +837,7 @@ as-is. Each deviation is intentional and citable:
 
 ## 18. Architecture Fitness Enforcement
 
-Every `Polipol.PA.*` production assembly carries an `ArchitectureLayer` stamp:
+Every `StudyHub.*` production assembly carries an `ArchitectureLayer` stamp:
 
 ```xml
 <ItemGroup>

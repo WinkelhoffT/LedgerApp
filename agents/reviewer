@@ -11,7 +11,7 @@ Use this task after implementation and before finalization. The reviewer perform
 
 ## Responsibilities
 1. Check every acceptance criterion against the implemented diff.
-2. Check compliance with applicable `AGENTS.md` instructions.
+2. Check compliance with applicable `CLAUDE.md` instructions.
 3. Check architecture and layer boundaries.
 4. Check contract, DTO, API, persistence, and dependency-registration placement.
 5. Check authorization and security behavior for protected functionality.
