@@ -7,17 +7,17 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Courses;
 
-public class CourseManagementTests
+public class CourseOrchestratorTests
 {
     private static readonly Guid SemesterId = Guid.NewGuid();
 
     private readonly Mock<ICourseRepository> _courseRepository = new();
     private readonly Mock<ISemesterRepository> _semesterRepository = new();
-    private readonly CourseManagement _sut;
+    private readonly CourseOrchestrator _sut;
 
-    public CourseManagementTests()
+    public CourseOrchestratorTests()
     {
-        _sut = new CourseManagement(_courseRepository.Object, _semesterRepository.Object);
+        _sut = new CourseOrchestrator(_courseRepository.Object, _semesterRepository.Object);
 
         _semesterRepository.Setup(r => r.GetByIdAsync(SemesterId, default))
             .ReturnsAsync(Semester.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));

@@ -6,28 +6,28 @@ namespace StudyHub.Api.Documents;
 
 [ApiController]
 [Route("api/documents")]
-public sealed class DocumentController(IDocumentManagement documentManagement) : ControllerBase
+public sealed class DocumentController(IDocumentOrchestrator documentOrchestrator) : ControllerBase
 {
     [HttpGet]
     public Task<IReadOnlyList<DocumentDto>> GetAllAsync(CancellationToken cancellationToken) =>
-        documentManagement.GetAllAsync(cancellationToken);
+        documentOrchestrator.GetAllAsync(cancellationToken);
 
     [HttpGet("by-course/{courseId:guid}")]
     public Task<IReadOnlyList<DocumentDto>> GetByCourseIdAsync(Guid courseId, CancellationToken cancellationToken) =>
-        documentManagement.GetByCourseIdAsync(courseId, cancellationToken);
+        documentOrchestrator.GetByCourseIdAsync(courseId, cancellationToken);
 
     [HttpGet("by-semester/{semesterId:guid}")]
     public Task<IReadOnlyList<DocumentDto>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken) =>
-        documentManagement.GetBySemesterIdAsync(semesterId, cancellationToken);
+        documentOrchestrator.GetBySemesterIdAsync(semesterId, cancellationToken);
 
     [HttpGet("{id:guid}")]
     public Task<DocumentDto> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        documentManagement.GetByIdAsync(id, cancellationToken);
+        documentOrchestrator.GetByIdAsync(id, cancellationToken);
 
     [HttpGet("{id:guid}/download")]
     public async Task<FileContentResult> DownloadAsync(Guid id, CancellationToken cancellationToken)
     {
-        var content = await documentManagement.DownloadAsync(id, cancellationToken);
+        var content = await documentOrchestrator.DownloadAsync(id, cancellationToken);
         return File(content.Content, content.ContentType, content.FileName);
     }
 
@@ -43,14 +43,14 @@ public sealed class DocumentController(IDocumentManagement documentManagement) :
         await stream.CopyToAsync(buffer, cancellationToken);
 
         var request = new UploadDocumentRequest(file.FileName, file.ContentType, buffer.ToArray(), courseId, semesterId);
-        return await documentManagement.UploadAsync(request, cancellationToken);
+        return await documentOrchestrator.UploadAsync(request, cancellationToken);
     }
 
     [HttpPost("{id:guid}/archive")]
     public Task<DocumentDto> ArchiveAsync(Guid id, CancellationToken cancellationToken) =>
-        documentManagement.ArchiveAsync(id, cancellationToken);
+        documentOrchestrator.ArchiveAsync(id, cancellationToken);
 
     [HttpPost("{id:guid}/restore")]
     public Task<DocumentDto> RestoreAsync(Guid id, CancellationToken cancellationToken) =>
-        documentManagement.RestoreAsync(id, cancellationToken);
+        documentOrchestrator.RestoreAsync(id, cancellationToken);
 }

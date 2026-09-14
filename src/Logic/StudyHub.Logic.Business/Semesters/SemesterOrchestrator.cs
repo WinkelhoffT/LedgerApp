@@ -4,7 +4,7 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Semesters;
 
-public sealed class SemesterManagement(ISemesterRepository semesterRepository, ICourseRepository courseRepository) : ISemesterManagement
+public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository, ICourseRepository courseRepository) : ISemesterOrchestrator
 {
     public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {

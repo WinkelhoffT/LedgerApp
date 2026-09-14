@@ -6,9 +6,9 @@ namespace StudyHub.Api.Dashboard;
 
 [ApiController]
 [Route("api/dashboard")]
-public sealed class DashboardController(IDashboardManagement dashboardManagement) : ControllerBase
+public sealed class DashboardController(IDashboardOrchestrator dashboardOrchestrator) : ControllerBase
 {
     [HttpGet("semester-progress")]
     public Task<SemesterProgressDto> GetSemesterProgressAsync(CancellationToken cancellationToken) =>
-        dashboardManagement.GetSemesterProgressAsync(cancellationToken);
+        dashboardOrchestrator.GetSemesterProgressAsync(cancellationToken);
 }

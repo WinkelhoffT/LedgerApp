@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Courses;
 
 namespace StudyHub.Data;
 
@@ -22,11 +23,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             builder.HasKey(c => c.Id);
 
             builder.Property(c => c.Name)
-                .HasMaxLength(Course.NameMaxLength)
+                .HasMaxLength(CreateCourseRequest.NameMaxLength)
                 .IsRequired();
 
             builder.Property(c => c.Description)
-                .HasMaxLength(Course.DescriptionMaxLength);
+                .HasMaxLength(CreateCourseRequest.DescriptionMaxLength);
 
             builder.Property(c => c.Color)
                 .HasMaxLength(20)

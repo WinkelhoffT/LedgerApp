@@ -2,7 +2,7 @@ using StudyHub.Shared.Courses;
 
 namespace StudyHub.Logic.Business.Courses;
 
-public interface ICourseManagement
+public interface ICourseOrchestrator
 {
     Task<IReadOnlyList<CourseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 

@@ -2,7 +2,7 @@ using StudyHub.Shared.Documents;
 
 namespace StudyHub.Logic.Business.Documents;
 
-public interface IDocumentManagement
+public interface IDocumentOrchestrator
 {
     Task<IReadOnlyList<DocumentDto>> GetAllAsync(CancellationToken cancellationToken = default);
 

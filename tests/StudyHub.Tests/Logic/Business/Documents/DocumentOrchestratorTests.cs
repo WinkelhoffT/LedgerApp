@@ -9,7 +9,7 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Documents;
 
-public class DocumentManagementTests
+public class DocumentOrchestratorTests
 {
     private static readonly Guid CourseId = Guid.NewGuid();
     private static readonly Guid SemesterId = Guid.NewGuid();
@@ -18,11 +18,11 @@ public class DocumentManagementTests
     private readonly Mock<IDocumentRepository> _documentRepository = new();
     private readonly Mock<ICourseRepository> _courseRepository = new();
     private readonly Mock<ISemesterRepository> _semesterRepository = new();
-    private readonly DocumentManagement _sut;
+    private readonly DocumentOrchestrator _sut;
 
-    public DocumentManagementTests()
+    public DocumentOrchestratorTests()
     {
-        _sut = new DocumentManagement(_documentRepository.Object, _courseRepository.Object, _semesterRepository.Object);
+        _sut = new DocumentOrchestrator(_documentRepository.Object, _courseRepository.Object, _semesterRepository.Object);
 
         _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
             .ReturnsAsync(Course.Create("Algorithms", null, "#2563eb", Guid.NewGuid()));

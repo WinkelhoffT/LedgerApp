@@ -16,11 +16,15 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   registration (`ServiceCollectionExtensions.AddStudyHubDataRepositories`).
 - `src/Logic/StudyHub.Logic.Domain`: domain entities (`Course`, `Semester`, `Document`,
   `SemesterProgress`), repository contracts (`ICourseRepository`, `ISemesterRepository`,
-  `IDocumentRepository`).
-- `src/Logic/StudyHub.Logic.Business`: use-case orchestration per domain (`CourseManagement`,
-  `SemesterManagement`, `DocumentManagement`, `DashboardManagement`), each with a
-  `Contracts/` subfolder holding its own Business-facing interface (`ICourseManagement`, …) —
-  these interfaces are Business-local, unlike the `Shared` DTOs/exceptions they use.
+  `IDocumentRepository`), and domain services that encode a business rule too specific to inline
+  in an orchestrator (`IActiveSemesterProvider`/`ActiveSemesterProvider` — which semester counts
+  as "active" right now).
+- `src/Logic/StudyHub.Logic.Business`: use-case orchestration per domain (`CourseOrchestrator`,
+  `SemesterOrchestrator`, `DocumentOrchestrator`, `DashboardOrchestrator`), each with a
+  `Contracts/` subfolder holding its own Business-facing interface (`ICourseOrchestrator`, …) —
+  these interfaces are Business-local, unlike the `Shared` DTOs/exceptions they use. Orchestrators
+  coordinate Domain repositories/services and assemble DTOs; they must not embed business rules
+  themselves.
 - `src/Logic/StudyHub.Logic.Integration/<Domain>/`: Accessor classes `StudyHub.UI` uses to call
   `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
   `IDashboardAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
@@ -77,12 +81,16 @@ and courses.
   `docs/architecture.md`: `Shared` / `Data` / `Logic{Domain, Business, Integration}` /
   `Infrastructure` / `UI` / `Tests`.
 - End-to-end flow: `StudyHub.UI` (Razor + code-behind) → Accessor (`Logic.Integration/<Domain>/`)
-  → Controller (`StudyHub.Api/<Domain>/`) → `*Management` orchestrator
-  (`Logic.Business/<Domain>/`) → Domain entity (`Logic.Domain/<Domain>/`) + Repository
+  → Controller (`StudyHub.Api/<Domain>/`) → `*Orchestrator`
+  (`Logic.Business/<Domain>/`) → Domain entity/service (`Logic.Domain/<Domain>/`) + Repository
   (`Data/<Domain>/`).
-- Business-local contracts (`ICourseManagement`, `ISemesterManagement`, `IDocumentManagement`,
-  `IDashboardManagement`) live in `StudyHub.Logic.Business/<Domain>/Contracts/`, separate from the
-  `*Management` implementation.
+- Business-local contracts (`ICourseOrchestrator`, `ISemesterOrchestrator`, `IDocumentOrchestrator`,
+  `IDashboardOrchestrator`) live in `StudyHub.Logic.Business/<Domain>/Contracts/`, separate from the
+  `*Orchestrator` implementation. `DashboardOrchestrator` is the example to follow when a use case
+  needs a business rule beyond plain CRUD: it depends on `ISemesterRepository` +
+  `IActiveSemesterProvider` (Domain) + `ISemesterProgressCalculator` (Domain) and only assembles
+  the result DTO itself — the "which semester is active" rule lives in
+  `Logic.Domain.Semesters.ActiveSemesterProvider`, not inline in the orchestrator.
 - Repository contracts live in `StudyHub.Logic.Domain/<Domain>/I<Domain>Repository.cs`;
   implementations live in `StudyHub.Data/<Domain>/<Domain>Repository.cs`.
 - `StudyHub.Data`/`StudyHub.Infrastructure`/`StudyHub.Logic.Business`/`StudyHub.Logic.Integration`/
@@ -92,7 +100,7 @@ and courses.
 - Frontend Accessors (`SemesterAccessor`, `CourseAccessor`, `DocumentAccessor`,
   `DashboardAccessor`, all in `Logic.Integration/<Domain>/`) are narrow and purpose-specific —
   shaped around what a page actually calls, not a 1:1 mirror of the Business interface. E.g.
-  `ISemesterAccessor` has 5 methods where `ISemesterManagement` has 6 (no `GetByIdAsync`, unused
+  `ISemesterAccessor` has 5 methods where `ISemesterOrchestrator` has 6 (no `GetByIdAsync`, unused
   by any page).
 - UI cross-page helpers live in `StudyHub.UI/Services/` (`ThemeAccessor`+`ThemeStateHolder`,
   `SidebarStateHolder`, `PageHeaderStateHolder`) — role-based names, not the generic `Service`
@@ -111,8 +119,11 @@ and courses.
 
 ### Class Suffix Targets
 
-- `Management`: Business-layer use-case orchestration for a domain (`CourseManagement`,
-  `SemesterManagement`, `DocumentManagement`, `DashboardManagement`).
+- `Orchestrator`: Business-layer use-case coordination for a domain (`CourseOrchestrator`,
+  `SemesterOrchestrator`, `DocumentOrchestrator`, `DashboardOrchestrator`) — coordinates Domain
+  repositories/services and assembles DTOs; never embeds business rules itself.
+- `Provider`: a Domain-layer service exposing a piece of domain data resolved by a business rule
+  (`IActiveSemesterProvider`/`ActiveSemesterProvider`).
 - `Repository`: persistence contract (`Logic.Domain`) or EF Core-backed CRUD implementation
   (`StudyHub.Data`).
 - `Controller`: ASP.NET Core API endpoint class in `StudyHub.Api` (`SemesterController`, …).
@@ -174,7 +185,7 @@ and courses.
 
 - New API endpoint: add an action to a `<Domain>Controller` in
   `src/UI/StudyHub.Api/<Domain>/`, calling a Business orchestrator (see `CLAUDE.md`, "API Layer").
-- New business use case: extend the relevant `I<Domain>Management`/`<Domain>Management` in
+- New business use case: extend the relevant `I<Domain>Orchestrator`/`<Domain>Orchestrator` in
   `src/Logic/StudyHub.Logic.Business/<Domain>/`, add a `Request`/`Dto` type in
   `src/Shared/StudyHub.Shared/<Domain>/` as needed, and register/adjust DI in
   `src/Logic/StudyHub.Logic.Business/ServiceCollectionExtensions.cs`.

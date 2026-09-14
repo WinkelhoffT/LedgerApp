@@ -2,7 +2,7 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Semesters;
 
-public interface ISemesterManagement
+public interface ISemesterOrchestrator
 {
     Task<IReadOnlyList<SemesterDto>> GetAllAsync(CancellationToken cancellationToken = default);
 

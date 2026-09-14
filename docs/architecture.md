@@ -166,8 +166,8 @@ CoCo explicitly describes a separate **DataClasses project** in CrossCutting for
 **DataClasses placement convention** (issue 086; see also section 9.3)
 
 - **Component-local contracts** (interfaces exposed only by their own implementation, e.g.
-  `ISemesterManagement`) live in a `Contracts/`-style area of the owning domain folder within
-  `StudyHub.Logic.Business` (e.g. `Courses/Contracts/ICourseManagement.cs`) — see `CLAUDE.md`,
+  `ISemesterOrchestrator`) live in a `Contracts/`-style area of the owning domain folder within
+  `StudyHub.Logic.Business` (e.g. `Courses/Contracts/ICourseOrchestrator.cs`) — see `CLAUDE.md`,
   "Contracts First".
 - **Wire-level DTOs/requests/exceptions** (crossing the `StudyHub.Api` ↔ `Logic.Integration` ↔
   `Logic.Business` boundary, e.g. `CourseDto`, `CreateCourseRequest`, `CourseArchivedException`)
@@ -732,7 +732,7 @@ Too much in CrossCutting increases global coupling.
 ### 14.2 Minimal Contract Shape
 
     // StudyHub.Logic.Business/Courses (Contract)
-    public interface ICourseManagement
+    public interface ICourseOrchestrator
     {
       Task<CourseDto> GetByIdAsync(Guid id, CancellationToken ct);
       Task<CourseDto> CreateAsync(CreateCourseRequest request, CancellationToken ct);
@@ -743,13 +743,13 @@ Too much in CrossCutting increases global coupling.
 ### 14.3 Minimal Implementation + DI Registration
 
     // StudyHub.Logic.Business/Courses (Implementation)
-    internal sealed class CourseManagement : ICourseManagement { /* ... */ }
+    internal sealed class CourseOrchestrator : ICourseOrchestrator { /* ... */ }
 
     public static class ServiceCollectionExtensions
     {
-      public static IServiceCollection AddCourseManagement(this IServiceCollection services)
+      public static IServiceCollection AddCourseOrchestrator(this IServiceCollection services)
       {
-        services.AddTransient<ICourseManagement, CourseManagement>();
+        services.AddTransient<ICourseOrchestrator, CourseOrchestrator>();
 
         return services;
       }

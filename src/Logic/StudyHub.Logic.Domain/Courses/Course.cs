@@ -2,11 +2,8 @@ using StudyHub.Shared.Courses;
 
 namespace StudyHub.Logic.Domain.Courses;
 
-public sealed class Course
+public sealed record Course
 {
-    public const int NameMaxLength = 100;
-    public const int DescriptionMaxLength = 1000;
-
     private Course()
     {
     }
@@ -80,15 +77,15 @@ public sealed class Course
             throw new CourseValidationException("Course name is required.");
         }
 
-        if (trimmedName.Length > NameMaxLength)
+        if (trimmedName.Length > CreateCourseRequest.NameMaxLength)
         {
-            throw new CourseValidationException($"Course name must not exceed {NameMaxLength} characters.");
+            throw new CourseValidationException($"Course name must not exceed {CreateCourseRequest.NameMaxLength} characters.");
         }
 
         var trimmedDescription = description?.Trim();
-        if (trimmedDescription is { Length: > DescriptionMaxLength })
+        if (trimmedDescription is { Length: > CreateCourseRequest.DescriptionMaxLength })
         {
-            throw new CourseValidationException($"Course description must not exceed {DescriptionMaxLength} characters.");
+            throw new CourseValidationException($"Course description must not exceed {CreateCourseRequest.DescriptionMaxLength} characters.");
         }
 
         var trimmedColor = color?.Trim() ?? string.Empty;

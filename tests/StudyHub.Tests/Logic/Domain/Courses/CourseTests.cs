@@ -32,7 +32,7 @@ public class CourseTests
     [Fact]
     public void Create_WithNameExceedingMaxLength_ThrowsValidationException()
     {
-        var name = new string('a', Course.NameMaxLength + 1);
+        var name = new string('a', CreateCourseRequest.NameMaxLength + 1);
 
         Assert.Throws<CourseValidationException>(() => Course.Create(name, null, "#2563eb", SemesterId));
     }

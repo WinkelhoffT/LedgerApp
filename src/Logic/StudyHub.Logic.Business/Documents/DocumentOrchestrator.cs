@@ -7,10 +7,10 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Documents;
 
-public sealed class DocumentManagement(
+public sealed class DocumentOrchestrator(
     IDocumentRepository documentRepository,
     ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository) : IDocumentManagement
+    ISemesterRepository semesterRepository) : IDocumentOrchestrator
 {
     private const long MaxFileSizeBytes = 25 * 1024 * 1024;
 

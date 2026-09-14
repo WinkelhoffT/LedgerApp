@@ -6,18 +6,18 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Semesters;
 
-public class SemesterManagementTests
+public class SemesterOrchestratorTests
 {
     private static readonly DateOnly StartDate = new(2025, 10, 1);
     private static readonly DateOnly EndDate = new(2026, 3, 31);
 
     private readonly Mock<ISemesterRepository> _repository = new();
     private readonly Mock<ICourseRepository> _courseRepository = new();
-    private readonly SemesterManagement _sut;
+    private readonly SemesterOrchestrator _sut;
 
-    public SemesterManagementTests()
+    public SemesterOrchestratorTests()
     {
-        _sut = new SemesterManagement(_repository.Object, _courseRepository.Object);
+        _sut = new SemesterOrchestrator(_repository.Object, _courseRepository.Object);
 
         _courseRepository.Setup(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync([]);

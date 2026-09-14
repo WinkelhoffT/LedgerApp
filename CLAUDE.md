@@ -144,6 +144,13 @@ Business coordinates Domain and Integration.
 
 Business never accesses Infrastructure directly.
 
+The Business-layer class that a Controller calls is named `<Domain>Orchestrator`
+(`SemesterOrchestrator`, `CourseOrchestrator`, `DocumentOrchestrator`, `DashboardOrchestrator`),
+not `<Domain>Management` — this project standardizes on `Orchestrator`, matching its role.
+Orchestrators coordinate repositories/Domain services and assemble DTOs; they must not embed
+business rules themselves (e.g. "which semester counts as active right now" is a domain rule, so
+it belongs in a Domain-layer type the orchestrator calls, not inline in the orchestrator method).
+
 ---
 
 ## Integration
@@ -179,7 +186,7 @@ Within each Logic component, keep the contract (interfaces, DTOs, exceptions) se
 implementation, e.g. a `Contracts/` subfolder or namespace per domain, rather than mixing DTO,
 interface, exception, and implementation classes in the same folder. This applies to
 component-local contracts that only that component's own implementation exposes (e.g.
-`ISemesterManagement` in `Logic.Business`) — not to the wire-level DTOs/exceptions described below.
+`ISemesterOrchestrator` in `Logic.Business`) — not to the wire-level DTOs/exceptions described below.
 
 DTOs, request/error-code types, and exceptions that cross the `StudyHub.Api` ↔ `Logic.Integration`
 ↔ `Logic.Business` boundary (i.e. anything an Accessor constructs, throws, or catches) belong in
@@ -208,7 +215,7 @@ logic; that belongs in the Business orchestrator it calls.
 - `StudyHub.UI` never talks to `StudyHub.Api` directly. It depends on small, purpose-specific
   Accessor interfaces/classes living in `StudyHub.Logic.Integration/<Domain>/`, injected into
   Razor components like any other service. Avoid one "fat" accessor per aggregate that implements
-  the full Business contract over HTTP (e.g. one class implementing `ISemesterManagement`
+  the full Business contract over HTTP (e.g. one class implementing `ISemesterOrchestrator`
   end-to-end); prefer narrower accessors that map to what a page actually needs. HttpClient/DI
   wiring for accessors lives in `Logic.Integration`'s own `ServiceCollectionExtensions`
   (`AddStudyHubIntegration`), called from `StudyHub.UI`'s `Program.cs` composition root.
