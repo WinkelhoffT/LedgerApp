@@ -3,6 +3,8 @@ using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Courses;
+using StudyHub.Shared.Documents;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Data;
 
@@ -65,7 +67,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             builder.HasKey(s => s.Id);
 
             builder.Property(s => s.Name)
-                .HasMaxLength(Semester.NameMaxLength)
+                .HasMaxLength(CreateSemesterRequest.NameMaxLength)
                 .IsRequired();
 
             builder.Property(s => s.StartDate)
@@ -94,11 +96,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             builder.HasKey(d => d.Id);
 
             builder.Property(d => d.FileName)
-                .HasMaxLength(Document.FileNameMaxLength)
+                .HasMaxLength(UploadDocumentRequest.FileNameMaxLength)
                 .IsRequired();
 
             builder.Property(d => d.ContentType)
-                .HasMaxLength(Document.ContentTypeMaxLength)
+                .HasMaxLength(UploadDocumentRequest.ContentTypeMaxLength)
                 .IsRequired();
 
             builder.Property(d => d.SizeBytes)

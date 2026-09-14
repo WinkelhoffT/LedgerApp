@@ -45,7 +45,7 @@ public class DocumentTests
     [Fact]
     public void Create_WithFileNameExceedingMaxLength_ThrowsValidationException()
     {
-        var fileName = new string('a', Document.FileNameMaxLength + 1);
+        var fileName = new string('a', UploadDocumentRequest.FileNameMaxLength + 1);
 
         Assert.Throws<DocumentValidationException>(() => Document.Create(fileName, "application/pdf", Content, CourseId, null));
     }

@@ -32,7 +32,7 @@ public class SemesterTests
     [Fact]
     public void Create_WithNameExceedingMaxLength_ThrowsValidationException()
     {
-        var name = new string('a', Semester.NameMaxLength + 1);
+        var name = new string('a', CreateSemesterRequest.NameMaxLength + 1);
 
         Assert.Throws<SemesterValidationException>(() => Semester.Create(name, StartDate, EndDate));
     }
