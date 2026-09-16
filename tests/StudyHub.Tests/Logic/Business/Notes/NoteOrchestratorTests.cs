@@ -1,15 +1,17 @@
 using Moq;
-using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Notes;
-using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
 using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Courses;
+using StudyHub.Shared.Documents;
+using StudyHub.Shared.Notes;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Notes;
 
-public class NoteManagementTests
+public class NoteOrchestratorTests
 {
     private static readonly Guid CourseId = Guid.NewGuid();
     private static readonly Guid SemesterId = Guid.NewGuid();
@@ -19,11 +21,11 @@ public class NoteManagementTests
     private readonly Mock<IDocumentRepository> _documentRepository = new();
     private readonly Mock<ICourseRepository> _courseRepository = new();
     private readonly Mock<ISemesterRepository> _semesterRepository = new();
-    private readonly NoteManagement _sut;
+    private readonly NoteOrchestrator _sut;
 
-    public NoteManagementTests()
+    public NoteOrchestratorTests()
     {
-        _sut = new NoteManagement(_noteRepository.Object, _documentRepository.Object, _courseRepository.Object, _semesterRepository.Object);
+        _sut = new NoteOrchestrator(_noteRepository.Object, _documentRepository.Object, _courseRepository.Object, _semesterRepository.Object);
 
         _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
             .ReturnsAsync(Course.Create("Algorithms", null, "#2563eb", Guid.NewGuid()));

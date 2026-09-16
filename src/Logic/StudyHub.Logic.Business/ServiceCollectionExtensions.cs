@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISemesterOrchestrator, SemesterOrchestrator>();
         services.AddScoped<IDashboardOrchestrator, DashboardOrchestrator>();
         services.AddScoped<IDocumentOrchestrator, DocumentOrchestrator>();
-        services.AddScoped<INoteManagement, NoteManagement>();
+        services.AddScoped<INoteOrchestrator, NoteOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
 

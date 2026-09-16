@@ -1,19 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using StudyHub.Infrastructure.Notes;
-using StudyHub.Logic.Domain.Notes;
 
 namespace StudyHub.Infrastructure;
 
-// Semester/Course/Document repositories now live in StudyHub.Data - see review.md gap 1.7.
-// TODO(migration): NoteRepository below is temporary and will move to StudyHub.Data in a
-// follow-up commit to match that convention. This project is otherwise reserved for actual
-// external-infrastructure concerns (file storage, email, AI provider adapters, etc.).
+// All repositories (Semester, Course, Document, Note) now live in StudyHub.Data - see review.md
+// gap 1.7. This project is reserved for actual external-infrastructure concerns (file storage,
+// email, AI provider adapters, etc.) that don't exist yet.
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddStudyHubInfrastructure(this IServiceCollection services)
-    {
-        services.AddScoped<INoteRepository, NoteRepository>();
-
-        return services;
-    }
+    public static IServiceCollection AddStudyHubInfrastructure(this IServiceCollection services) => services;
 }

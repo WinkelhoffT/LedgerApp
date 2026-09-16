@@ -1,3 +1,3 @@
-namespace StudyHub.Logic.Business.Notes;
+namespace StudyHub.Shared.Notes;
 
 public sealed record NoteBacklinkDto(Guid NoteId, string Title);

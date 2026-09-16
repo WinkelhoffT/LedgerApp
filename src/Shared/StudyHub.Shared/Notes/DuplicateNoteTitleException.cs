@@ -1,4 +1,4 @@
-namespace StudyHub.Logic.Business.Notes;
+namespace StudyHub.Shared.Notes;
 
 public sealed class DuplicateNoteTitleException(string title) : Exception($"A note titled '{title}' already exists.")
 {

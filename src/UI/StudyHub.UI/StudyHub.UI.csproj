@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="bootstrap" Version="5.3.8" />
+    <PackageReference Include="Markdig" Version="0.42.0" />
   </ItemGroup>
 
 </Project>

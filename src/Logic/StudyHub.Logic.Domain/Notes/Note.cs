@@ -1,3 +1,5 @@
+using StudyHub.Shared.Notes;
+
 namespace StudyHub.Logic.Domain.Notes;
 
 public sealed class Note

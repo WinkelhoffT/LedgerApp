@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Notes;
-using StudyHub.Logic.Domain.Notes;
+using StudyHub.Shared.Notes;
 
 namespace StudyHub.Api.Notes;
 

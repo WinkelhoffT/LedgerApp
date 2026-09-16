@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Infrastructure.Notes;
+using StudyHub.Data.Notes;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
 
-namespace StudyHub.Tests.Infrastructure.Notes;
+namespace StudyHub.Tests.Data.Notes;
 
 public class NoteRepositoryTests
 {

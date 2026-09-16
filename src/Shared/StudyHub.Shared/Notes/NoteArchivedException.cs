@@ -1,4 +1,4 @@
-namespace StudyHub.Logic.Domain.Notes;
+namespace StudyHub.Shared.Notes;
 
 public sealed class NoteArchivedException(Guid noteId) : Exception($"Note '{noteId}' is archived.")
 {

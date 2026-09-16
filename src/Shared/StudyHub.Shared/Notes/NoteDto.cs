@@ -1,4 +1,4 @@
-namespace StudyHub.Logic.Business.Notes;
+namespace StudyHub.Shared.Notes;
 
 public sealed record NoteDto(
     Guid Id,

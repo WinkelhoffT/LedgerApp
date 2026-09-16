@@ -1,6 +1,12 @@
-namespace StudyHub.Logic.Business.Notes;
+using StudyHub.Shared.Notes;
 
-public interface INoteManagement
+namespace StudyHub.Logic.Integration.Notes;
+
+/// <summary>
+/// Narrow HTTP access to StudyHub.Api's note endpoints, covering only what the Notes page
+/// actually calls - not a full Business-shaped orchestration contract.
+/// </summary>
+public interface INoteAccessor
 {
     Task<IReadOnlyList<NoteDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
