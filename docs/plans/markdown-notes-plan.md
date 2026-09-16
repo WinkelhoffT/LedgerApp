@@ -6,25 +6,41 @@ new page, new business workflow). Per the Medium workflow this plan covers
 planned architecture, affected layers, required contracts, and database
 impact — implementation starts only after review.
 
-## 0. Documentation note
+## 0. Documentation Cleanup (in scope)
 
-`CLAUDE.md` asks to flag doc/implementation conflicts instead of guessing, so
-two are noted upfront (not blockers, just context for this plan):
+`CLAUDE.md` asks to flag doc/implementation conflicts instead of guessing.
+Two were found while researching this plan — per review feedback, both are
+now **in scope** for this branch rather than just flagged:
 
-- `docs/architecture.md` and `docs/agent-context.md` describe a different,
-  unrelated codebase (a "Polipol.AppLauncher"/"CoCo" WPF+Postgres solution
-  with `.Contract`/`.Implementation` project pairs). None of it matches this
-  repository (StudyHub, a Blazor Web App on the simpler
+- **`docs/architecture.md` and `docs/agent-context.md` describe a different,
+  unrelated codebase** (a "Polipol.AppLauncher"/"CoCo" WPF+Postgres solution
+  with `.Contract`/`.Implementation` project pairs, `Polipol.PA.*`/
+  `Polipol.AppStore` namespaces, MSTest, WPF frontend). None of it matches
+  this repository (StudyHub, a Blazor Web App on the simpler
   `Shared/Data/Logic{Domain,Business,Integration}/Infrastructure/UI/Tests`
-  layout `CLAUDE.md` itself describes). This plan follows the actual
-  repository structure and the precedent set by
-  `docs/plans/document-management-plan.md`, not those two files.
-- `CLAUDE.md` references `docs/roadmap.md` and `docs/adrs/`; neither exists
-  in the repo (only `docs/architecture.md`, `docs/agent-context.md`,
-  `docs/agent-rule-catalog.md`, `docs/mockup/`, `docs/plans/`). The
-  "Markdown Notes" milestone name is taken from `CLAUDE.md`'s own "Long-Term
-  Vision" list and from `docs/mockup/StudyHub.html`, which already contains a
-  full Notes page mockup (`pageNotes()`, `.notes-layout` CSS, sample data).
+  layout `CLAUDE.md` itself describes, using xUnit, EF Core/SQLite, ASP.NET
+  Core minimal APIs). **Action:** rewrite both files so they describe
+  StudyHub itself instead of being deleted or left stale — real repository
+  map (`src/Shared`, `src/Data`, `src/Logic/{Domain,Business,Integration}`,
+  `src/Infrastructure`, `src/UI/{StudyHub.Api,StudyHub.UI}`,
+  `tests/StudyHub.Tests`), real components (Semesters/Courses/Documents/
+  Notes), real DI pattern (one `ServiceCollectionExtensions` per project,
+  not per-component `.Contract`/`.Implementation` pairs), real test stack
+  (xUnit), real local-run commands. `docs/plans/document-management-plan.md`
+  and this plan, together with the actual `src/` tree, are the source of
+  truth for the rewrite — not invented content.
+- **`CLAUDE.md` references `docs/roadmap.md` and `docs/adrs/`, neither of
+  which exists** (only `docs/architecture.md`, `docs/agent-context.md`,
+  `docs/agent-rule-catalog.md`, `docs/mockup/`, `docs/plans/`). **Action:**
+  remove those two dangling references from `CLAUDE.md`'s "Documentation"
+  section. (The "Markdown Notes" milestone name itself stays valid either
+  way — it comes from `CLAUDE.md`'s own "Long-Term Vision" list and from
+  `docs/mockup/StudyHub.html`'s existing `pageNotes()` mockup, neither of
+  which depends on the missing files.)
+
+This cleanup doesn't depend on the Notes feature code and is planned as its
+own small first commit on this branch, before the feature work (see the
+Task Checklist).
 
 ## 1. Goal
 
@@ -48,12 +64,37 @@ In scope:
   `pageNotes()`): two-pane layout — note list (search + tag filter) on the
   left, Markdown editor with live preview on the right.
 - Soft delete (archive/restore), mirroring `Course`/`Semester`/`Document`.
+- **Obsidian-style wiki-links and backlinks** (per review feedback asking
+  for Notion/Confluence/Obsidian-like basics — see section 3a for the full
+  feature-by-feature reasoning): `[[Note Title]]` inside a note's Markdown
+  resolves to a clickable link to that note, and each note shows a "Linked
+  mentions" panel listing every other note that links to it.
+- **Heading outline** in the editor pane — a small in-page table of contents
+  generated from the note's own `#`/`##`/`###` headings. Cheap once Markdig
+  parses the content for the preview anyway, and a direct Notion/Confluence
+  affordance.
+- **Note templates on creation** ("Lecture Notes", "Exam Prep", "Blank" —
+  client-side starter snippets only, no schema change) — a lightweight
+  Notion-style quick start.
 
-Out of scope (future milestones per `CLAUDE.md`'s "Long-Term Vision"):
+Out of scope for this iteration (see section 3a for the full reasoning):
 
+- **Nested/hierarchical notes** (Notion sub-pages / Confluence page tree).
+  Needs a self-referencing `ParentNoteId`, cycle prevention, and a tree UI
+  widget, for a benefit tags + wiki-links already cover reasonably well for
+  one student's notes. Worth its own follow-up plan if it turns out to be
+  needed.
+- **Graph view** of note links (Obsidian's node graph). The backlinks panel
+  surfaces the same underlying data without a force-directed graph
+  renderer; revisit only if flat backlink lists prove insufficient.
+- **Comments / mentions** (Confluence's/Notion's collaboration surface).
+  StudyHub is explicitly a single-user personal tool (`CLAUDE.md`: "a
+  personal learning companion") — there's no second user to comment as.
 - AI summarization / flashcard generation from notes.
-- Rich-text/WYSIWYG editing, image embedding, or drag-drop file upload
-  directly inline in the Markdown body.
+- Rich-text/WYSIWYG or block-based editing (Notion's block editor), image
+  embedding, or drag-drop file upload directly inline in the Markdown body —
+  plain Markdown already covers headings/lists/quotes/code a block editor
+  would also offer, at a fraction of the UI cost.
 - Full-text search ranking (a simple client-side substring filter over
   title/content/tags is in scope; a search index is not).
 - Real-time collaborative editing.
@@ -103,6 +144,44 @@ Out of scope (future milestones per `CLAUDE.md`'s "Long-Term Vision"):
   rather than opening a `NoteFormDialog`. This is a deliberate deviation from
   the modal convention used elsewhere, justified by the mockup's own UX and
   by Markdown editing needing more room than a modal comfortably gives.
+- **Note titles must be unique**, mirroring `Course.Name`/`Semester.Name`'s
+  existing unique index. This is what makes `[[Title]]` wiki-link resolution
+  deterministic without needing a disambiguation picker. Enforced via a
+  unique index + a `DuplicateNoteTitleException` (same shape as
+  `DuplicateCourseNameException`/`DuplicateSemesterNameException`).
+- **Wiki-link resolution rule:** exact, case-insensitive title match,
+  re-parsed from `Content` and re-resolved into the `NoteLinks` table on
+  every create/update. A `[[Title]]` that doesn't match any existing note
+  renders as plain (unlinked) text in the preview — there's no Obsidian-style
+  "create note from broken link" flow in this iteration (nothing stops it
+  being added later; it doesn't affect the schema).
+
+## 3a. Notion / Confluence / Obsidian feature survey
+
+Requested: "grundlegende Features wie in Notion oder Confluence" / a
+lightweight Obsidian-like note system. Notion, Confluence, and Obsidian are
+general-purpose, multi-user or plugin-driven products, so instead of
+adopting any of them wholesale, each commonly-associated feature was
+evaluated against `CLAUDE.md`'s "build the smallest useful solution" /
+"avoid over-engineering" principle and against StudyHub's actual context
+(one student, Course/Semester-scoped notes, no collaboration surface):
+
+| Feature | Source | Decision | Why |
+|---|---|---|---|
+| `[[Wiki-links]]` between notes | Obsidian | **In scope** | The one feature that's genuinely hard to bolt on later — link storage needs a real table from day one. Cheap otherwise: one join table (`NoteLinks`), parsed from `Content` on save. |
+| Backlinks panel | Obsidian | **In scope** | Direct payoff of wiki-links — a single indexed query (`NoteLinks` where `TargetNoteId = @id`), no extra modeling. |
+| Heading outline / mini-TOC | Notion, Confluence | **In scope** | Free once Markdig parses `Content` for the preview anyway; no schema impact. |
+| Note templates (starter snippets) | Notion | **In scope** | Pure UI convenience, no schema impact, trivial to extend later. |
+| Tags + tag filter | Notion, Confluence, Obsidian | **Already in scope** | Carried over from the original plan (section 3). |
+| Nested pages / page tree | Notion, Confluence | **Deferred** | Needs `ParentNoteId` + cycle prevention + a tree UI component; tags + wiki-links already give a lightweight organizing structure. Candidate for a dedicated follow-up plan. |
+| Graph view | Obsidian | **Deferred** | A force-directed graph is a sizeable standalone UI component; the backlinks panel exposes the same underlying data first, more cheaply. |
+| Comments / mentions | Confluence, Notion | **Out of scope** | No second user in a personal, single-user tool — nobody to comment as. |
+| Real-time collaborative editing | Notion, Confluence | **Out of scope** | Same reason; also already out of scope in the original plan. |
+| Block-based editing (drag-and-drop blocks) | Notion | **Out of scope** | Would mean replacing the plain Markdown textarea with a block editor — a large UI investment; Markdown already covers the headings/lists/quotes/code a block editor would also offer. |
+
+If nested pages or a graph view turn out to matter in practice, both are
+additive on top of a flat `Notes` table + `NoteLinks` — neither needs to
+change to add either one later.
 
 ## 4. Architecture Impact
 
@@ -112,13 +191,13 @@ Mirrors the existing `Documents`/`Courses`/`Semesters` features exactly
 
 | Layer | Project | Additions |
 |---|---|---|
-| Domain | `StudyHub.Logic.Domain` | `Notes/Note.cs` (entity: `Title`, `Content`, `Tags`, `CourseId`/`SemesterId`, `IsArchived`, `Archive()`/`Restore()`, `Update()`), `INoteRepository` (CRUD + `GetAttachedDocumentIdsAsync`/`AddAttachmentAsync`/`RemoveAttachmentAsync`), `NoteNotFoundException`, `NoteValidationException`, `NoteArchivedException` |
-| Business | `StudyHub.Logic.Business` | `Notes/INoteManagement.cs`, `NoteManagement.cs` (CRUD, `ArchiveAsync`/`RestoreAsync`, `AttachDocumentAsync`/`DetachDocumentAsync` — depends on `INoteRepository` + `IDocumentRepository` + `ICourseRepository` + `ISemesterRepository`, same "Business depends on Domain repository contracts directly" pattern `DocumentManagement` already uses), `NoteDto` (incl. `AttachedDocumentIds`), `CreateNoteRequest`, `UpdateNoteRequest`, `NoteErrorCodes` |
-| Infrastructure | `StudyHub.Infrastructure` | `Notes/NoteRepository.cs` (EF Core repository incl. `NoteDocuments` join queries) |
-| Data | `StudyHub.Data` | `DbSet<Note>` + `DbSet<NoteDocument>`, `OnModelCreating` configuration (mirrors `Document`'s check-constraint pattern), one EF Core migration |
-| UI (API) | `StudyHub.Api` | `Notes/NoteEndpoints.cs` (list/by-course/by-semester/by-id, create, update, archive, restore, attach/detach document), `NoteExceptionHandler.cs` |
-| UI (Blazor) | `StudyHub.UI` | `Notes/NoteApiClient.cs`, rewritten `Components/Pages/Notes.razor` (+ code-behind) with note list + Markdown editor/preview, `Components/Shared/NoteAttachmentPicker.razor` (reuses `DocumentUploadDialog` + existing `DocumentDto` list) |
-| Tests | `StudyHub.Tests` | `Logic/Domain/Notes/NoteTests.cs`, `Logic/Business/Notes/NoteManagementTests.cs`, `Infrastructure/Notes/NoteRepositoryTests.cs`, `Api/Notes/NoteEndpointsTests.cs` |
+| Domain | `StudyHub.Logic.Domain` | `Notes/Note.cs` (entity: `Title`, `Content`, `Tags`, `CourseId`/`SemesterId`, `IsArchived`, `Archive()`/`Restore()`, `Update()`), `INoteRepository` (CRUD + `GetAttachedDocumentIdsAsync`/`AddAttachmentAsync`/`RemoveAttachmentAsync` + `ReplaceLinksAsync`/`GetLinkedNoteIdsAsync`/`GetBacklinkNoteIdsAsync` for `NoteLinks`), `NoteNotFoundException`, `NoteValidationException`, `NoteArchivedException`, `DuplicateNoteTitleException` |
+| Business | `StudyHub.Logic.Business` | `Notes/INoteManagement.cs`, `NoteManagement.cs` (CRUD, `ArchiveAsync`/`RestoreAsync`, `AttachDocumentAsync`/`DetachDocumentAsync`, wiki-link extraction on create/update — parses `[[Title]]` out of `Content` and calls `INoteRepository.ReplaceLinksAsync`, `GetBacklinksAsync` — depends on `INoteRepository` + `IDocumentRepository` + `ICourseRepository` + `ISemesterRepository`, same "Business depends on Domain repository contracts directly" pattern `DocumentManagement` already uses), `NoteDto` (incl. `AttachedDocumentIds`, `LinkedNoteIds`), `NoteBacklinkDto`, `CreateNoteRequest`, `UpdateNoteRequest`, `NoteErrorCodes` |
+| Infrastructure | `StudyHub.Infrastructure` | `Notes/NoteRepository.cs` (EF Core repository incl. `NoteDocuments` and `NoteLinks` join queries) |
+| Data | `StudyHub.Data` | `DbSet<Note>` + `DbSet<NoteDocument>` + `DbSet<NoteLink>`, `OnModelCreating` configuration (mirrors `Document`'s check-constraint pattern), one EF Core migration |
+| UI (API) | `StudyHub.Api` | `Notes/NoteEndpoints.cs` (list/by-course/by-semester/by-id, create, update, archive, restore, attach/detach document, `{id}/backlinks`), `NoteExceptionHandler.cs` |
+| UI (Blazor) | `StudyHub.UI` | `Notes/NoteApiClient.cs`, rewritten `Components/Pages/Notes.razor` (+ code-behind) with note list + Markdown editor/preview + heading outline + backlinks panel + template picker, `Components/Shared/NoteAttachmentPicker.razor` (reuses `DocumentUploadDialog` + existing `DocumentDto` list) |
+| Tests | `StudyHub.Tests` | `Logic/Domain/Notes/NoteTests.cs`, `Logic/Business/Notes/NoteManagementTests.cs` (incl. wiki-link parsing/resolution cases), `Infrastructure/Notes/NoteRepositoryTests.cs`, `Api/Notes/NoteEndpointsTests.cs` |
 
 DI wiring (mirrors `Document` exactly):
 
@@ -128,31 +207,52 @@ DI wiring (mirrors `Document` exactly):
 
 ## 5. Database Impact
 
-- New table `Notes`: `Id`, `Title`, `Content` (capped at 50,000 chars),
-  `Tags` (delimited string, nullable), `CourseId` (nullable FK, `Restrict`),
-  `SemesterId` (nullable FK, `Restrict`), `IsArchived`, `CreatedAt`, `UpdatedAt`.
-  Check constraint enforcing exactly one of `CourseId`/`SemesterId`, same as
-  `Documents.CK_Documents_ExactlyOneParent`.
+- New table `Notes`: `Id`, `Title` (unique index, see section 3), `Content`
+  (capped at 50,000 chars), `Tags` (delimited string, nullable), `CourseId`
+  (nullable FK, `Restrict`), `SemesterId` (nullable FK, `Restrict`),
+  `IsArchived`, `CreatedAt`, `UpdatedAt`. Check constraint enforcing exactly
+  one of `CourseId`/`SemesterId`, same as `Documents.CK_Documents_ExactlyOneParent`.
 - New join table `NoteDocuments`: `NoteId` (FK → `Notes`, `Restrict`),
   `DocumentId` (FK → `Documents`, `Restrict`), composite primary key
   `(NoteId, DocumentId)`. `Restrict` on both sides for the same reason as
   elsewhere in the schema — notes and documents are only ever archived, never
   hard-deleted, so a physical delete must not silently cascade.
-- Indexes on `Notes.CourseId`, `Notes.SemesterId`, and `NoteDocuments.DocumentId`
-  (for "which notes reference this document" lookups).
+- New join table `NoteLinks` (wiki-links, section 3a): `SourceNoteId` (FK →
+  `Notes`, `Restrict`), `TargetNoteId` (FK → `Notes`, `Restrict`), composite
+  primary key `(SourceNoteId, TargetNoteId)`. Repopulated wholesale for a
+  note (delete-then-reinsert its outgoing rows) every time `NoteManagement`
+  parses `[[Title]]` links out of `Content` on create/update — same
+  "recompute on save" approach as `Course`/`Semester`/`Document`'s
+  archive/restore, just applied to a derived join instead of a flag.
+- Indexes on `Notes.CourseId`, `Notes.SemesterId`, `NoteDocuments.DocumentId`,
+  and `NoteLinks.TargetNoteId` (the backlinks query).
 - One EF Core migration ("AddNote"), per `CLAUDE.md`'s "one migration per
-  feature". No provider change — stays on the existing SQLite database.
+  feature" — `Notes`, `NoteDocuments`, and `NoteLinks` all land in that same
+  migration since they're one feature. No provider change — stays on the
+  existing SQLite database.
 
 ## 6. Task Checklist
 
+### Documentation (first, per section 0)
+
+- [ ] Rewrite `docs/architecture.md` to describe StudyHub's actual layers/
+      components instead of the unrelated Polipol.AppLauncher/CoCo content.
+- [ ] Rewrite `docs/agent-context.md` to describe StudyHub's actual repo map,
+      domain glossary, and conventions instead of AppLauncher's.
+- [ ] Remove the dangling `docs/roadmap.md`/`docs/adrs/` references from
+      `CLAUDE.md`'s "Documentation" section.
+
 ### Backend
 
-- [ ] `Note` domain entity + `INoteRepository` + EF configuration/migration.
+- [ ] `Note` domain entity + `INoteRepository` + EF configuration/migration
+      (incl. `NoteDocuments` and `NoteLinks` join tables).
 - [ ] `NoteManagement` (create/update/archive/restore, attach/detach document,
-      validation: title required, content size cap, exactly-one-parent,
+      wiki-link parsing + `NoteLinks` resolution on save, `GetBacklinksAsync`,
+      validation: title required + unique, content size cap, exactly-one-parent,
       parent existence/not-archived — mirrors `DocumentManagement`).
 - [ ] `NoteEndpoints` (list/by-course/by-semester/by-id, create, update,
-      archive, restore, attach/detach document) + `NoteExceptionHandler`.
+      archive, restore, attach/detach document, `{id}/backlinks`) +
+      `NoteExceptionHandler`.
 
 ### UI
 
@@ -163,7 +263,10 @@ DI wiring (mirrors `Document` exactly):
 - [ ] `Notes.razor` rewrite: note list (search box, tag filter chips, scope
       filter reusing the `Documents.razor` course/semester `<select>`
       pattern) + Markdown editor pane with live preview (Markdig).
-- [ ] "New note" / "attach document" flows per section 3.
+- [ ] "New note" (with template picker) / "attach document" flows per
+      section 3.
+- [ ] Wiki-link click-to-navigate in the preview pane + "Linked mentions"
+      (backlinks) panel + heading outline mini-TOC.
 - [ ] Archive/restore actions (mirrors `DocumentDetailsDialog`'s pattern).
 
 ## 7. Validation Plan
@@ -174,17 +277,27 @@ DI wiring (mirrors `Document` exactly):
   Course, create one under a Semester, edit content and confirm the
   Markdown preview updates, attach an existing document, upload+attach a
   new document, archive/restore a note, filter by tag and by course/semester
-  scope.
+  scope, link two notes with `[[Title]]` and confirm the backlink shows up
+  on the target note, confirm a `[[Missing Title]]` link renders unlinked.
 
 ## 8. Risks / Assumptions
 
 - All items under section 3 ("Decisions") are explicit assumptions —
-  particularly the new Markdig dependency and the unrestricted
-  note-to-document attachment scope — and should be confirmed before
-  implementation starts.
+  particularly the new Markdig dependency, the unrestricted
+  note-to-document attachment scope, and the new unique-title constraint —
+  and should be confirmed before implementation starts.
 - 50,000 characters and the tag-as-string approach are the two most likely
   candidates to need revisiting if usage patterns turn out different than
   expected (e.g. long lecture-note transcripts, or a desire to rename a tag
   across all notes at once).
-- The two pre-existing documentation gaps noted in section 0 are unrelated to
-  this feature and aren't addressed by this plan.
+- **Unique titles** is a new constraint not present on any other entity
+  except by convention (`Course`/`Semester` also enforce it) — renaming a
+  note to an existing title now needs a clear validation error in the UI,
+  not just a 500 from a DB unique-index violation.
+- Recomputing `NoteLinks` on every save is O(number of `[[links]]` in the
+  note), not O(all notes) — fine at personal-notes scale, called out in case
+  note counts ever grow far beyond what one student would produce.
+- Section 3a's "deferred" items (nested pages, graph view) are deliberately
+  not designed for here beyond "additive later" — if either is wanted for
+  this iteration after all, say so and this plan gets revised before
+  implementation starts.
