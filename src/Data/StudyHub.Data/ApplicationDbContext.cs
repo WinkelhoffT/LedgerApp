@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
+using StudyHub.Logic.Domain.Notes;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
@@ -15,6 +16,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Semester> Semesters => Set<Semester>();
 
     public DbSet<Document> Documents => Set<Document>();
+
+    public DbSet<Note> Notes => Set<Note>();
+
+    public DbSet<NoteDocument> NoteDocuments => Set<NoteDocument>();
+
+    public DbSet<NoteLink> NoteLinks => Set<NoteLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,6 +146,101 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             builder.ToTable(t => t.HasCheckConstraint(
                 "CK_Documents_ExactlyOneParent",
                 "((\"CourseId\" IS NOT NULL AND \"SemesterId\" IS NULL) OR (\"CourseId\" IS NULL AND \"SemesterId\" IS NOT NULL))"));
+        });
+
+        modelBuilder.Entity<Note>(builder =>
+        {
+            builder.ToTable("Notes");
+
+            builder.HasKey(n => n.Id);
+
+            builder.Property(n => n.Title)
+                .HasMaxLength(Note.TitleMaxLength)
+                .IsRequired();
+
+            builder.Property(n => n.Content)
+                .HasMaxLength(Note.ContentMaxLength)
+                .IsRequired();
+
+            builder.Property(n => n.Tags)
+                .HasMaxLength(Note.TagsMaxLength);
+
+            builder.Property(n => n.IsArchived)
+                .IsRequired();
+
+            builder.Property(n => n.CreatedAt)
+                .IsRequired();
+
+            builder.Property(n => n.UpdatedAt)
+                .IsRequired();
+
+            builder.HasIndex(n => n.Title)
+                .IsUnique();
+
+            builder.HasIndex(n => n.CourseId);
+
+            builder.HasIndex(n => n.SemesterId);
+
+            // Restrict, not Cascade: neither parent is ever hard-deleted (only archived), so a
+            // physical delete of a Course/Semester should never silently take its Notes with it.
+            builder.HasOne<Course>()
+                .WithMany()
+                .HasForeignKey(n => n.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Semester>()
+                .WithMany()
+                .HasForeignKey(n => n.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mirrors the invariant enforced in the Note domain constructor: a note belongs to
+            // exactly one of a Course or a Semester, never both, never neither.
+            builder.ToTable(t => t.HasCheckConstraint(
+                "CK_Notes_ExactlyOneParent",
+                "((\"CourseId\" IS NOT NULL AND \"SemesterId\" IS NULL) OR (\"CourseId\" IS NULL AND \"SemesterId\" IS NOT NULL))"));
+        });
+
+        modelBuilder.Entity<NoteDocument>(builder =>
+        {
+            builder.ToTable("NoteDocuments");
+
+            builder.HasKey(nd => new { nd.NoteId, nd.DocumentId });
+
+            builder.HasIndex(nd => nd.DocumentId);
+
+            // Restrict on both sides for the same reason as elsewhere in the schema — notes and
+            // documents are only ever archived, never hard-deleted, so a physical delete must
+            // never silently cascade.
+            builder.HasOne<Note>()
+                .WithMany()
+                .HasForeignKey(nd => nd.NoteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Document>()
+                .WithMany()
+                .HasForeignKey(nd => nd.DocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<NoteLink>(builder =>
+        {
+            builder.ToTable("NoteLinks");
+
+            builder.HasKey(l => new { l.SourceNoteId, l.TargetNoteId });
+
+            builder.HasIndex(l => l.TargetNoteId);
+
+            // Restrict on both sides: links are recomputed on save (delete-then-reinsert), never
+            // relied upon to cascade-delete a Note, which is itself only ever archived.
+            builder.HasOne<Note>()
+                .WithMany()
+                .HasForeignKey(l => l.SourceNoteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Note>()
+                .WithMany()
+                .HasForeignKey(l => l.TargetNoteId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
