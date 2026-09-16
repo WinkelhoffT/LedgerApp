@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Semesters;
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Courses;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Api.Courses;
 

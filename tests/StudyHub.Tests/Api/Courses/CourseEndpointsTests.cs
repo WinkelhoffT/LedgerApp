@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StudyHub.Data;
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Semesters;
+using StudyHub.Shared.Courses;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Api.Courses;
 

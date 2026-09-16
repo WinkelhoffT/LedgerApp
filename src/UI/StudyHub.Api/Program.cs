@@ -11,8 +11,10 @@ using StudyHub.Logic.Business;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.ContentRootPath);
+builder.Services.AddStudyHubDataRepositories();
 builder.Services.AddStudyHubInfrastructure();
 builder.Services.AddStudyHubBusiness();
+builder.Services.AddControllers();
 
 builder.Services.AddExceptionHandler<CourseExceptionHandler>();
 builder.Services.AddExceptionHandler<SemesterExceptionHandler>();
@@ -37,10 +39,7 @@ using (var migrationScope = app.Services.CreateScope())
 app.UseExceptionHandler();
 
 app.MapHealthChecks("/health");
-app.MapCourseEndpoints();
-app.MapSemesterEndpoints();
-app.MapDashboardEndpoints();
-app.MapDocumentEndpoints();
+app.MapControllers();
 
 app.Run();
 

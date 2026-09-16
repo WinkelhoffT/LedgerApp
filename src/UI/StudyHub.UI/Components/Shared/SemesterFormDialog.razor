@@ -1,6 +1,4 @@
-@using StudyHub.Logic.Business.Semesters
-@using StudyHub.Logic.Domain.Semesters
-@inject ISemesterManagement SemesterManagement
+@using StudyHub.Shared.Semesters
 
 @if (IsOpen)
 {
@@ -22,7 +20,7 @@
 
                     <div class="form-group">
                         <label for="semester-name">Name</label>
-                        <input id="semester-name" class="form-control" maxlength="@Semester.NameMaxLength" @bind="Name" placeholder="e.g. Winter 2025/26" />
+                        <input id="semester-name" class="form-control" maxlength="@CreateSemesterRequest.NameMaxLength" @bind="Name" placeholder="e.g. Winter 2025/26" />
                     </div>
 
                     <div class="form-row">
@@ -45,88 +43,4 @@
             </EditForm>
         </div>
     </div>
-}
-
-@code {
-    [Parameter]
-    public bool IsOpen { get; set; }
-
-    [Parameter]
-    public SemesterDto? EditingSemester { get; set; }
-
-    [Parameter]
-    public EventCallback OnClose { get; set; }
-
-    [Parameter]
-    public EventCallback<SemesterDto> OnSaved { get; set; }
-
-    private string Name { get; set; } = string.Empty;
-
-    private DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-
-    private DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddMonths(4));
-
-    private bool IsSaving { get; set; }
-
-    private string? ErrorMessage { get; set; }
-
-    private SemesterDto? _lastLoadedSemester;
-
-    protected override void OnParametersSet()
-    {
-        if (!IsOpen)
-        {
-            return;
-        }
-
-        if (EditingSemester == _lastLoadedSemester)
-        {
-            return;
-        }
-
-        _lastLoadedSemester = EditingSemester;
-        ErrorMessage = null;
-        Name = EditingSemester?.Name ?? string.Empty;
-        StartDate = EditingSemester?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
-        EndDate = EditingSemester?.EndDate ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(4));
-    }
-
-    private async Task SubmitAsync()
-    {
-        IsSaving = true;
-        ErrorMessage = null;
-
-        try
-        {
-            var saved = EditingSemester is null
-                ? await SemesterManagement.CreateAsync(new CreateSemesterRequest(Name, StartDate, EndDate))
-                : await SemesterManagement.UpdateAsync(new UpdateSemesterRequest(EditingSemester.Id, Name, StartDate, EndDate));
-
-            await OnSaved.InvokeAsync(saved);
-            await Close();
-        }
-        catch (SemesterValidationException ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        catch (DuplicateSemesterNameException ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        catch (SemesterArchivedException ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        finally
-        {
-            IsSaving = false;
-        }
-    }
-
-    private async Task Close()
-    {
-        ErrorMessage = null;
-        _lastLoadedSemester = null;
-        await OnClose.InvokeAsync();
-    }
 }

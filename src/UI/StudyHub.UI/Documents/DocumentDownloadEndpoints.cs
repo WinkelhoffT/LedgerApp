@@ -1,4 +1,4 @@
-using StudyHub.Logic.Business.Documents;
+using StudyHub.Logic.Integration.Documents;
 
 namespace StudyHub.UI.Documents;
 
@@ -11,9 +11,9 @@ public static class DocumentDownloadEndpoints
 {
     public static IEndpointRouteBuilder MapDocumentDownloadEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/documents/{id:guid}/download", async (Guid id, IDocumentManagement documentManagement, CancellationToken cancellationToken) =>
+        endpoints.MapGet("/documents/{id:guid}/download", async (Guid id, IDocumentAccessor documentAccessor, CancellationToken cancellationToken) =>
         {
-            var content = await documentManagement.DownloadAsync(id, cancellationToken);
+            var content = await documentAccessor.DownloadAsync(id, cancellationToken);
             return Results.File(content.Content, content.ContentType, content.FileName);
         });
 

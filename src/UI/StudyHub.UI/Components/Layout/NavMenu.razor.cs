@@ -10,7 +10,7 @@ public partial class NavMenu : ComponentBase, IDisposable
     private NavigationManager NavigationManager { get; set; } = default!;
 
     [Inject]
-    private ISidebarStateService SidebarState { get; set; } = default!;
+    private ISidebarStateHolder SidebarState { get; set; } = default!;
 
     private static readonly NavGroup[] Groups =
     [

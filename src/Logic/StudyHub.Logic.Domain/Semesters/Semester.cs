@@ -1,9 +1,9 @@
+using StudyHub.Shared.Semesters;
+
 namespace StudyHub.Logic.Domain.Semesters;
 
-public sealed class Semester
+public sealed record Semester
 {
-    public const int NameMaxLength = 100;
-
     private Semester()
     {
     }
@@ -75,9 +75,9 @@ public sealed class Semester
             throw new SemesterValidationException("Semester name is required.");
         }
 
-        if (trimmedName.Length > NameMaxLength)
+        if (trimmedName.Length > CreateSemesterRequest.NameMaxLength)
         {
-            throw new SemesterValidationException($"Semester name must not exceed {NameMaxLength} characters.");
+            throw new SemesterValidationException($"Semester name must not exceed {CreateSemesterRequest.NameMaxLength} characters.");
         }
 
         if (endDate < startDate)

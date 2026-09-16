@@ -4,6 +4,7 @@ using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Documents;
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.SemesterProgress;
+using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Logic.Business;
 
@@ -11,11 +12,12 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddStudyHubBusiness(this IServiceCollection services)
     {
-        services.AddScoped<ICourseManagement, CourseManagement>();
-        services.AddScoped<ISemesterManagement, SemesterManagement>();
-        services.AddScoped<IDashboardManagement, DashboardManagement>();
-        services.AddScoped<IDocumentManagement, DocumentManagement>();
+        services.AddScoped<ICourseOrchestrator, CourseOrchestrator>();
+        services.AddScoped<ISemesterOrchestrator, SemesterOrchestrator>();
+        services.AddScoped<IDashboardOrchestrator, DashboardOrchestrator>();
+        services.AddScoped<IDocumentOrchestrator, DocumentOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
+        services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
 
         return services;
     }
