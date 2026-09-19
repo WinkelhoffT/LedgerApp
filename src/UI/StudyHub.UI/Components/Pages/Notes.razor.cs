@@ -112,6 +112,10 @@ public partial class Notes
 
     private bool ShowPreview { get; set; }
 
+    private bool IsEditingContent { get; set; }
+
+    private bool ShowEditor => IsCreating || IsEditingContent;
+
     private ElementReference ContentTextAreaRef;
 
     private ElementReference PreviewPaneRef;
@@ -247,15 +251,18 @@ public partial class Notes
             return;
         }
 
-        await JS.InvokeVoidAsync("studyHubNotesEditor.attachSlashKeyGuard", ContentTextAreaRef);
-
-        if (PendingCursorPosition is { } position)
+        if (ShowEditor)
         {
-            PendingCursorPosition = null;
-            await JS.InvokeVoidAsync("studyHubNotesEditor.setCursor", ContentTextAreaRef, position);
+            await JS.InvokeVoidAsync("studyHubNotesEditor.attachSlashKeyGuard", ContentTextAreaRef);
+
+            if (PendingCursorPosition is { } position)
+            {
+                PendingCursorPosition = null;
+                await JS.InvokeVoidAsync("studyHubNotesEditor.setCursor", ContentTextAreaRef, position);
+            }
         }
 
-        if (ShowPreview)
+        if (!ShowEditor || ShowPreview)
         {
             await JS.InvokeVoidAsync("studyHubNotesEditor.highlightCode", PreviewPaneRef);
         }
@@ -376,9 +383,12 @@ public partial class Notes
 
     private void TogglePreview() => ShowPreview = !ShowPreview;
 
+    private void StartEditing() => IsEditingContent = true;
+
     private void StartNewNote()
     {
         IsCreating = true;
+        IsEditingContent = false;
         SelectedNoteId = null;
         WorkingTitle = string.Empty;
         WorkingContent = string.Empty;
@@ -402,6 +412,7 @@ public partial class Notes
     {
         SelectedNoteId = id;
         IsCreating = false;
+        IsEditingContent = false;
         ErrorMessage = null;
 
         var note = NoteList?.FirstOrDefault(n => n.Id == id) ?? await NoteAccessor.GetByIdAsync(id);

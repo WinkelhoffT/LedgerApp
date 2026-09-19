@@ -73,10 +73,29 @@ window.studyHubNotesEditor = {
   // treats a MarkupString as opaque), so Prism's own DOMContentLoaded-based
   // auto-highlighting (disabled via `Prism.manual = true` in App.razor)
   // never sees the new <code> blocks. This re-scans the given container
-  // after each render instead.
+  // after each render instead, then adds a copy button per code block -
+  // both need redoing every time since the old nodes are gone.
   highlightCode: function (el) {
-    if (window.Prism && el) {
+    if (!el) {
+      return;
+    }
+    if (window.Prism) {
       Prism.highlightAllUnder(el);
     }
+    el.querySelectorAll('pre').forEach(function (pre) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'code-copy-btn';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', function () {
+        var code = pre.querySelector('code');
+        var text = code ? code.innerText : pre.innerText;
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        });
+      });
+      pre.appendChild(btn);
+    });
   },
 };

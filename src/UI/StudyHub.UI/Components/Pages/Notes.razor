@@ -95,7 +95,7 @@ else
                     <button class="btn btn-primary" type="button" @onclick="StartNewNote">New Note</button>
                 </div>
             }
-            else
+            else if (ShowEditor)
             {
                 <div class="editor-toolbar">
                     <input class="form-control note-title-input" placeholder="Note title" @bind="WorkingTitle" disabled="@IsReadOnly" />
@@ -191,30 +191,80 @@ else
                         </div>
                     }
                 </div>
-
-                @if (!IsCreating && SelectedNote is not null)
-                {
-                    <div class="note-side-panels">
-                        <NoteAttachmentPicker NoteId="SelectedNote.Id" AttachedDocumentIds="SelectedNote.AttachedDocumentIds" OnChanged="HandleNoteChangedAsync" />
-
-                        <div class="note-backlinks">
-                            <div class="section-title note-backlinks-title">Linked mentions</div>
-                            @if (Backlinks.Count == 0)
+            }
+            else if (SelectedNote is { } note)
+            {
+                <div class="note-view-toolbar">
+                    <div>
+                        <h2 class="note-view-title">@note.Title</h2>
+                        <div class="note-view-meta">
+                            <span>@GetParentName(note)</span>
+                            <span class="nli-date">Updated @note.UpdatedAt.ToLocalTime().ToString("g")</span>
+                            @if (note.IsArchived)
                             {
-                                <p class="placeholder-hint">No other notes link here yet.</p>
-                            }
-                            else
-                            {
-                                <ul class="backlink-list">
-                                    @foreach (var backlink in Backlinks)
-                                    {
-                                        <li><a href="/notes?note=@backlink.NoteId">@backlink.Title</a></li>
-                                    }
-                                </ul>
+                                <span class="badge-archived">Archived</span>
                             }
                         </div>
+                        @if (note.Tags.Count > 0)
+                        {
+                            <div class="note-view-tags">
+                                @foreach (var tag in note.Tags)
+                                {
+                                    <span class="note-tag-f">#@tag</span>
+                                }
+                            </div>
+                        }
                     </div>
-                }
+                    <div class="editor-toolbar-actions">
+                        @if (note.IsArchived)
+                        {
+                            <button class="btn btn-secondary btn-sm" type="button" disabled="@IsSaving" @onclick="RestoreSelectedAsync">Restore</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm" type="button" @onclick="StartEditing">Edit</button>
+                            <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsSaving" @onclick="ArchiveSelectedAsync">Archive</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="preview-pane note-view-body" @ref="PreviewPaneRef">
+                    @if (HeadingOutline.Count > 0)
+                    {
+                        <div class="note-outline">
+                            <div class="note-outline-title">Outline</div>
+                            @foreach (var heading in HeadingOutline)
+                            {
+                                <a class="note-outline-item level-@heading.Level" href="#@heading.Id">@heading.Text</a>
+                            }
+                        </div>
+                    }
+                    @((MarkupString)PreviewHtml)
+                </div>
+            }
+
+            @if (!IsCreating && SelectedNote is not null)
+            {
+                <div class="note-side-panels">
+                    <NoteAttachmentPicker NoteId="SelectedNote.Id" AttachedDocumentIds="SelectedNote.AttachedDocumentIds" OnChanged="HandleNoteChangedAsync" />
+
+                    <div class="note-backlinks">
+                        <div class="section-title note-backlinks-title">Linked mentions</div>
+                        @if (Backlinks.Count == 0)
+                        {
+                            <p class="placeholder-hint">No other notes link here yet.</p>
+                        }
+                        else
+                        {
+                            <ul class="backlink-list">
+                                @foreach (var backlink in Backlinks)
+                                {
+                                    <li><a href="/notes?note=@backlink.NoteId">@backlink.Title</a></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>

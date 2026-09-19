@@ -123,6 +123,32 @@ In scope:
   a foreign, hardcoded theme. The slash-command menu (addendum above) grew
   one "Code: `<language>`" entry per bundled language so users don't have to
   remember Prism's exact language identifiers.
+- **Addendum — read-only view mode by default** ("das ganze soll im
+  frontend nicht nach markdown aussehen, nur im backend"). Opening an
+  existing note no longer drops straight into the raw-Markdown `<textarea>`;
+  it shows the rendered page (title, course/semester, tags, updated date,
+  outline, backlinks — the same `PreviewHtml`/`HeadingOutline` already built
+  for the preview pane, just as the note's primary view instead of an
+  opt-in split pane) with an **Edit** button, matching Confluence's
+  view-first/edit-on-demand page model instead of a permanently-open source
+  editor. Clicking Edit swaps in the existing raw-Markdown editor (full
+  width, slash menu, optional live-split preview per the addendum above);
+  Save/Cancel/Archive all return to the rendered view. An archived note has
+  no Edit affordance at all (only Restore) — it's render-only, same as
+  `NoteArchivedException`'s existing "restore before editing" invariant, now
+  enforced by the UI itself rather than just a disabled/readonly textarea.
+  New state: `IsEditingContent` (+ `ShowEditor => IsCreating ||
+  IsEditingContent`); `OpenNoteAsync`/`StartNewNote` reset it, `StartEditing`
+  sets it. No backend/contract change — `Content` is still one Markdown
+  string, this only changes which of the two already-existing render paths
+  (raw textarea vs. `PreviewHtml`) is shown by default.
+- **Addendum — copy button on code blocks.** Each rendered `<pre>` in the
+  preview/view gets a small hover-revealed "Copy" button (`notes-editor.js`,
+  added alongside the Prism highlighting pass since both need redoing every
+  render), using `navigator.clipboard.writeText`. Pure DOM/JS, no Blazor
+  component per code block — keeps the "one Markdown string, no block
+  model" decision above intact instead of needing per-block component
+  interactivity.
 
 Out of scope for this iteration (see section 3a for the full reasoning):
 
