@@ -1,12 +1,14 @@
 using System.Text.RegularExpressions;
 using Markdig;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Notes;
 using StudyHub.Logic.Integration.Semesters;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
+using StudyHub.UI.Components.Shared;
 using StudyHub.UI.Services;
 
 namespace StudyHub.UI.Components.Pages;
@@ -27,8 +29,26 @@ public partial class Notes
         ["exam"] = "# Exam Prep\n\n## Concepts to Review\n\n- \n\n## Practice Questions\n\n1. \n\n## Summary\n\n",
     };
 
+    private static readonly IReadOnlyList<SlashCommand> SlashCommands =
+    [
+        new("Heading 1", "Big section heading", "# ", ""),
+        new("Heading 2", "Medium section heading", "## ", ""),
+        new("Heading 3", "Small section heading", "### ", ""),
+        new("Bulleted list", "Simple bullet list", "- ", ""),
+        new("Numbered list", "List with numbering", "1. ", ""),
+        new("Task list", "To-do list with checkboxes", "- [ ] ", ""),
+        new("Quote", "Capture a quote", "> ", ""),
+        new("Code block", "Code snippet", "```\n", "\n```"),
+        new("Table", "Simple 2-column table", "| Header | Header |\n| --- | --- |\n| Cell | Cell |\n", ""),
+        new("Divider", "Horizontal rule", "\n---\n", ""),
+        new("Link", "Insert a link", "[", "](url)"),
+    ];
+
     [Inject]
     private INoteAccessor NoteAccessor { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
 
     [Inject]
     private ICourseAccessor CourseAccessor { get; set; } = default!;
@@ -78,6 +98,25 @@ public partial class Notes
     private string? ErrorMessage { get; set; }
 
     private IReadOnlyList<NoteBacklinkDto> Backlinks { get; set; } = [];
+
+    private ElementReference ContentTextAreaRef;
+
+    private bool SlashMenuOpen { get; set; }
+
+    private int SlashTriggerPosition { get; set; }
+
+    private string SlashQuery { get; set; } = string.Empty;
+
+    private int SlashSelectedIndex { get; set; }
+
+    private double SlashMenuTop { get; set; }
+
+    private double SlashMenuLeft { get; set; }
+
+    private int? PendingCursorPosition { get; set; }
+
+    private IReadOnlyList<SlashCommand> FilteredSlashCommands =>
+        SlashCommands.Where(c => c.Label.Contains(SlashQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
     private NoteDto? SelectedNote => NoteList?.FirstOrDefault(n => n.Id == SelectedNoteId);
 
@@ -185,6 +224,127 @@ public partial class Notes
             await OpenNoteAsync(id);
         }
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsCreating && SelectedNote is null)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("studyHubNotesEditor.attachSlashKeyGuard", ContentTextAreaRef);
+
+        if (PendingCursorPosition is { } position)
+        {
+            PendingCursorPosition = null;
+            await JS.InvokeVoidAsync("studyHubNotesEditor.setCursor", ContentTextAreaRef, position);
+        }
+    }
+
+    private async Task OnContentInputAsync(ChangeEventArgs e)
+    {
+        WorkingContent = e.Value?.ToString() ?? string.Empty;
+        var cursor = await JS.InvokeAsync<int>("studyHubNotesEditor.getSelectionStart", ContentTextAreaRef);
+        await UpdateSlashMenuAsync(cursor);
+    }
+
+    private Task OnContentKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (!SlashMenuOpen)
+        {
+            return Task.CompletedTask;
+        }
+
+        var commands = FilteredSlashCommands;
+
+        return e.Key switch
+        {
+            "ArrowDown" when commands.Count > 0 => SetSlashSelection((SlashSelectedIndex + 1) % commands.Count),
+            "ArrowUp" when commands.Count > 0 => SetSlashSelection((SlashSelectedIndex - 1 + commands.Count) % commands.Count),
+            "Enter" or "Tab" when commands.Count > 0 => ApplySlashCommandAsync(commands[SlashSelectedIndex]),
+            "Escape" => CloseSlashMenu(),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private Task SetSlashSelection(int index)
+    {
+        SlashSelectedIndex = index;
+        return Task.CompletedTask;
+    }
+
+    private Task CloseSlashMenu()
+    {
+        SlashMenuOpen = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task UpdateSlashMenuAsync(int cursor)
+    {
+        cursor = Math.Clamp(cursor, 0, WorkingContent.Length);
+
+        var lineStart = 0;
+        if (cursor > 0)
+        {
+            lineStart = WorkingContent.LastIndexOf('\n', cursor - 1) + 1;
+        }
+
+        var textBeforeCursor = WorkingContent[lineStart..cursor];
+        var slashIndex = textBeforeCursor.LastIndexOf('/');
+
+        if (slashIndex < 0)
+        {
+            SlashMenuOpen = false;
+            return;
+        }
+
+        var query = textBeforeCursor[(slashIndex + 1)..];
+        if (query.Length > 24 || query.Any(char.IsWhiteSpace))
+        {
+            SlashMenuOpen = false;
+            return;
+        }
+
+        SlashTriggerPosition = lineStart + slashIndex;
+        SlashQuery = query;
+
+        if (FilteredSlashCommands.Count == 0)
+        {
+            SlashMenuOpen = false;
+            return;
+        }
+
+        if (!SlashMenuOpen)
+        {
+            SlashSelectedIndex = 0;
+        }
+        else
+        {
+            SlashSelectedIndex = Math.Min(SlashSelectedIndex, FilteredSlashCommands.Count - 1);
+        }
+
+        SlashMenuOpen = true;
+
+        var coordinates = await JS.InvokeAsync<CaretCoordinates>("studyHubNotesEditor.getCaretCoordinates", ContentTextAreaRef);
+        SlashMenuTop = coordinates.Top + coordinates.LineHeight;
+        SlashMenuLeft = coordinates.Left;
+    }
+
+    private Task ApplySlashCommandAsync(SlashCommand command)
+    {
+        var before = WorkingContent[..SlashTriggerPosition];
+        var queryEnd = Math.Min(SlashTriggerPosition + 1 + SlashQuery.Length, WorkingContent.Length);
+        var after = WorkingContent[queryEnd..];
+
+        WorkingContent = before + command.Before + command.After + after;
+        PendingCursorPosition = before.Length + command.Before.Length;
+
+        SlashMenuOpen = false;
+        SlashQuery = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private sealed record CaretCoordinates(double Top, double Left, double LineHeight);
 
     private async Task LoadNotesAsync()
     {

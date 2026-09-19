@@ -1,6 +1,8 @@
 # Feature Plan: Markdown Notes
 
-Status: Draft — awaiting review/confirmation before implementation
+Status: Implemented (CRUD, wiki-links, backlinks, outline, templates). See the
+"Slash-command menu" addendum below (section 2) for a follow-up UI addition
+requested after the initial implementation.
 Classification (per `CLAUDE.md`): **Medium** (new CRUD feature, new domain object,
 new page, new business workflow). Per the Medium workflow this plan covers
 planned architecture, affected layers, required contracts, and database
@@ -76,6 +78,22 @@ In scope:
 - **Note templates on creation** ("Lecture Notes", "Exam Prep", "Blank" —
   client-side starter snippets only, no schema change) — a lightweight
   Notion-style quick start.
+- **Addendum — slash-command menu** (requested after the rest of this plan
+  shipped: "wie in Confluence ... mit `/` Sachen wie Listen oder Code
+  Snippets erstellen"). Typing `/` at the start of a line in the editor
+  opens a filterable popup (Heading 1–3, Bulleted/Numbered/Task list, Quote,
+  Code block, Table, Divider, Link); picking one deletes the `/query` text
+  and inserts the corresponding Markdown snippet at the cursor. Implemented
+  as a client-side text-snippet inserter over the existing plain-text
+  `Content` field — **not** a block-per-node document model — so it needed
+  no backend/contract/schema change: `Components/Shared/SlashCommand.cs` +
+  `SlashCommandMenu.razor` (popup UI, keyboard nav) plus
+  `wwwroot/js/notes-editor.js` (a small JS interop module; Blazor doesn't
+  expose a `<textarea>`'s cursor pixel position or `selectionStart`, so
+  those two need direct DOM access — same "one new client-side script"
+  shape flagged for Markdown rendering below, just for the editor itself
+  rather than the preview). See the "Rich-text/WYSIWYG" bullet just below
+  for why this stays out of block-editor territory.
 
 Out of scope for this iteration (see section 3a for the full reasoning):
 
@@ -91,10 +109,15 @@ Out of scope for this iteration (see section 3a for the full reasoning):
   StudyHub is explicitly a single-user personal tool (`CLAUDE.md`: "a
   personal learning companion") — there's no second user to comment as.
 - AI summarization / flashcard generation from notes.
-- Rich-text/WYSIWYG or block-based editing (Notion's block editor), image
-  embedding, or drag-drop file upload directly inline in the Markdown body —
-  plain Markdown already covers headings/lists/quotes/code a block editor
-  would also offer, at a fraction of the UI cost.
+- Rich-text/WYSIWYG or a **real block-based document model** (Notion's
+  block editor: each block a separate persisted node, drag-drop reordering,
+  contenteditable), image embedding, or drag-drop file upload directly
+  inline in the Markdown body — plain Markdown already covers
+  headings/lists/quotes/code a block editor would also offer, at a fraction
+  of the UI cost. The slash-command menu (addendum above) gets the
+  Confluence/Notion *feel* — typing `/` to insert an element — without this:
+  it's a snippet inserter over one plain-text `Content` field, not a
+  per-block schema.
 - Full-text search ranking (a simple client-side substring filter over
   title/content/tags is in scope; a search index is not).
 - Real-time collaborative editing.

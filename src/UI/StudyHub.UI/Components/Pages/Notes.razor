@@ -163,7 +163,16 @@ else
                 }
 
                 <div class="editor-split">
-                    <textarea class="editor-pane" @bind="WorkingContent" @bind:event="oninput" readonly="@IsReadOnly" placeholder="Write in Markdown… use [[Note Title]] to link another note."></textarea>
+                    <textarea class="editor-pane" @ref="ContentTextAreaRef" value="@WorkingContent"
+                              @oninput="OnContentInputAsync" @onkeydown="OnContentKeyDownAsync"
+                              data-slash-menu-open="@(SlashMenuOpen ? "true" : "false")"
+                              readonly="@IsReadOnly" placeholder="Write in Markdown… type / for commands, [[Note Title]] to link another note."></textarea>
+                    @if (SlashMenuOpen)
+                    {
+                        <SlashCommandMenu Commands="FilteredSlashCommands" SelectedIndex="SlashSelectedIndex"
+                                          TopPx="SlashMenuTop" LeftPx="SlashMenuLeft"
+                                          OnSelect="ApplySlashCommandAsync" OnHover="index => SlashSelectedIndex = index" />
+                    }
                     <div class="preview-pane">
                         @if (HeadingOutline.Count > 0)
                         {
