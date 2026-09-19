@@ -39,7 +39,17 @@ public partial class Notes
         new("Numbered list", "List with numbering", "1. ", ""),
         new("Task list", "To-do list with checkboxes", "- [ ] ", ""),
         new("Quote", "Capture a quote", "> ", ""),
-        new("Code block", "Code snippet", "```\n", "\n```"),
+        new("Code block", "Plain code snippet, no highlighting", "```\n", "\n```"),
+        new("Code: C#", "C# snippet with syntax highlighting", "```csharp\n", "\n```"),
+        new("Code: Java", "Java snippet with syntax highlighting", "```java\n", "\n```"),
+        new("Code: Python", "Python snippet with syntax highlighting", "```python\n", "\n```"),
+        new("Code: JavaScript", "JavaScript snippet with syntax highlighting", "```javascript\n", "\n```"),
+        new("Code: TypeScript", "TypeScript snippet with syntax highlighting", "```typescript\n", "\n```"),
+        new("Code: SQL", "SQL snippet with syntax highlighting", "```sql\n", "\n```"),
+        new("Code: Bash", "Shell snippet with syntax highlighting", "```bash\n", "\n```"),
+        new("Code: JSON", "JSON snippet with syntax highlighting", "```json\n", "\n```"),
+        new("Code: HTML", "HTML snippet with syntax highlighting", "```html\n", "\n```"),
+        new("Code: CSS", "CSS snippet with syntax highlighting", "```css\n", "\n```"),
         new("Table", "Simple 2-column table", "| Header | Header |\n| --- | --- |\n| Cell | Cell |\n", ""),
         new("Divider", "Horizontal rule", "\n---\n", ""),
         new("Link", "Insert a link", "[", "](url)"),
@@ -103,6 +113,8 @@ public partial class Notes
     private bool ShowPreview { get; set; }
 
     private ElementReference ContentTextAreaRef;
+
+    private ElementReference PreviewPaneRef;
 
     private bool SlashMenuOpen { get; set; }
 
@@ -241,6 +253,11 @@ public partial class Notes
         {
             PendingCursorPosition = null;
             await JS.InvokeVoidAsync("studyHubNotesEditor.setCursor", ContentTextAreaRef, position);
+        }
+
+        if (ShowPreview)
+        {
+            await JS.InvokeVoidAsync("studyHubNotesEditor.highlightCode", PreviewPaneRef);
         }
     }
 

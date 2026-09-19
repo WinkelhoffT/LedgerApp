@@ -94,6 +94,35 @@ In scope:
   shape flagged for Markdown rendering below, just for the editor itself
   rather than the preview). See the "Rich-text/WYSIWYG" bullet just below
   for why this stays out of block-editor territory.
+- **Addendum — code block syntax highlighting** (follow-up to the addendum
+  above: "ungefähr wie bei confluence auch syntax highlighting"). The
+  preview pane's fenced code blocks (` ```csharp ` etc.) are now colorized
+  client-side. Markdig's default (CommonMark-spec) fenced-code rendering
+  already emits `<pre><code class="language-csharp">` for a fenced block
+  with an info string — no pipeline change needed — so this only needed a
+  highlighter to walk that markup: **Prism.js** (MIT), vendored directly as
+  a static file (`wwwroot/js/vendor/prismjs/prism-bundle.js` — core plus the
+  csharp/java/python/javascript/typescript/sql/bash/json/markup(html)/css/
+  yaml/go/rust/markdown grammars, fetched via `npm pack prismjs` and
+  concatenated/minified). Lives under `wwwroot/js/vendor/`, not
+  `wwwroot/lib/` — the latter is `.gitignore`d project-wide (populated at
+  restore time from a static-web-assets NuGet package, the way the
+  `bootstrap` PackageReference populates `lib/bootstrap/`; no such package
+  exists for Prism, so committing it as a plain tracked file was simpler
+  and safer than inventing one).
+  `Prism.manual = true` (set in `App.razor` before the bundle loads) turns
+  off its own DOMContentLoaded auto-highlight, and
+  `notes-editor.js`'s new `highlightCode()` is called from
+  `Notes.razor.cs`'s `OnAfterRenderAsync` instead, since the preview's HTML
+  is replaced wholesale on every render (a `MarkupString` region) and Prism
+  never sees those new `<code>` elements otherwise. Token colors are mapped
+  to the app's own `--accent`/`--success`/`--warning`/`--text-2`/`--text-3`
+  custom properties (plus one new `--code-function`) rather than shipping
+  one of Prism's canned theme CSS files, so highlighted code stays
+  consistent with StudyHub's own light/dark palette instead of looking like
+  a foreign, hardcoded theme. The slash-command menu (addendum above) grew
+  one "Code: `<language>`" entry per bundled language so users don't have to
+  remember Prism's exact language identifiers.
 
 Out of scope for this iteration (see section 3a for the full reasoning):
 

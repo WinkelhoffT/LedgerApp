@@ -176,7 +176,7 @@ else
                     }
                     @if (ShowPreview)
                     {
-                        <div class="preview-pane">
+                        <div class="preview-pane" @ref="PreviewPaneRef">
                             @if (HeadingOutline.Count > 0)
                             {
                                 <div class="note-outline">

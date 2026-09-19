@@ -68,4 +68,15 @@ window.studyHubNotesEditor = {
       }
     });
   },
+
+  // The preview pane's HTML is replaced wholesale on every render (Blazor
+  // treats a MarkupString as opaque), so Prism's own DOMContentLoaded-based
+  // auto-highlighting (disabled via `Prism.manual = true` in App.razor)
+  // never sees the new <code> blocks. This re-scans the given container
+  // after each render instead.
+  highlightCode: function (el) {
+    if (window.Prism && el) {
+      Prism.highlightAllUnder(el);
+    }
+  },
 };
