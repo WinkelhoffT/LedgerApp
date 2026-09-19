@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Markdig;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Notes;
 using StudyHub.Logic.Integration.Semesters;
