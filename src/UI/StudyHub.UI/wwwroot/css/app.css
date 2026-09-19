@@ -376,12 +376,14 @@ select:focus-visible,
 .template-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); }
 .note-error { margin: 0 16px; }
 
-.editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; flex: 1; min-height: 320px; }
+.editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; flex: 1; min-height: 420px; }
+.editor-split.full-width { grid-template-columns: 1fr; }
 .editor-pane {
   width: 100%; height: 100%; resize: none; border: none; border-right: 1px solid var(--border);
   padding: 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
   background: var(--surface); color: var(--text);
 }
+.editor-split.full-width .editor-pane { border-right: none; }
 .editor-pane:focus-visible { outline: none; }
 .editor-pane[readonly] { background: var(--surface-2); color: var(--text-2); }
 .preview-pane { padding: 16px; overflow-y: auto; font-size: 13.5px; line-height: 1.65; }

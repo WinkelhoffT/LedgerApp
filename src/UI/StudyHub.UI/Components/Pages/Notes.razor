@@ -129,6 +129,7 @@ else
                     <input class="form-control note-tags-input" placeholder="Tags (comma-separated)" @bind="WorkingTags" disabled="@IsReadOnly" />
 
                     <div class="editor-toolbar-actions">
+                        <button class="btn btn-outline btn-sm" type="button" @onclick="TogglePreview">@(ShowPreview ? "Hide preview" : "Show preview")</button>
                         @if (IsCreating)
                         {
                             <span class="template-row">
@@ -162,7 +163,7 @@ else
                     <div class="form-error note-error">@ErrorMessage</div>
                 }
 
-                <div class="editor-split">
+                <div class="editor-split @(ShowPreview ? "" : "full-width")">
                     <textarea class="editor-pane" @ref="ContentTextAreaRef" value="@WorkingContent"
                               @oninput="OnContentInputAsync" @onkeydown="OnContentKeyDownAsync"
                               data-slash-menu-open="@(SlashMenuOpen ? "true" : "false")"
@@ -173,19 +174,22 @@ else
                                           TopPx="SlashMenuTop" LeftPx="SlashMenuLeft"
                                           OnSelect="ApplySlashCommandAsync" OnHover="index => SlashSelectedIndex = index" />
                     }
-                    <div class="preview-pane">
-                        @if (HeadingOutline.Count > 0)
-                        {
-                            <div class="note-outline">
-                                <div class="note-outline-title">Outline</div>
-                                @foreach (var heading in HeadingOutline)
-                                {
-                                    <a class="note-outline-item level-@heading.Level" href="#@heading.Id">@heading.Text</a>
-                                }
-                            </div>
-                        }
-                        @((MarkupString)PreviewHtml)
-                    </div>
+                    @if (ShowPreview)
+                    {
+                        <div class="preview-pane">
+                            @if (HeadingOutline.Count > 0)
+                            {
+                                <div class="note-outline">
+                                    <div class="note-outline-title">Outline</div>
+                                    @foreach (var heading in HeadingOutline)
+                                    {
+                                        <a class="note-outline-item level-@heading.Level" href="#@heading.Id">@heading.Text</a>
+                                    }
+                                </div>
+                            }
+                            @((MarkupString)PreviewHtml)
+                        </div>
+                    }
                 </div>
 
                 @if (!IsCreating && SelectedNote is not null)

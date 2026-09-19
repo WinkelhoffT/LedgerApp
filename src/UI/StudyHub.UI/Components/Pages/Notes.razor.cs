@@ -99,6 +99,8 @@ public partial class Notes
 
     private IReadOnlyList<NoteBacklinkDto> Backlinks { get; set; } = [];
 
+    private bool ShowPreview { get; set; }
+
     private ElementReference ContentTextAreaRef;
 
     private bool SlashMenuOpen { get; set; }
@@ -353,6 +355,8 @@ public partial class Notes
     }
 
     private void SetActiveTag(string? tag) => ActiveTag = tag;
+
+    private void TogglePreview() => ShowPreview = !ShowPreview;
 
     private void StartNewNote()
     {
