@@ -44,7 +44,7 @@ public class NoteTests
     [Fact]
     public void Create_WithTitleExceedingMaxLength_ThrowsValidationException()
     {
-        var title = new string('a', Note.TitleMaxLength + 1);
+        var title = new string('a', CreateNoteRequest.TitleMaxLength + 1);
 
         Assert.Throws<NoteValidationException>(() => Note.Create(title, "Content", null, CourseId, null));
     }
@@ -52,7 +52,7 @@ public class NoteTests
     [Fact]
     public void Create_WithContentExceedingMaxLength_ThrowsValidationException()
     {
-        var content = new string('a', Note.ContentMaxLength + 1);
+        var content = new string('a', CreateNoteRequest.ContentMaxLength + 1);
 
         Assert.Throws<NoteValidationException>(() => Note.Create("Title", content, null, CourseId, null));
     }

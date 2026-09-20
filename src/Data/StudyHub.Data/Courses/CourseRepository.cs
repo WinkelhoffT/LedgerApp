@@ -21,7 +21,7 @@ public sealed class CourseRepository(ApplicationDbContext dbContext) : ICourseRe
 
     public Task<bool> ExistsByNameAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default)
     {
-        var normalizedName = name.Trim().ToLower();
+        var normalizedName = Course.NormalizeNameForComparison(name);
 
         return dbContext.Courses
             .Where(c => excludingId == null || c.Id != excludingId)

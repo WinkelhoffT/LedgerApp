@@ -39,7 +39,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
 
     public Task<bool> ExistsByTitleAsync(string title, Guid? excludingId, CancellationToken cancellationToken = default)
     {
-        var normalizedTitle = title.Trim().ToLower();
+        var normalizedTitle = Note.NormalizeTitleForComparison(title);
 
         return dbContext.Notes
             .Where(n => excludingId == null || n.Id != excludingId)
@@ -110,7 +110,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
             return new Dictionary<string, Guid>();
         }
 
-        var normalizedTitles = titles.Select(t => t.Trim().ToLower()).ToList();
+        var normalizedTitles = titles.Select(Note.NormalizeTitleForComparison).ToList();
 
         var matches = await dbContext.Notes
             .Where(n => normalizedTitles.Contains(n.Title.ToLower()))

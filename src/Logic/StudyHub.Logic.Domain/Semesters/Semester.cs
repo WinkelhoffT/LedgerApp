@@ -4,6 +4,11 @@ namespace StudyHub.Logic.Domain.Semesters;
 
 public sealed record Semester
 {
+    // Defines what "the same name" means for uniqueness comparisons (trim + case-fold). Exposed
+    // as a delegate so StudyHub.Data's SemesterRepository can reuse this domain rule instead of
+    // re-implementing name normalization itself.
+    public static readonly Func<string, string> NormalizeNameForComparison = name => name.Trim().ToLower();
+
     private Semester()
     {
     }

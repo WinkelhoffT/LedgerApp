@@ -5,6 +5,7 @@ using StudyHub.Logic.Domain.Notes;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
+using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Data;
@@ -154,16 +155,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             builder.HasKey(n => n.Id);
 
+            // NOCASE collation makes the unique index below enforce case-insensitive uniqueness
+            // at the database level too, not just in NoteRepository.ExistsByTitleAsync — closing
+            // the race window where two near-simultaneous creates with differently-cased titles
+            // ("Foo" / "foo") could otherwise both pass the app-level check and be inserted.
             builder.Property(n => n.Title)
-                .HasMaxLength(Note.TitleMaxLength)
+                .HasMaxLength(CreateNoteRequest.TitleMaxLength)
+                .UseCollation("NOCASE")
                 .IsRequired();
 
             builder.Property(n => n.Content)
-                .HasMaxLength(Note.ContentMaxLength)
+                .HasMaxLength(CreateNoteRequest.ContentMaxLength)
                 .IsRequired();
 
             builder.Property(n => n.Tags)
-                .HasMaxLength(Note.TagsMaxLength);
+                .HasMaxLength(CreateNoteRequest.TagsMaxLength);
 
             builder.Property(n => n.IsArchived)
                 .IsRequired();

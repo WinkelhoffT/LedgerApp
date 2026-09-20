@@ -4,6 +4,11 @@ namespace StudyHub.Logic.Domain.Courses;
 
 public sealed record Course
 {
+    // Defines what "the same name" means for uniqueness comparisons (trim + case-fold). Exposed
+    // as a delegate so StudyHub.Data's CourseRepository can reuse this domain rule instead of
+    // re-implementing name normalization itself.
+    public static readonly Func<string, string> NormalizeNameForComparison = name => name.Trim().ToLower();
+
     private Course()
     {
     }

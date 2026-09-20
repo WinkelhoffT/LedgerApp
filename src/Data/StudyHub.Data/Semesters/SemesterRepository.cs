@@ -15,7 +15,7 @@ public sealed class SemesterRepository(ApplicationDbContext dbContext) : ISemest
 
     public Task<bool> ExistsByNameAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default)
     {
-        var normalizedName = name.Trim().ToLower();
+        var normalizedName = Semester.NormalizeNameForComparison(name);
 
         return dbContext.Semesters
             .Where(s => excludingId == null || s.Id != excludingId)

@@ -1,6 +1,6 @@
 namespace StudyHub.Logic.Domain.Notes;
 
-public sealed class NoteDocument
+public sealed record NoteDocument
 {
     private NoteDocument()
     {

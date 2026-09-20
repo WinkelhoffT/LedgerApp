@@ -2,11 +2,12 @@ using StudyHub.Shared.Notes;
 
 namespace StudyHub.Logic.Domain.Notes;
 
-public sealed class Note
+public sealed record Note
 {
-    public const int TitleMaxLength = 200;
-    public const int ContentMaxLength = 50_000;
-    public const int TagsMaxLength = 500;
+    // Defines what "the same title" means for uniqueness comparisons (trim + case-fold). Exposed
+    // as a delegate so StudyHub.Data's NoteRepository can reuse this domain rule instead of
+    // re-implementing title normalization itself.
+    public static readonly Func<string, string> NormalizeTitleForComparison = title => title.Trim().ToLower();
 
     private Note()
     {
@@ -83,20 +84,20 @@ public sealed class Note
             throw new NoteValidationException("Note title is required.");
         }
 
-        if (trimmedTitle.Length > TitleMaxLength)
+        if (trimmedTitle.Length > CreateNoteRequest.TitleMaxLength)
         {
-            throw new NoteValidationException($"Note title must not exceed {TitleMaxLength} characters.");
+            throw new NoteValidationException($"Note title must not exceed {CreateNoteRequest.TitleMaxLength} characters.");
         }
 
-        if (content is null || content.Length > ContentMaxLength)
+        if (content is null || content.Length > CreateNoteRequest.ContentMaxLength)
         {
-            throw new NoteValidationException($"Note content must not exceed {ContentMaxLength} characters.");
+            throw new NoteValidationException($"Note content must not exceed {CreateNoteRequest.ContentMaxLength} characters.");
         }
 
         var trimmedTags = tags?.Trim();
-        if (trimmedTags is { Length: > TagsMaxLength })
+        if (trimmedTags is { Length: > CreateNoteRequest.TagsMaxLength })
         {
-            throw new NoteValidationException($"Note tags must not exceed {TagsMaxLength} characters.");
+            throw new NoteValidationException($"Note tags must not exceed {CreateNoteRequest.TagsMaxLength} characters.");
         }
 
         if (courseId is null == semesterId is null)
