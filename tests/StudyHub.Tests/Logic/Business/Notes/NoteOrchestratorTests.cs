@@ -42,6 +42,8 @@ public class NoteOrchestratorTests
             .ReturnsAsync((IReadOnlyList<Guid>)[]);
         _noteRepository.Setup(r => r.GetIdsByTitlesAsync(It.IsAny<IReadOnlyCollection<string>>(), default))
             .ReturnsAsync(new Dictionary<string, Guid>());
+        _noteRepository.Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync((IReadOnlyList<Note>)[]);
     }
 
     [Fact]
@@ -133,6 +135,31 @@ public class NoteOrchestratorTests
         _noteRepository.Verify(r => r.ReplaceLinksAsync(
             It.IsAny<Guid>(),
             It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(targetId)),
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenExistingNoteHasForwardWikiLink_ResolvesThatNotesLinksToo()
+    {
+        var forwardReferencingNote = Note.Create("Referencing Note", "See [[Future Note]] for details.", null, CourseId, null);
+        _noteRepository.Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync((IReadOnlyList<Note>)[forwardReferencingNote]);
+
+        var capturedNoteId = Guid.Empty;
+        _noteRepository.Setup(r => r.AddAsync(It.IsAny<Note>(), default))
+            .Callback<Note, CancellationToken>((note, _) => capturedNoteId = note.Id)
+            .Returns(Task.CompletedTask);
+        _noteRepository.Setup(r => r.GetIdsByTitlesAsync(
+                It.Is<IReadOnlyCollection<string>>(titles => titles.Contains("Future Note")), default))
+            .ReturnsAsync(() => new Dictionary<string, Guid> { ["Future Note"] = capturedNoteId });
+
+        var request = new CreateNoteRequest("Future Note", "Content", null, CourseId, null);
+
+        var created = await _sut.CreateAsync(request);
+
+        _noteRepository.Verify(r => r.ReplaceLinksAsync(
+            forwardReferencingNote.Id,
+            It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(created.Id)),
             default), Times.Once);
     }
 

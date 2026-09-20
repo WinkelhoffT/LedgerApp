@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
@@ -10,7 +9,7 @@ using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Notes;
 
-public sealed partial class NoteOrchestrator(
+public sealed class NoteOrchestrator(
     INoteRepository noteRepository,
     IDocumentRepository documentRepository,
     ICourseRepository courseRepository,
@@ -51,6 +50,7 @@ public sealed partial class NoteOrchestrator(
         await noteRepository.SaveChangesAsync(cancellationToken);
 
         await ResolveLinksAsync(note, cancellationToken);
+        await ReconcileForwardReferencesAsync(note, cancellationToken);
 
         return await ToDtoAsync(note, cancellationToken);
     }
@@ -67,6 +67,7 @@ public sealed partial class NoteOrchestrator(
         await noteRepository.SaveChangesAsync(cancellationToken);
 
         await ResolveLinksAsync(note, cancellationToken);
+        await ReconcileForwardReferencesAsync(note, cancellationToken);
 
         return await ToDtoAsync(note, cancellationToken);
     }
@@ -172,7 +173,7 @@ public sealed partial class NoteOrchestrator(
 
     private async Task ResolveLinksAsync(Note note, CancellationToken cancellationToken)
     {
-        var titles = ExtractWikiLinkTitles(note.Content);
+        var titles = WikiLinkParser.ExtractTitles(note.Content);
         if (titles.Count == 0)
         {
             await noteRepository.ReplaceLinksAsync(note.Id, [], cancellationToken);
@@ -187,20 +188,28 @@ public sealed partial class NoteOrchestrator(
         await noteRepository.SaveChangesAsync(cancellationToken);
     }
 
-    private static IReadOnlyCollection<string> ExtractWikiLinkTitles(string content)
+    // A note saved with `[[Future Note]]` before "Future Note" exists is intentionally left as
+    // plain text (no auto-create) — but once "Future Note" is created (or renamed into place),
+    // the referencing note's own NoteLinks row is never re-touched, so its backlinks panel would
+    // silently drift from what the live preview already renders as a clickable link. Re-resolving
+    // every other note that textually references the saved note's title closes that gap.
+    private async Task ReconcileForwardReferencesAsync(Note target, CancellationToken cancellationToken)
     {
-        var titles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var allNotes = await noteRepository.GetAllAsync(cancellationToken);
 
-        foreach (Match match in WikiLinkPattern().Matches(content))
+        foreach (var candidate in allNotes)
         {
-            var title = match.Groups[1].Value.Trim();
-            if (title.Length > 0)
+            if (candidate.Id == target.Id)
             {
-                titles.Add(title);
+                continue;
+            }
+
+            var referencedTitles = WikiLinkParser.ExtractTitles(candidate.Content);
+            if (referencedTitles.Contains(target.Title))
+            {
+                await ResolveLinksAsync(candidate, cancellationToken);
             }
         }
-
-        return titles;
     }
 
     private async Task<NoteDto> ToDtoAsync(Note note, CancellationToken cancellationToken)
@@ -238,7 +247,4 @@ public sealed partial class NoteOrchestrator(
         string.IsNullOrWhiteSpace(tags)
             ? []
             : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-    [GeneratedRegex(@"\[\[(.+?)\]\]")]
-    private static partial Regex WikiLinkPattern();
 }

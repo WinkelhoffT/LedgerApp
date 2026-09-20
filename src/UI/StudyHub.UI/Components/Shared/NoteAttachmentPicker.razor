@@ -4,6 +4,11 @@
         <button class="btn btn-outline btn-sm" type="button" @onclick="OpenUploadDialog">Upload &amp; attach</button>
     </div>
 
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error">@ErrorMessage</div>
+    }
+
     @if (AttachedDocuments.Count == 0)
     {
         <p class="placeholder-hint">No documents attached yet.</p>
@@ -15,7 +20,7 @@
             {
                 <li class="attachment-item">
                     <span>@document.FileName</span>
-                    <button class="icon-btn" type="button" aria-label="Detach @document.FileName" @onclick="() => DetachAsync(document.Id)">
+                    <button class="icon-btn" type="button" aria-label="Detach @document.FileName" disabled="@IsSaving" @onclick="() => DetachAsync(document.Id)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
                     </button>
                 </li>
@@ -33,7 +38,7 @@
                     <option value="@document.Id">@document.FileName</option>
                 }
             </select>
-            <button class="btn btn-secondary btn-sm" type="button" disabled="@(SelectedDocumentId == Guid.Empty)" @onclick="AttachAsync">Attach</button>
+            <button class="btn btn-secondary btn-sm" type="button" disabled="@(SelectedDocumentId == Guid.Empty || IsSaving)" @onclick="AttachAsync">Attach</button>
         </div>
     }
 </div>

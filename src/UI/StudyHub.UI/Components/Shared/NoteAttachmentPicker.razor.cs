@@ -29,6 +29,10 @@ public partial class NoteAttachmentPicker
 
     private Guid SelectedDocumentId { get; set; }
 
+    private bool IsSaving { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
     private IReadOnlyList<DocumentDto> AttachedDocuments =>
         AllDocuments.Where(d => AttachedDocumentIds.Contains(d.Id)).ToList();
 
@@ -44,15 +48,48 @@ public partial class NoteAttachmentPicker
             return;
         }
 
-        var updated = await NoteAccessor.AttachDocumentAsync(NoteId, SelectedDocumentId);
-        SelectedDocumentId = Guid.Empty;
-        await OnChanged.InvokeAsync(updated);
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var updated = await NoteAccessor.AttachDocumentAsync(NoteId, SelectedDocumentId);
+            SelectedDocumentId = Guid.Empty;
+            await OnChanged.InvokeAsync(updated);
+        }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+        }
+        catch (DocumentNotFoundException)
+        {
+            ErrorMessage = "This document no longer exists.";
+            AllDocuments = await DocumentAccessor.GetAllAsync();
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private async Task DetachAsync(Guid documentId)
     {
-        var updated = await NoteAccessor.DetachDocumentAsync(NoteId, documentId);
-        await OnChanged.InvokeAsync(updated);
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var updated = await NoteAccessor.DetachDocumentAsync(NoteId, documentId);
+            await OnChanged.InvokeAsync(updated);
+        }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private void OpenUploadDialog() => IsUploadDialogOpen = true;
@@ -61,8 +98,22 @@ public partial class NoteAttachmentPicker
 
     private async Task HandleUploadedAsync(DocumentDto uploaded)
     {
-        AllDocuments = await DocumentAccessor.GetAllAsync();
-        var updated = await NoteAccessor.AttachDocumentAsync(NoteId, uploaded.Id);
-        await OnChanged.InvokeAsync(updated);
+        IsSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            AllDocuments = await DocumentAccessor.GetAllAsync();
+            var updated = await NoteAccessor.AttachDocumentAsync(NoteId, uploaded.Id);
+            await OnChanged.InvokeAsync(updated);
+        }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 }

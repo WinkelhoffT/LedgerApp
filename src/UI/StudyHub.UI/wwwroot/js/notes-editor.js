@@ -75,6 +75,12 @@ window.studyHubNotesEditor = {
   // never sees the new <code> blocks. This re-scans the given container
   // after each render instead, then adds a copy button per code block -
   // both need redoing every time since the old nodes are gone.
+  //
+  // OnAfterRenderAsync calls this unconditionally on every render though, not
+  // just ones where PreviewHtml actually changed (e.g. toggling ShowArchived
+  // while the same note stays open) - when the markup is untouched, Blazor
+  // doesn't recreate the <pre> nodes, so without the guard below each such
+  // render would append yet another "Copy" button to the same block.
   highlightCode: function (el) {
     if (!el) {
       return;
@@ -83,6 +89,9 @@ window.studyHubNotesEditor = {
       Prism.highlightAllUnder(el);
     }
     el.querySelectorAll('pre').forEach(function (pre) {
+      if (pre.querySelector(':scope > .code-copy-btn')) {
+        return;
+      }
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'code-copy-btn';

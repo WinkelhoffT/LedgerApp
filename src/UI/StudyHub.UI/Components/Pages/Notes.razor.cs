@@ -18,7 +18,6 @@ public partial class Notes
 {
     private enum AssignmentTarget { Course, Semester }
 
-    private static readonly Regex WikiLinkPattern = new(@"\[\[(.+?)\]\]", RegexOptions.Compiled);
     private static readonly Regex HeadingPattern = new(@"<h([1-3]) id=""([^""]+)"">(.*?)</h\1>", RegexOptions.Compiled);
     private static readonly Regex TagStripPattern = new("<.*?>", RegexOptions.Compiled);
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().DisableHtml().UseAutoIdentifiers().Build();
@@ -141,8 +140,26 @@ public partial class Notes
 
     private bool IsReadOnly => !IsCreating && SelectedNote is { IsArchived: true };
 
-    private Dictionary<string, Guid> TitleToNoteId =>
-        (NoteList ?? []).ToDictionary(n => n.Title, n => n.Id, StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<NoteDto>? _titleToNoteIdCacheSource;
+
+    private Dictionary<string, Guid>? _titleToNoteIdCache;
+
+    // NoteList only changes on load/save, but this property is read on every render (including
+    // once per wiki-link match while rendering PreviewHtml), so rebuilding the dictionary from
+    // scratch each time makes every keystroke in the editor cost O(notes) work for no reason.
+    private Dictionary<string, Guid> TitleToNoteId
+    {
+        get
+        {
+            if (_titleToNoteIdCache is null || !ReferenceEquals(_titleToNoteIdCacheSource, NoteList))
+            {
+                _titleToNoteIdCacheSource = NoteList;
+                _titleToNoteIdCache = (NoteList ?? []).ToDictionary(n => n.Title, n => n.Id, StringComparer.OrdinalIgnoreCase);
+            }
+
+            return _titleToNoteIdCache;
+        }
+    }
 
     private IReadOnlyList<string> AllTags =>
         (NoteList ?? [])
@@ -195,19 +212,42 @@ public partial class Notes
         }
     }
 
+    private string? _previewHtmlCache;
+
+    private string? _previewHtmlCacheContent;
+
+    private Dictionary<string, Guid>? _previewHtmlCacheTitleMap;
+
+    // Both HeadingOutline and the Razor markup read PreviewHtml, and each read previously reran
+    // the wiki-link regex plus a full Markdig pass. Cache the result until WorkingContent (or the
+    // resolved title map) actually changes, and resolve the title map once per call instead of
+    // once per wiki-link match inside the Regex.Replace delegate.
     private string PreviewHtml
     {
         get
         {
-            var withLinks = WikiLinkPattern.Replace(WorkingContent, match =>
+            var titleMap = TitleToNoteId;
+
+            if (_previewHtmlCache is not null
+                && _previewHtmlCacheContent == WorkingContent
+                && ReferenceEquals(_previewHtmlCacheTitleMap, titleMap))
+            {
+                return _previewHtmlCache;
+            }
+
+            var withLinks = WikiLinkParser.Pattern().Replace(WorkingContent, match =>
             {
                 var title = match.Groups[1].Value.Trim();
-                return TitleToNoteId.TryGetValue(title, out var id)
+                return titleMap.TryGetValue(title, out var id)
                     ? $"[{title}](/notes?note={id})"
                     : match.Value;
             });
 
-            return Markdown.ToHtml(withLinks, Pipeline);
+            _previewHtmlCache = Markdown.ToHtml(withLinks, Pipeline);
+            _previewHtmlCacheContent = WorkingContent;
+            _previewHtmlCacheTitleMap = titleMap;
+
+            return _previewHtmlCache;
         }
     }
 
@@ -471,6 +511,13 @@ public partial class Notes
             IsCreating = false;
             await OpenNoteAsync(saved.Id);
         }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+            SelectedNoteId = null;
+            IsCreating = false;
+            await LoadNotesAsync();
+        }
         catch (DuplicateNoteTitleException)
         {
             ErrorMessage = "A note with this title already exists.";
@@ -513,10 +560,24 @@ public partial class Notes
         }
 
         IsSaving = true;
-        await NoteAccessor.ArchiveAsync(id);
-        await LoadNotesAsync();
-        await OpenNoteAsync(id);
-        IsSaving = false;
+        ErrorMessage = null;
+
+        try
+        {
+            await NoteAccessor.ArchiveAsync(id);
+            await LoadNotesAsync();
+            await OpenNoteAsync(id);
+        }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+            SelectedNoteId = null;
+            await LoadNotesAsync();
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private async Task RestoreSelectedAsync()
@@ -527,10 +588,24 @@ public partial class Notes
         }
 
         IsSaving = true;
-        await NoteAccessor.RestoreAsync(id);
-        await LoadNotesAsync();
-        await OpenNoteAsync(id);
-        IsSaving = false;
+        ErrorMessage = null;
+
+        try
+        {
+            await NoteAccessor.RestoreAsync(id);
+            await LoadNotesAsync();
+            await OpenNoteAsync(id);
+        }
+        catch (NoteNotFoundException)
+        {
+            ErrorMessage = "This note no longer exists. It may have been deleted in another tab.";
+            SelectedNoteId = null;
+            await LoadNotesAsync();
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private async Task HandleNoteChangedAsync(NoteDto _) => await LoadNotesAsync();
