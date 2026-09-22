@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StudyHub.Api;
 using StudyHub.Data;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Notes;
@@ -29,22 +30,31 @@ public class NoteEndpointsTests
             // the production default ("/app/data") so that resolution doesn't throw in tests.
             builder.UseSetting(
                 "ConnectionStrings:DefaultConnection",
-                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}");
+                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}"
+            );
 
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(databaseName));
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseInMemoryDatabase(databaseName)
+                );
             });
         });
     }
 
     private static async Task<Guid> CreateCourseAsync(HttpClient client, string name = "Algorithms")
     {
-        var semesterResponse = await client.PostAsJsonAsync("api/semesters", new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate));
+        var semesterResponse = await client.PostAsJsonAsync(
+            "api/semesters",
+            new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate)
+        );
         var semester = await semesterResponse.Content.ReadFromJsonAsync<SemesterDto>();
 
-        var courseResponse = await client.PostAsJsonAsync("api/courses", new CreateCourseRequest(name, null, "#2563eb", semester!.Id));
+        var courseResponse = await client.PostAsJsonAsync(
+            "api/courses",
+            new CreateCourseRequest(name, null, "#2563eb", semester!.Id)
+        );
         courseResponse.EnsureSuccessStatusCode();
         var course = await courseResponse.Content.ReadFromJsonAsync<CourseDto>();
         return course!.Id;
@@ -69,7 +79,9 @@ public class NoteEndpointsTests
         var courseId = await CreateCourseAsync(client);
 
         var createResponse = await client.PostAsJsonAsync(
-            "api/notes", new CreateNoteRequest("Lecture 1", "# Intro", "graphs", courseId, null));
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "# Intro", "graphs", courseId, null)
+        );
         createResponse.EnsureSuccessStatusCode();
         var created = await createResponse.Content.ReadFromJsonAsync<NoteDto>();
 
@@ -87,8 +99,14 @@ public class NoteEndpointsTests
         using var client = factory.CreateClient();
         var courseId = await CreateCourseAsync(client);
 
-        await client.PostAsJsonAsync("api/notes", new CreateNoteRequest("Lecture 1", "Content", null, courseId, null));
-        var response = await client.PostAsJsonAsync("api/notes", new CreateNoteRequest("Lecture 1", "Other content", null, courseId, null));
+        await client.PostAsJsonAsync(
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "Content", null, courseId, null)
+        );
+        var response = await client.PostAsJsonAsync(
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "Other content", null, courseId, null)
+        );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(NoteErrorCodes.DuplicateNoteTitle, await GetErrorCodeAsync(response));
@@ -101,7 +119,9 @@ public class NoteEndpointsTests
         using var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(
-            "api/notes", new CreateNoteRequest("Lecture 1", "Content", null, Guid.NewGuid(), null));
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "Content", null, Guid.NewGuid(), null)
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(CourseErrorCodes.CourseNotFound, await GetErrorCodeAsync(response));
@@ -113,10 +133,16 @@ public class NoteEndpointsTests
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
         var courseId = await CreateCourseAsync(client);
-        var createResponse = await client.PostAsJsonAsync("api/notes", new CreateNoteRequest("Lecture 1", "Content", null, courseId, null));
+        var createResponse = await client.PostAsJsonAsync(
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "Content", null, courseId, null)
+        );
         var note = await createResponse.Content.ReadFromJsonAsync<NoteDto>();
 
-        var archiveResponse = await client.PostAsync($"api/notes/{note!.Id}/archive", content: null);
+        var archiveResponse = await client.PostAsync(
+            $"api/notes/{note!.Id}/archive",
+            content: null
+        );
         var archived = await archiveResponse.Content.ReadFromJsonAsync<NoteDto>();
         Assert.True(archived!.IsArchived);
 
@@ -132,16 +158,29 @@ public class NoteEndpointsTests
         using var client = factory.CreateClient();
         var courseId = await CreateCourseAsync(client);
 
-        var targetResponse = await client.PostAsJsonAsync("api/notes", new CreateNoteRequest("Graph Theory", "Content", null, courseId, null));
+        var targetResponse = await client.PostAsJsonAsync(
+            "api/notes",
+            new CreateNoteRequest("Graph Theory", "Content", null, courseId, null)
+        );
         var target = await targetResponse.Content.ReadFromJsonAsync<NoteDto>();
 
         var sourceResponse = await client.PostAsJsonAsync(
-            "api/notes", new CreateNoteRequest("Lecture 1", "See [[Graph Theory]] for background.", null, courseId, null));
+            "api/notes",
+            new CreateNoteRequest(
+                "Lecture 1",
+                "See [[Graph Theory]] for background.",
+                null,
+                courseId,
+                null
+            )
+        );
         var source = await sourceResponse.Content.ReadFromJsonAsync<NoteDto>();
 
         Assert.Equal([target!.Id], source!.LinkedNoteIds);
 
-        var backlinks = await client.GetFromJsonAsync<List<NoteBacklinkDto>>($"api/notes/{target.Id}/backlinks");
+        var backlinks = await client.GetFromJsonAsync<List<NoteBacklinkDto>>(
+            $"api/notes/{target.Id}/backlinks"
+        );
         Assert.Equal(["Lecture 1"], backlinks!.Select(b => b.Title));
     }
 
@@ -151,7 +190,10 @@ public class NoteEndpointsTests
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
         var courseId = await CreateCourseAsync(client);
-        var noteResponse = await client.PostAsJsonAsync("api/notes", new CreateNoteRequest("Lecture 1", "Content", null, courseId, null));
+        var noteResponse = await client.PostAsJsonAsync(
+            "api/notes",
+            new CreateNoteRequest("Lecture 1", "Content", null, courseId, null)
+        );
         var note = await noteResponse.Content.ReadFromJsonAsync<NoteDto>();
 
         using var uploadContent = new MultipartFormDataContent
@@ -164,11 +206,16 @@ public class NoteEndpointsTests
         var document = await uploadResponse.Content.ReadFromJsonAsync<JsonElement>();
         var documentId = document.GetProperty("id").GetGuid();
 
-        var attachResponse = await client.PostAsync($"api/notes/{note!.Id}/documents/{documentId}", content: null);
+        var attachResponse = await client.PostAsync(
+            $"api/notes/{note!.Id}/documents/{documentId}",
+            content: null
+        );
         var attached = await attachResponse.Content.ReadFromJsonAsync<NoteDto>();
         Assert.Equal([documentId], attached!.AttachedDocumentIds);
 
-        var detachResponse = await client.DeleteAsync($"api/notes/{note.Id}/documents/{documentId}");
+        var detachResponse = await client.DeleteAsync(
+            $"api/notes/{note.Id}/documents/{documentId}"
+        );
         var detached = await detachResponse.Content.ReadFromJsonAsync<NoteDto>();
         Assert.Empty(detached!.AttachedDocumentIds);
     }
@@ -177,9 +224,11 @@ public class NoteEndpointsTests
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
-        if (problemDetails is null
+        if (
+            problemDetails is null
             || !problemDetails.Extensions.TryGetValue("errorCode", out var value)
-            || value is not JsonElement element)
+            || value is not JsonElement element
+        )
         {
             return null;
         }
