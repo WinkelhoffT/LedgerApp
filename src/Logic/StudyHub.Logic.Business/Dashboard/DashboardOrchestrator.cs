@@ -1,3 +1,4 @@
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.SemesterProgress;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Dashboard;
@@ -7,9 +8,12 @@ namespace StudyHub.Logic.Business.Dashboard;
 public sealed class DashboardOrchestrator(
     ISemesterRepository semesterRepository,
     IActiveSemesterProvider activeSemesterProvider,
-    ISemesterProgressCalculator semesterProgressCalculator) : IDashboardOrchestrator
+    ISemesterProgressCalculator semesterProgressCalculator
+) : IDashboardOrchestrator
 {
-    public async Task<SemesterProgressDto> GetSemesterProgressAsync(CancellationToken cancellationToken = default)
+    public async Task<SemesterProgressDto> GetSemesterProgressAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var semesters = await semesterRepository.GetAllAsync(cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -20,7 +24,11 @@ public sealed class DashboardOrchestrator(
             return SemesterProgressDto.Empty;
         }
 
-        var progress = semesterProgressCalculator.Calculate(activeSemester.StartDate, activeSemester.EndDate, today);
+        var progress = semesterProgressCalculator.Calculate(
+            activeSemester.StartDate,
+            activeSemester.EndDate,
+            today
+        );
 
         return new SemesterProgressDto(
             HasActiveSemester: true,
@@ -31,6 +39,7 @@ public sealed class DashboardOrchestrator(
             TotalDays: progress.TotalDays,
             ElapsedDays: progress.ElapsedDays,
             RemainingDays: progress.RemainingDays,
-            PercentComplete: progress.PercentComplete);
+            PercentComplete: progress.PercentComplete
+        );
     }
 }

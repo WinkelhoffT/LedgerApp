@@ -1,6 +1,6 @@
 using StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Business.Semesters;
+namespace StudyHub.Logic.Business.Contract;
 
 public interface ISemesterOrchestrator
 {

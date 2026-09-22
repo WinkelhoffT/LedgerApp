@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Documents;
+using StudyHub.Logic.Business.Notes;
 using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.SemesterProgress;
 using StudyHub.Logic.Domain.Semesters;
@@ -16,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISemesterOrchestrator, SemesterOrchestrator>();
         services.AddScoped<IDashboardOrchestrator, DashboardOrchestrator>();
         services.AddScoped<IDocumentOrchestrator, DocumentOrchestrator>();
+        services.AddScoped<INoteOrchestrator, NoteOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Business.Documents;
 using StudyHub.Shared.Documents;
 
@@ -13,12 +14,16 @@ public sealed class DocumentController(IDocumentOrchestrator documentOrchestrato
         documentOrchestrator.GetAllAsync(cancellationToken);
 
     [HttpGet("by-course/{courseId:guid}")]
-    public Task<IReadOnlyList<DocumentDto>> GetByCourseIdAsync(Guid courseId, CancellationToken cancellationToken) =>
-        documentOrchestrator.GetByCourseIdAsync(courseId, cancellationToken);
+    public Task<IReadOnlyList<DocumentDto>> GetByCourseIdAsync(
+        Guid courseId,
+        CancellationToken cancellationToken
+    ) => documentOrchestrator.GetByCourseIdAsync(courseId, cancellationToken);
 
     [HttpGet("by-semester/{semesterId:guid}")]
-    public Task<IReadOnlyList<DocumentDto>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken) =>
-        documentOrchestrator.GetBySemesterIdAsync(semesterId, cancellationToken);
+    public Task<IReadOnlyList<DocumentDto>> GetBySemesterIdAsync(
+        Guid semesterId,
+        CancellationToken cancellationToken
+    ) => documentOrchestrator.GetBySemesterIdAsync(semesterId, cancellationToken);
 
     [HttpGet("{id:guid}")]
     public Task<DocumentDto> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
@@ -36,13 +41,20 @@ public sealed class DocumentController(IDocumentOrchestrator documentOrchestrato
         IFormFile file,
         [FromForm] Guid? courseId,
         [FromForm] Guid? semesterId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         await using var stream = file.OpenReadStream();
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, cancellationToken);
 
-        var request = new UploadDocumentRequest(file.FileName, file.ContentType, buffer.ToArray(), courseId, semesterId);
+        var request = new UploadDocumentRequest(
+            file.FileName,
+            file.ContentType,
+            buffer.ToArray(),
+            courseId,
+            semesterId
+        );
         return await documentOrchestrator.UploadAsync(request, cancellationToken);
     }
 

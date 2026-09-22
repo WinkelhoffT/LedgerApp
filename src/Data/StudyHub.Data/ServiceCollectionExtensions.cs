@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Data.Courses;
 using StudyHub.Data.Documents;
+using StudyHub.Data.Notes;
 using StudyHub.Data.Semesters;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
+using StudyHub.Logic.Domain.Notes;
 using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Data;
@@ -15,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISemesterRepository, SemesterRepository>();
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<INoteRepository, NoteRepository>();
 
         return services;
     }

@@ -31,6 +31,7 @@ Core documentation:
 - `docs/architecture.md`
 - `docs/agent-context.md`
 - `docs/agent-rule-catalog.md`
+- `docs/plans/`
 
 If documentation conflicts with the current implementation, report the inconsistency instead of making assumptions.
 

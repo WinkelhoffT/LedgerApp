@@ -240,8 +240,20 @@ dotnet run --project src/UI/StudyHub.UI/StudyHub.UI.csproj
 ```
 
 On first run this creates `src/UI/StudyHub.Api/App_Data/StudyHub.db` and applies all migrations.
-The UI's `appsettings.Development.json` points `Api:BaseAddress` at the Api's local dev URL
-(`http://localhost:5250/`, see `src/UI/StudyHub.Api/Properties/launchSettings.json`).
+
+The UI needs `Api:BaseAddress` to point at the Api's local dev URL instead of the Docker-only
+`studyhub-api` hostname from `appsettings.json`. This override is gitignored (it's per-machine), so
+create it once from the checked-in template:
+
+```bash
+cp src/UI/StudyHub.UI/appsettings.Development.json.example src/UI/StudyHub.UI/appsettings.Development.json
+```
+
+This points `Api:BaseAddress` at `http://localhost:5250/` (see
+`src/UI/StudyHub.Api/Properties/launchSettings.json`). Without it — e.g. when launching both
+projects directly from an IDE like Rider instead of via `dotnet run` from a shell with this file
+already present — the UI throws `SocketException: ... studyhub-api ...` because that hostname only
+resolves inside the Docker Compose network.
 
 ### Run the tests
 

@@ -1,6 +1,6 @@
 using StudyHub.Shared.Courses;
 
-namespace StudyHub.Logic.Business.Courses;
+namespace StudyHub.Logic.Business.Contract;
 
 public interface ICourseOrchestrator
 {

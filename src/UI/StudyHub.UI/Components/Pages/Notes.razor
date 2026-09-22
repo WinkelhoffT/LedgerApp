@@ -1,5 +1,271 @@
 @page "/notes"
+@rendermode InteractiveServer
 
 <PageTitle>Notes</PageTitle>
 
-<p>Notes — coming soon.</p>
+<div class="page-toolbar">
+    <select class="form-control scope-select" @bind="SelectedScope">
+        <option value="all">All notes</option>
+        @if (Courses.Count > 0)
+        {
+            <optgroup label="Courses">
+                @foreach (var course in Courses)
+                {
+                    <option value="course:@course.Id">@course.Name</option>
+                }
+            </optgroup>
+        }
+        @if (Semesters.Count > 0)
+        {
+            <optgroup label="Semesters">
+                @foreach (var semester in Semesters)
+                {
+                    <option value="semester:@semester.Id">@semester.Name</option>
+                }
+            </optgroup>
+        }
+    </select>
+
+    <label class="toggle-check">
+        <input type="checkbox" @bind="ShowArchived" />
+        Show archived
+    </label>
+
+    <button class="btn btn-primary" type="button" @onclick="StartNewNote">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        New Note
+    </button>
+</div>
+
+@if (NoteList is null)
+{
+    <p class="placeholder-hint">Loading notes…</p>
+}
+else
+{
+    <div class="notes-layout">
+        <div class="notes-list card">
+            <div class="notes-list-head">
+                <div class="note-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+                    <input class="form-control" placeholder="Search notes…" @bind="SearchText" @bind:event="oninput" />
+                </div>
+                @if (AllTags.Count > 0)
+                {
+                    <div class="note-tags-row">
+                        <button class="note-tag-f @(ActiveTag is null ? "active" : "")" type="button" @onclick="() => SetActiveTag(null)">All</button>
+                        @foreach (var tag in AllTags)
+                        {
+                            <button class="note-tag-f @(ActiveTag == tag ? "active" : "")" type="button" @onclick="() => SetActiveTag(tag)">#@tag</button>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="notes-scroll">
+                @if (VisibleNotes.Count == 0)
+                {
+                    <p class="placeholder-hint" style="margin:16px">No notes match.</p>
+                }
+                @foreach (var note in VisibleNotes)
+                {
+                    <div class="note-list-item @(note.Id == SelectedNoteId ? "active" : "")" @onclick="() => OpenNoteAsync(note.Id)">
+                        <div class="nli-title">
+                            @note.Title
+                            @if (note.IsArchived)
+                            {
+                                <span class="badge-archived">Archived</span>
+                            }
+                        </div>
+                        <div class="nli-excerpt">@GetExcerpt(note)</div>
+                        <div class="nli-meta">
+                            <span>@GetParentName(note)</span>
+                            <span class="nli-date">@note.UpdatedAt.ToLocalTime().ToString("d")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="note-editor card">
+            @if (!IsCreating && SelectedNote is null)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-title">No note selected</div>
+                    <div class="empty-state-text">Select a note from the list, or create a new one.</div>
+                    <button class="btn btn-primary" type="button" @onclick="StartNewNote">New Note</button>
+                </div>
+            }
+            else if (ShowEditor)
+            {
+                <div class="editor-toolbar">
+                    <input class="form-control note-title-input" placeholder="Note title" @bind="WorkingTitle" disabled="@IsReadOnly" />
+
+                    <select class="form-control note-scope-select" @bind="WorkingAssignmentKind" disabled="@IsReadOnly">
+                        <option value="@AssignmentTarget.Course">Course</option>
+                        <option value="@AssignmentTarget.Semester">Semester</option>
+                    </select>
+
+                    @if (WorkingAssignmentKind == AssignmentTarget.Course)
+                    {
+                        <select class="form-control" @bind="WorkingCourseId" disabled="@IsReadOnly">
+                            <option value="@Guid.Empty">Select a course…</option>
+                            @foreach (var course in Courses)
+                            {
+                                <option value="@course.Id">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <select class="form-control" @bind="WorkingSemesterId" disabled="@IsReadOnly">
+                            <option value="@Guid.Empty">Select a semester…</option>
+                            @foreach (var semester in Semesters)
+                            {
+                                <option value="@semester.Id">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
+                            }
+                        </select>
+                    }
+
+                    <input class="form-control note-tags-input" placeholder="Tags (comma-separated)" @bind="WorkingTags" disabled="@IsReadOnly" />
+
+                    <div class="editor-toolbar-actions">
+                        <button class="btn btn-outline btn-sm" type="button" @onclick="TogglePreview">@(ShowPreview ? "Hide preview" : "Show preview")</button>
+                        @if (IsCreating)
+                        {
+                            <span class="template-row">
+                                Start from:
+                                <button class="btn btn-outline btn-sm" type="button" @onclick='() => ApplyTemplate("blank")'>Blank</button>
+                                <button class="btn btn-outline btn-sm" type="button" @onclick='() => ApplyTemplate("lecture")'>Lecture Notes</button>
+                                <button class="btn btn-outline btn-sm" type="button" @onclick='() => ApplyTemplate("exam")'>Exam Prep</button>
+                            </span>
+                        }
+                        @if (!IsReadOnly)
+                        {
+                            <button class="btn btn-primary btn-sm" type="button" disabled="@IsSaving" @onclick="SaveAsync">Save</button>
+                        }
+                        @if (!IsCreating && SelectedNote is not null)
+                        {
+                            @if (SelectedNote.IsArchived)
+                            {
+                                <button class="btn btn-secondary btn-sm" type="button" disabled="@IsSaving" @onclick="RestoreSelectedAsync">Restore</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsSaving" @onclick="ArchiveSelectedAsync">Archive</button>
+                            }
+                        }
+                        <button class="btn btn-secondary btn-sm" type="button" @onclick="CancelEditingAsync">Cancel</button>
+                    </div>
+                </div>
+
+                @if (ErrorMessage is not null)
+                {
+                    <div class="form-error note-error">@ErrorMessage</div>
+                }
+
+                <div class="editor-split @(ShowPreview ? "" : "full-width")">
+                    <textarea class="editor-pane" @ref="ContentTextAreaRef" value="@WorkingContent"
+                              @oninput="OnContentInputAsync" @onkeydown="OnContentKeyDownAsync"
+                              data-slash-menu-open="@(SlashMenuOpen ? "true" : "false")"
+                              readonly="@IsReadOnly" placeholder="Write in Markdown… type / for commands, [[Note Title]] to link another note."></textarea>
+                    @if (SlashMenuOpen)
+                    {
+                        <SlashCommandMenu Commands="FilteredSlashCommands" SelectedIndex="SlashSelectedIndex"
+                                          TopPx="SlashMenuTop" LeftPx="SlashMenuLeft"
+                                          OnSelect="ApplySlashCommandAsync" OnHover="index => SlashSelectedIndex = index" />
+                    }
+                    @if (ShowPreview)
+                    {
+                        <div class="preview-pane" @ref="PreviewPaneRef">
+                            @if (HeadingOutline.Count > 0)
+                            {
+                                <div class="note-outline">
+                                    <div class="note-outline-title">Outline</div>
+                                    @foreach (var heading in HeadingOutline)
+                                    {
+                                        <a class="note-outline-item level-@heading.Level" href="#@heading.Id">@heading.Text</a>
+                                    }
+                                </div>
+                            }
+                            @((MarkupString)PreviewHtml)
+                        </div>
+                    }
+                </div>
+            }
+            else if (SelectedNote is { } note)
+            {
+                <div class="note-view-toolbar">
+                    <div>
+                        <h2 class="note-view-title">@note.Title</h2>
+                        <div class="note-view-meta">
+                            <span>@GetParentName(note)</span>
+                            <span class="nli-date">Updated @note.UpdatedAt.ToLocalTime().ToString("g")</span>
+                            @if (note.IsArchived)
+                            {
+                                <span class="badge-archived">Archived</span>
+                            }
+                        </div>
+                        @if (note.Tags.Count > 0)
+                        {
+                            <div class="note-view-tags">
+                                @foreach (var tag in note.Tags)
+                                {
+                                    <span class="note-tag-f">#@tag</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="editor-toolbar-actions">
+                        @if (note.IsArchived)
+                        {
+                            <button class="btn btn-secondary btn-sm" type="button" disabled="@IsSaving" @onclick="RestoreSelectedAsync">Restore</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm" type="button" @onclick="StartEditing">Edit</button>
+                            <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsSaving" @onclick="ArchiveSelectedAsync">Archive</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="preview-pane note-view-body" @ref="PreviewPaneRef">
+                    @if (HeadingOutline.Count > 0)
+                    {
+                        <div class="note-outline">
+                            <div class="note-outline-title">Outline</div>
+                            @foreach (var heading in HeadingOutline)
+                            {
+                                <a class="note-outline-item level-@heading.Level" href="#@heading.Id">@heading.Text</a>
+                            }
+                        </div>
+                    }
+                    @((MarkupString)PreviewHtml)
+                </div>
+            }
+
+            @if (!IsCreating && SelectedNote is not null)
+            {
+                <div class="note-side-panels">
+                    <NoteAttachmentPicker NoteId="SelectedNote.Id" AttachedDocumentIds="SelectedNote.AttachedDocumentIds" OnChanged="HandleNoteChangedAsync" />
+
+                    <div class="note-backlinks">
+                        <div class="section-title note-backlinks-title">Linked mentions</div>
+                        @if (Backlinks.Count == 0)
+                        {
+                            <p class="placeholder-hint">No other notes link here yet.</p>
+                        }
+                        else
+                        {
+                            <ul class="backlink-list">
+                                @foreach (var backlink in Backlinks)
+                                {
+                                    <li><a href="/notes?note=@backlink.NoteId">@backlink.Title</a></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
