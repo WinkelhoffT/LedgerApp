@@ -2,7 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
-    <ProjectReference Include="..\..\Logic\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\StudyHub.Shared.Domain\StudyHub.Shared.Domain.csproj" />
+    <ProjectReference Include="..\StudyHub.Data.Contract\StudyHub.Data.Contract.csproj" />
   </ItemGroup>
 
   <ItemGroup>

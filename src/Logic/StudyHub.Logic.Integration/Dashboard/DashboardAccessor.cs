@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using StudyHub.Logic.Integration.Contract.Dashboard;
 using StudyHub.Shared.Dashboard;
 
 namespace StudyHub.Logic.Integration.Dashboard;

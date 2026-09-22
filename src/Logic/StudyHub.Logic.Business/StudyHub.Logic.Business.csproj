@@ -2,7 +2,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\StudyHub.Shared.Domain\StudyHub.Shared.Domain.csproj" />
+    <ProjectReference Include="..\..\Data\StudyHub.Data.Contract\StudyHub.Data.Contract.csproj" />
+    <ProjectReference Include="..\StudyHub.Logic.Business.Contract\StudyHub.Logic.Business.Contract.csproj" />
     <ProjectReference Include="..\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+    <ProjectReference Include="..\StudyHub.Logic.Domain.Contract\StudyHub.Logic.Domain.Contract.csproj" />
     <ProjectReference Include="..\StudyHub.Logic.Integration\StudyHub.Logic.Integration.csproj" />
   </ItemGroup>
 

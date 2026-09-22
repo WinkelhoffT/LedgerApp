@@ -1,9 +1,11 @@
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Documents;
-using StudyHub.Logic.Domain.Notes;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Data.Contract.Courses;
+using StudyHub.Data.Contract.Documents;
+using StudyHub.Data.Contract.Notes;
+using StudyHub.Data.Contract.Semesters;
+using StudyHub.Logic.Business.Contract.Notes;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
+using StudyHub.Shared.Domain.Notes;
 using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
 

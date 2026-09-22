@@ -1,4 +1,4 @@
-using StudyHub.Logic.Integration.Documents;
+using StudyHub.Logic.Integration.Contract.Documents;
 
 namespace StudyHub.UI.Documents;
 

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Dashboard;
+using StudyHub.Logic.Business.Contract.Dashboard;
 using StudyHub.Shared.Dashboard;
 
 namespace StudyHub.Api.Dashboard;

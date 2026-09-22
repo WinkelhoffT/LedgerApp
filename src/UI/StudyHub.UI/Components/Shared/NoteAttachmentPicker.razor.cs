@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using StudyHub.Logic.Integration.Documents;
-using StudyHub.Logic.Integration.Notes;
+using StudyHub.Logic.Integration.Contract.Documents;
+using StudyHub.Logic.Integration.Contract.Notes;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;
 

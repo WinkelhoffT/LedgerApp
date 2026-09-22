@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using StudyHub.Logic.Integration.Contract.Notes;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;

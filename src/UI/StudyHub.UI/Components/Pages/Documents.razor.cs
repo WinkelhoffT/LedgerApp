@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using StudyHub.Logic.Integration.Courses;
-using StudyHub.Logic.Integration.Documents;
-using StudyHub.Logic.Integration.Semesters;
+using StudyHub.Logic.Integration.Contract.Courses;
+using StudyHub.Logic.Integration.Contract.Documents;
+using StudyHub.Logic.Integration.Contract.Semesters;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Semesters;

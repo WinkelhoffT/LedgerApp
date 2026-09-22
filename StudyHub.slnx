@@ -1,14 +1,19 @@
 <Solution>
   <Folder Name="/01_Shared/">
     <Project Path="src/Shared/StudyHub.Shared/StudyHub.Shared.csproj" />
+    <Project Path="src/Shared/StudyHub.Shared.Domain/StudyHub.Shared.Domain.csproj" />
   </Folder>
   <Folder Name="/02_Data/">
     <Project Path="src/Data/StudyHub.Data/StudyHub.Data.csproj" />
+    <Project Path="src/Data/StudyHub.Data.Contract/StudyHub.Data.Contract.csproj" />
   </Folder>
   <Folder Name="/03_Logic/">
     <Project Path="src/Logic/StudyHub.Logic.Business/StudyHub.Logic.Business.csproj" />
+    <Project Path="src/Logic/StudyHub.Logic.Business.Contract/StudyHub.Logic.Business.Contract.csproj" />
     <Project Path="src/Logic/StudyHub.Logic.Domain/StudyHub.Logic.Domain.csproj" />
+    <Project Path="src/Logic/StudyHub.Logic.Domain.Contract/StudyHub.Logic.Domain.Contract.csproj" />
     <Project Path="src/Logic/StudyHub.Logic.Integration/StudyHub.Logic.Integration.csproj" />
+    <Project Path="src/Logic/StudyHub.Logic.Integration.Contract/StudyHub.Logic.Integration.Contract.csproj" />
   </Folder>
   <Folder Name="/04_UI/">
     <Project Path="src/UI/StudyHub.UI/StudyHub.UI.csproj" />

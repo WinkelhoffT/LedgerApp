@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using StudyHub.Logic.Integration.Contract.Semesters;
 using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Integration.Semesters;

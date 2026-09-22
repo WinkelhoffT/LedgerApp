@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using StudyHub.Logic.Integration.Dashboard;
+using StudyHub.Logic.Integration.Contract.Dashboard;
 using StudyHub.Shared.Dashboard;
 using StudyHub.UI.Services;
 

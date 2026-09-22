@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
 using StudyHub.Data.Semesters;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Domain.Semesters;
 
 namespace StudyHub.Tests.Data.Semesters;
 

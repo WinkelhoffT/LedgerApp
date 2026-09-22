@@ -1,5 +1,7 @@
-using StudyHub.Logic.Domain.SemesterProgress;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Data.Contract.Semesters;
+using StudyHub.Logic.Business.Contract.Dashboard;
+using StudyHub.Logic.Domain.Contract.SemesterProgress;
+using StudyHub.Logic.Domain.Contract.Semesters;
 using StudyHub.Shared.Dashboard;
 
 namespace StudyHub.Logic.Business.Dashboard;

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Notes;
+using StudyHub.Logic.Business.Contract.Notes;
 using StudyHub.Shared.Notes;
 
 namespace StudyHub.Api.Notes;

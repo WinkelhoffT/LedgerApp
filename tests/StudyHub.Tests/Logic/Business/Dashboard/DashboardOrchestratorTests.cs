@@ -1,7 +1,9 @@
 using Moq;
+using StudyHub.Data.Contract.Semesters;
 using StudyHub.Logic.Business.Dashboard;
-using StudyHub.Logic.Domain.SemesterProgress;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Logic.Domain.Contract.SemesterProgress;
+using StudyHub.Logic.Domain.Contract.Semesters;
+using StudyHub.Shared.Domain.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Dashboard;
 

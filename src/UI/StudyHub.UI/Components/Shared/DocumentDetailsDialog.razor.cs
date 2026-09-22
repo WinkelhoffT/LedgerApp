@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using StudyHub.Logic.Integration.Documents;
+using StudyHub.Logic.Integration.Contract.Documents;
 using StudyHub.Shared.Documents;
 
 namespace StudyHub.UI.Components.Shared;

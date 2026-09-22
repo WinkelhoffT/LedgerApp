@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
     <ProjectReference Include="..\..\Logic\StudyHub.Logic.Integration\StudyHub.Logic.Integration.csproj" />
+    <ProjectReference Include="..\..\Logic\StudyHub.Logic.Integration.Contract\StudyHub.Logic.Integration.Contract.csproj" />
   </ItemGroup>
 
   <ItemGroup>

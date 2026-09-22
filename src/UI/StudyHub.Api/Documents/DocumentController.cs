@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Logic.Business.Documents;
+using StudyHub.Logic.Business.Contract.Documents;
 using StudyHub.Shared.Documents;
 
 namespace StudyHub.Api.Documents;

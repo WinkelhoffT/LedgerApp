@@ -100,14 +100,21 @@ The project follows a **Composite Component Architecture Pattern**.
 > itself — the UI depends on Integration's Accessor contracts, never talks to `StudyHub.Api` (an
 > HTTP call to a separate process) directly. DTOs, requests, error codes, and exceptions that cross
 > that Api/Integration/Business boundary live in `StudyHub.Shared`, since Integration must not
-> depend on `Logic.Business`/`Logic.Domain` (see "Layering" below) — Domain-only types (entities,
-> repository contracts) stay in `Logic.Domain`.
+> depend on `Logic.Business`/`Logic.Domain` (see "Layering" below).
+>
+> Every project below that has an implementation (`Data`, `Logic.Domain`, `Logic.Business`,
+> `Logic.Integration`) has a matching `.Contract` project (`Data.Contract`, `Logic.Domain.Contract`,
+> `Logic.Business.Contract`, `Logic.Integration.Contract`) that holds only the interfaces
+> (and, per component, DTOs/exceptions local to that interface) consumers need — never the
+> implementation. Entities (`Note`, `Semester`, `Course`, `Document`, …) live in
+> `StudyHub.Shared.Domain`, since they're consumed across Data, Domain and Business alike; repository
+> interfaces (`INoteRepository`, …) live in `StudyHub.Data.Contract`, not `Logic.Domain`.
 
 Projects:
 
-- Shared
-- Data
-- Logic
+- Shared (+ `Shared.Domain` for entities)
+- Data (+ `Data.Contract` for repository interfaces)
+- Logic (Domain, Business, Integration — each with a matching `.Contract` project)
 - UI
 - Infrastructure
 - Tests
@@ -124,11 +131,12 @@ Responsibilities:
 
 Contains:
 
-- Entities
-- Value Objects
-- Domain Rules
+- Domain Rules (e.g. `ActiveSemesterProvider`, `SemesterProgressCalculator`), whose interfaces
+  live in `Logic.Domain.Contract`
 
-No external dependencies.
+Entities and Value Objects (`Note`, `Semester`, `Course`, `Document`, …) live in
+`StudyHub.Shared.Domain`, not here — see "Architecture" above. `Logic.Domain` depends on
+`Shared.Domain` and its own `Logic.Domain.Contract`; no other external dependencies.
 
 ---
 
@@ -183,11 +191,15 @@ Rules:
 - UI communicates only with Integration's Accessor contracts — never directly with `StudyHub.Api`,
   `Logic.Business`, or `Logic.Domain`.
 
-Within each Logic component, keep the contract (interfaces, DTOs, exceptions) separated from its
-implementation, e.g. a `Contracts/` subfolder or namespace per domain, rather than mixing DTO,
-interface, exception, and implementation classes in the same folder. This applies to
-component-local contracts that only that component's own implementation exposes (e.g.
-`ISemesterOrchestrator` in `Logic.Business`) — not to the wire-level DTOs/exceptions described below.
+Keep each component's contract (interfaces, and any DTOs/exceptions local to that contract)
+physically separate from its implementation, in a sibling `<Project>.Contract` project — not a
+`Contracts/` subfolder inside the implementation project. `Data`, `Logic.Domain`, `Logic.Business`,
+and `Logic.Integration` each have a matching `.Contract` project (`Data.Contract`,
+`Logic.Domain.Contract`, `Logic.Business.Contract`, `Logic.Integration.Contract`); the
+implementation project references and implements its own `.Contract` project, and consumers
+reference the `.Contract` project, never the implementation. This applies to component-local
+contracts that only that component's own implementation exposes (e.g. `ISemesterOrchestrator` in
+`Logic.Business.Contract`) — not to the wire-level DTOs/exceptions described below.
 
 DTOs, request/error-code types, and exceptions that cross the `StudyHub.Api` ↔ `Logic.Integration`
 ↔ `Logic.Business` boundary (i.e. anything an Accessor constructs, throws, or catches) belong in
@@ -196,9 +208,10 @@ DTOs, request/error-code types, and exceptions that cross the `StudyHub.Api` ↔
 (`CourseDto`, `CreateCourseRequest`, …) and the Domain-level invariant exceptions entities throw
 (`CourseArchivedException`, `CourseValidationException`, …) when an Accessor needs to reconstruct
 them from a `ProblemDetails` error code. Options/configuration classes also belong in `Shared`
-(e.g. under a `Configuration` area). Types genuinely local to one project (e.g. a Business
-orchestration interface, or a Domain entity) stay where they are — don't move everything to
-`Shared` on principle.
+(e.g. under a `Configuration` area). Types genuinely local to one component's contract (e.g. a
+Business orchestration interface in `Logic.Business.Contract`) stay in that component's `.Contract`
+project — don't move everything to `Shared` on principle. Entities are the one exception: they
+cross Data, Domain, and Business, so they live in `Shared.Domain` rather than any single component.
 
 ---
 
@@ -214,8 +227,9 @@ logic; that belongs in the Business orchestrator it calls.
 # UI Services and Frontend Integration
 
 - `StudyHub.UI` never talks to `StudyHub.Api` directly. It depends on small, purpose-specific
-  Accessor interfaces/classes living in `StudyHub.Logic.Integration/<Domain>/`, injected into
-  Razor components like any other service. Avoid one "fat" accessor per aggregate that implements
+  Accessor interfaces living in `StudyHub.Logic.Integration.Contract/<Domain>/` (implemented by
+  the matching classes in `StudyHub.Logic.Integration/<Domain>/`), injected into Razor components
+  like any other service. Avoid one "fat" accessor per aggregate that implements
   the full Business contract over HTTP (e.g. one class implementing `ISemesterOrchestrator`
   end-to-end); prefer narrower accessors that map to what a page actually needs. HttpClient/DI
   wiring for accessors lives in `Logic.Integration`'s own `ServiceCollectionExtensions`

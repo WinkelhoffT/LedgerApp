@@ -1,5 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Logic.Integration.Contract.Courses;
+using StudyHub.Logic.Integration.Contract.Dashboard;
+using StudyHub.Logic.Integration.Contract.Documents;
+using StudyHub.Logic.Integration.Contract.Notes;
+using StudyHub.Logic.Integration.Contract.Semesters;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Dashboard;
 using StudyHub.Logic.Integration.Documents;

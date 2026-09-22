@@ -1,4 +1,4 @@
-using StudyHub.Logic.Domain.Documents;
+using StudyHub.Shared.Domain.Documents;
 using StudyHub.Shared.Documents;
 
 namespace StudyHub.Tests.Logic.Domain.Documents;

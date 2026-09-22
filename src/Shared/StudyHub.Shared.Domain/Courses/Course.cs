@@ -1,0 +1,113 @@
+using StudyHub.Shared.Courses;
+
+namespace StudyHub.Shared.Domain.Courses;
+
+public sealed record Course
+{
+    // Defines what "the same name" means for uniqueness comparisons (trim + case-fold). Exposed
+    // as a delegate so StudyHub.Data's CourseRepository can reuse this domain rule instead of
+    // re-implementing name normalization itself.
+    public static readonly Func<string, string> NormalizeNameForComparison = name => name.Trim().ToLower();
+
+    private Course()
+    {
+    }
+
+    public Guid Id { get; private set; }
+
+    public string Name { get; private set; } = string.Empty;
+
+    public string? Description { get; private set; }
+
+    public string Color { get; private set; } = string.Empty;
+
+    public Guid SemesterId { get; private set; }
+
+    public bool IsArchived { get; private set; }
+
+    public DateTime CreatedAt { get; private set; }
+
+    public DateTime UpdatedAt { get; private set; }
+
+    public static Course Create(string name, string? description, string color, Guid semesterId)
+    {
+        var course = new Course
+        {
+            Id = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        course.SetDetails(name, description, color, semesterId);
+
+        return course;
+    }
+
+    public void Update(string name, string? description, string color, Guid semesterId)
+    {
+        if (IsArchived)
+        {
+            throw new CourseArchivedException(Id);
+        }
+
+        SetDetails(name, description, color, semesterId);
+    }
+
+    public void Archive()
+    {
+        if (IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        if (!IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    private void SetDetails(string name, string? description, string color, Guid semesterId)
+    {
+        var trimmedName = name?.Trim() ?? string.Empty;
+        if (trimmedName.Length == 0)
+        {
+            throw new CourseValidationException("Course name is required.");
+        }
+
+        if (trimmedName.Length > CreateCourseRequest.NameMaxLength)
+        {
+            throw new CourseValidationException($"Course name must not exceed {CreateCourseRequest.NameMaxLength} characters.");
+        }
+
+        var trimmedDescription = description?.Trim();
+        if (trimmedDescription is { Length: > CreateCourseRequest.DescriptionMaxLength })
+        {
+            throw new CourseValidationException($"Course description must not exceed {CreateCourseRequest.DescriptionMaxLength} characters.");
+        }
+
+        var trimmedColor = color?.Trim() ?? string.Empty;
+        if (trimmedColor.Length == 0)
+        {
+            throw new CourseValidationException("Course color is required.");
+        }
+
+        if (semesterId == Guid.Empty)
+        {
+            throw new CourseValidationException("Course must be assigned to a semester.");
+        }
+
+        Name = trimmedName;
+        Description = string.IsNullOrEmpty(trimmedDescription) ? null : trimmedDescription;
+        Color = trimmedColor;
+        SemesterId = semesterId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+}

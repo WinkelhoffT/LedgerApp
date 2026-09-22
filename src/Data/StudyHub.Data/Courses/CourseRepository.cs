@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Logic.Domain.Courses;
+using StudyHub.Data.Contract.Courses;
+using StudyHub.Shared.Domain.Courses;
 
 namespace StudyHub.Data.Courses;
 

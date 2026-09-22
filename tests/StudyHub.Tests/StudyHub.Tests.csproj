@@ -23,10 +23,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Data\StudyHub.Data\StudyHub.Data.csproj" />
+    <ProjectReference Include="..\..\src\Data\StudyHub.Data.Contract\StudyHub.Data.Contract.csproj" />
     <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Domain.Contract\StudyHub.Logic.Domain.Contract.csproj" />
     <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Business\StudyHub.Logic.Business.csproj" />
+    <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Business.Contract\StudyHub.Logic.Business.Contract.csproj" />
+    <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Integration\StudyHub.Logic.Integration.csproj" />
+    <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Integration.Contract\StudyHub.Logic.Integration.Contract.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\StudyHub.Infrastructure\StudyHub.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Shared\StudyHub.Shared.Domain\StudyHub.Shared.Domain.csproj" />
     <ProjectReference Include="..\..\src\UI\StudyHub.Api\StudyHub.Api.csproj" />
   </ItemGroup>
 
