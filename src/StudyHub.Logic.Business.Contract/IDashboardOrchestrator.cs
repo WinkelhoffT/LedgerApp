@@ -1,6 +1,6 @@
 using StudyHub.Shared.Dashboard;
 
-namespace StudyHub.Logic.Business.Dashboard;
+namespace StudyHub.Logic.Business.Contract;
 
 public interface IDashboardOrchestrator
 {

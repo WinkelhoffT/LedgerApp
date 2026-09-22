@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
@@ -14,21 +15,30 @@ public sealed partial class NoteOrchestrator(
     INoteRepository noteRepository,
     IDocumentRepository documentRepository,
     ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository) : INoteOrchestrator
+    ISemesterRepository semesterRepository
+) : INoteOrchestrator
 {
-    public async Task<IReadOnlyList<NoteDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NoteDto>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var notes = await noteRepository.GetAllAsync(cancellationToken);
         return await ToDtosAsync(notes, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<NoteDto>> GetByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NoteDto>> GetByCourseIdAsync(
+        Guid courseId,
+        CancellationToken cancellationToken = default
+    )
     {
         var notes = await noteRepository.GetByCourseIdAsync(courseId, cancellationToken);
         return await ToDtosAsync(notes, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<NoteDto>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NoteDto>> GetBySemesterIdAsync(
+        Guid semesterId,
+        CancellationToken cancellationToken = default
+    )
     {
         var notes = await noteRepository.GetBySemesterIdAsync(semesterId, cancellationToken);
         return await ToDtosAsync(notes, cancellationToken);
@@ -40,12 +50,25 @@ public sealed partial class NoteOrchestrator(
         return await ToDtoAsync(note, cancellationToken);
     }
 
-    public async Task<NoteDto> CreateAsync(CreateNoteRequest request, CancellationToken cancellationToken = default)
+    public async Task<NoteDto> CreateAsync(
+        CreateNoteRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         await EnsureTitleIsUniqueAsync(request.Title, excludingId: null, cancellationToken);
-        await EnsureParentIsAssignableAsync(request.CourseId, request.SemesterId, cancellationToken);
+        await EnsureParentIsAssignableAsync(
+            request.CourseId,
+            request.SemesterId,
+            cancellationToken
+        );
 
-        var note = Note.Create(request.Title, request.Content, request.Tags, request.CourseId, request.SemesterId);
+        var note = Note.Create(
+            request.Title,
+            request.Content,
+            request.Tags,
+            request.CourseId,
+            request.SemesterId
+        );
 
         await noteRepository.AddAsync(note, cancellationToken);
         await noteRepository.SaveChangesAsync(cancellationToken);
@@ -55,14 +78,27 @@ public sealed partial class NoteOrchestrator(
         return await ToDtoAsync(note, cancellationToken);
     }
 
-    public async Task<NoteDto> UpdateAsync(UpdateNoteRequest request, CancellationToken cancellationToken = default)
+    public async Task<NoteDto> UpdateAsync(
+        UpdateNoteRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         var note = await GetExistingNoteAsync(request.Id, cancellationToken);
 
         await EnsureTitleIsUniqueAsync(request.Title, request.Id, cancellationToken);
-        await EnsureParentIsAssignableAsync(request.CourseId, request.SemesterId, cancellationToken);
+        await EnsureParentIsAssignableAsync(
+            request.CourseId,
+            request.SemesterId,
+            cancellationToken
+        );
 
-        note.Update(request.Title, request.Content, request.Tags, request.CourseId, request.SemesterId);
+        note.Update(
+            request.Title,
+            request.Content,
+            request.Tags,
+            request.CourseId,
+            request.SemesterId
+        );
 
         await noteRepository.SaveChangesAsync(cancellationToken);
 
@@ -93,11 +129,16 @@ public sealed partial class NoteOrchestrator(
         return await ToDtoAsync(note, cancellationToken);
     }
 
-    public async Task<NoteDto> AttachDocumentAsync(Guid noteId, Guid documentId, CancellationToken cancellationToken = default)
+    public async Task<NoteDto> AttachDocumentAsync(
+        Guid noteId,
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
     {
         var note = await GetExistingNoteAsync(noteId, cancellationToken);
 
-        _ = await documentRepository.GetByIdAsync(documentId, cancellationToken)
+        _ =
+            await documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new DocumentNotFoundException(documentId);
 
         await noteRepository.AddAttachmentAsync(noteId, documentId, cancellationToken);
@@ -106,7 +147,11 @@ public sealed partial class NoteOrchestrator(
         return await ToDtoAsync(note, cancellationToken);
     }
 
-    public async Task<NoteDto> DetachDocumentAsync(Guid noteId, Guid documentId, CancellationToken cancellationToken = default)
+    public async Task<NoteDto> DetachDocumentAsync(
+        Guid noteId,
+        Guid documentId,
+        CancellationToken cancellationToken = default
+    )
     {
         var note = await GetExistingNoteAsync(noteId, cancellationToken);
 
@@ -116,11 +161,17 @@ public sealed partial class NoteOrchestrator(
         return await ToDtoAsync(note, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<NoteBacklinkDto>> GetBacklinksAsync(Guid noteId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NoteBacklinkDto>> GetBacklinksAsync(
+        Guid noteId,
+        CancellationToken cancellationToken = default
+    )
     {
         await GetExistingNoteAsync(noteId, cancellationToken);
 
-        var backlinkNoteIds = await noteRepository.GetBacklinkNoteIdsAsync(noteId, cancellationToken);
+        var backlinkNoteIds = await noteRepository.GetBacklinkNoteIdsAsync(
+            noteId,
+            cancellationToken
+        );
         if (backlinkNoteIds.Count == 0)
         {
             return [];
@@ -135,9 +186,13 @@ public sealed partial class NoteOrchestrator(
 
     private async Task<Note> GetExistingNoteAsync(Guid id, CancellationToken cancellationToken) =>
         await noteRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new NoteNotFoundException(id);
+        ?? throw new NoteNotFoundException(id);
 
-    private async Task EnsureTitleIsUniqueAsync(string title, Guid? excludingId, CancellationToken cancellationToken)
+    private async Task EnsureTitleIsUniqueAsync(
+        string title,
+        Guid? excludingId,
+        CancellationToken cancellationToken
+    )
     {
         if (await noteRepository.ExistsByTitleAsync(title, excludingId, cancellationToken))
         {
@@ -145,11 +200,16 @@ public sealed partial class NoteOrchestrator(
         }
     }
 
-    private async Task EnsureParentIsAssignableAsync(Guid? courseId, Guid? semesterId, CancellationToken cancellationToken)
+    private async Task EnsureParentIsAssignableAsync(
+        Guid? courseId,
+        Guid? semesterId,
+        CancellationToken cancellationToken
+    )
     {
         if (courseId is { } id)
         {
-            var course = await courseRepository.GetByIdAsync(id, cancellationToken)
+            var course =
+                await courseRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new CourseNotFoundException(id);
 
             if (course.IsArchived)
@@ -160,7 +220,8 @@ public sealed partial class NoteOrchestrator(
 
         if (semesterId is { } semId)
         {
-            var semester = await semesterRepository.GetByIdAsync(semId, cancellationToken)
+            var semester =
+                await semesterRepository.GetByIdAsync(semId, cancellationToken)
                 ?? throw new SemesterNotFoundException(semId);
 
             if (semester.IsArchived)
@@ -205,12 +266,18 @@ public sealed partial class NoteOrchestrator(
 
     private async Task<NoteDto> ToDtoAsync(Note note, CancellationToken cancellationToken)
     {
-        var attachedDocumentIds = await noteRepository.GetAttachedDocumentIdsAsync(note.Id, cancellationToken);
+        var attachedDocumentIds = await noteRepository.GetAttachedDocumentIdsAsync(
+            note.Id,
+            cancellationToken
+        );
         var linkedNoteIds = await noteRepository.GetLinkedNoteIdsAsync(note.Id, cancellationToken);
         return ToDto(note, attachedDocumentIds, linkedNoteIds);
     }
 
-    private async Task<IReadOnlyList<NoteDto>> ToDtosAsync(IReadOnlyList<Note> notes, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<NoteDto>> ToDtosAsync(
+        IReadOnlyList<Note> notes,
+        CancellationToken cancellationToken
+    )
     {
         var dtos = new List<NoteDto>(notes.Count);
         foreach (var note in notes)
@@ -221,23 +288,32 @@ public sealed partial class NoteOrchestrator(
         return dtos;
     }
 
-    private static NoteDto ToDto(Note note, IReadOnlyList<Guid> attachedDocumentIds, IReadOnlyList<Guid> linkedNoteIds) => new(
-        note.Id,
-        note.Title,
-        note.Content,
-        SplitTags(note.Tags),
-        note.CourseId,
-        note.SemesterId,
-        note.IsArchived,
-        note.CreatedAt,
-        note.UpdatedAt,
-        attachedDocumentIds,
-        linkedNoteIds);
+    private static NoteDto ToDto(
+        Note note,
+        IReadOnlyList<Guid> attachedDocumentIds,
+        IReadOnlyList<Guid> linkedNoteIds
+    ) =>
+        new(
+            note.Id,
+            note.Title,
+            note.Content,
+            SplitTags(note.Tags),
+            note.CourseId,
+            note.SemesterId,
+            note.IsArchived,
+            note.CreatedAt,
+            note.UpdatedAt,
+            attachedDocumentIds,
+            linkedNoteIds
+        );
 
     private static IReadOnlyList<string> SplitTags(string? tags) =>
         string.IsNullOrWhiteSpace(tags)
             ? []
-            : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            : tags.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
 
     [GeneratedRegex(@"\[\[(.+?)\]\]")]
     private static partial Regex WikiLinkPattern();

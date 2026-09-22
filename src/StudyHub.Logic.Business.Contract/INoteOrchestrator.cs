@@ -1,6 +1,6 @@
 using StudyHub.Shared.Notes;
 
-namespace StudyHub.Logic.Business.Notes;
+namespace StudyHub.Logic.Business.Contract;
 
 public interface INoteOrchestrator
 {

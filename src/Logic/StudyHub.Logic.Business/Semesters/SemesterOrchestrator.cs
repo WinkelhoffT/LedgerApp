@@ -1,24 +1,36 @@
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business.Semesters;
 
-public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository, ICourseRepository courseRepository) : ISemesterOrchestrator
+public sealed class SemesterOrchestrator(
+    ISemesterRepository semesterRepository,
+    ICourseRepository courseRepository
+) : ISemesterOrchestrator
 {
-    public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var semesters = await semesterRepository.GetAllAsync(cancellationToken);
         return semesters.Select(ToDto).ToList();
     }
 
-    public async Task<SemesterDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SemesterDto> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
         return ToDto(semester);
     }
 
-    public async Task<SemesterDto> CreateAsync(CreateSemesterRequest request, CancellationToken cancellationToken = default)
+    public async Task<SemesterDto> CreateAsync(
+        CreateSemesterRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         await EnsureNameIsUniqueAsync(request.Name, excludingId: null, cancellationToken);
 
@@ -30,7 +42,10 @@ public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository,
         return ToDto(semester);
     }
 
-    public async Task<SemesterDto> UpdateAsync(UpdateSemesterRequest request, CancellationToken cancellationToken = default)
+    public async Task<SemesterDto> UpdateAsync(
+        UpdateSemesterRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         var semester = await GetExistingSemesterAsync(request.Id, cancellationToken);
 
@@ -43,7 +58,10 @@ public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository,
         return ToDto(semester);
     }
 
-    public async Task<SemesterDto> ArchiveAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SemesterDto> ArchiveAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
 
@@ -60,7 +78,10 @@ public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository,
         return ToDto(semester);
     }
 
-    public async Task<SemesterDto> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SemesterDto> RestoreAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
 
@@ -71,11 +92,18 @@ public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository,
         return ToDto(semester);
     }
 
-    private async Task<Semester> GetExistingSemesterAsync(Guid id, CancellationToken cancellationToken) =>
+    private async Task<Semester> GetExistingSemesterAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
         await semesterRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new SemesterNotFoundException(id);
+        ?? throw new SemesterNotFoundException(id);
 
-    private async Task EnsureNameIsUniqueAsync(string name, Guid? excludingId, CancellationToken cancellationToken)
+    private async Task EnsureNameIsUniqueAsync(
+        string name,
+        Guid? excludingId,
+        CancellationToken cancellationToken
+    )
     {
         if (await semesterRepository.ExistsByNameAsync(name, excludingId, cancellationToken))
         {
@@ -83,12 +111,14 @@ public sealed class SemesterOrchestrator(ISemesterRepository semesterRepository,
         }
     }
 
-    private static SemesterDto ToDto(Semester semester) => new(
-        semester.Id,
-        semester.Name,
-        semester.StartDate,
-        semester.EndDate,
-        semester.IsArchived,
-        semester.CreatedAt,
-        semester.UpdatedAt);
+    private static SemesterDto ToDto(Semester semester) =>
+        new(
+            semester.Id,
+            semester.Name,
+            semester.StartDate,
+            semester.EndDate,
+            semester.IsArchived,
+            semester.CreatedAt,
+            semester.UpdatedAt
+        );
 }

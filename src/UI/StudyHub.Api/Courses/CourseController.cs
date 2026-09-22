@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Shared.Courses;
 
@@ -17,13 +18,18 @@ public sealed class CourseController(ICourseOrchestrator courseOrchestrator) : C
         courseOrchestrator.GetByIdAsync(id, cancellationToken);
 
     [HttpPost]
-    public Task<CourseDto> CreateAsync(CreateCourseRequest request, CancellationToken cancellationToken) =>
-        courseOrchestrator.CreateAsync(request, cancellationToken);
+    public Task<CourseDto> CreateAsync(
+        CreateCourseRequest request,
+        CancellationToken cancellationToken
+    ) => courseOrchestrator.CreateAsync(request, cancellationToken);
 
     // The route id always wins over whatever Id is present in the request body.
     [HttpPut("{id:guid}")]
-    public Task<CourseDto> UpdateAsync(Guid id, UpdateCourseRequest request, CancellationToken cancellationToken) =>
-        courseOrchestrator.UpdateAsync(request with { Id = id }, cancellationToken);
+    public Task<CourseDto> UpdateAsync(
+        Guid id,
+        UpdateCourseRequest request,
+        CancellationToken cancellationToken
+    ) => courseOrchestrator.UpdateAsync(request with { Id = id }, cancellationToken);
 
     [HttpPost("{id:guid}/archive")]
     public Task<CourseDto> ArchiveAsync(Guid id, CancellationToken cancellationToken) =>

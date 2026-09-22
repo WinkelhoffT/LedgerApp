@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Api;
 using StudyHub.Api.Courses;
-using StudyHub.Api.Dashboard;
 using StudyHub.Api.Documents;
 using StudyHub.Api.Notes;
 using StudyHub.Api.Semesters;
@@ -45,4 +44,7 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program;
+namespace StudyHub.Api
+{
+    public partial class Program;
+}

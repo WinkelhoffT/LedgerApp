@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Business.Courses;
 using StudyHub.Logic.Business.Dashboard;
 using StudyHub.Logic.Business.Documents;

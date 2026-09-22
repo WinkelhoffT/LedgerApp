@@ -1,6 +1,6 @@
 using StudyHub.Shared.Documents;
 
-namespace StudyHub.Logic.Business.Documents;
+namespace StudyHub.Logic.Business.Contract;
 
 public interface IDocumentOrchestrator
 {
