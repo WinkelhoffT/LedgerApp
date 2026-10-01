@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Data.Documents;
-using StudyHub.Logic.Domain.Documents;
+using StudyHub.Logic.Domain;
+using StudyHub.Shared.Documents;
 
 namespace StudyHub.Tests.Data.Documents;
 
 public class DocumentRepositoryTests
 {
+    private static readonly DocumentLifecycle DocumentLifecycle = new();
+
     private static readonly Guid CourseId = Guid.NewGuid();
     private static readonly Guid SemesterId = Guid.NewGuid();
     private static readonly byte[] Content = [1, 2, 3];
@@ -25,7 +27,7 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        var document = Document.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
 
         await repository.AddAsync(document);
         await repository.SaveChangesAsync();
@@ -42,8 +44,8 @@ public class DocumentRepositoryTests
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
         var otherCourseId = Guid.NewGuid();
-        await repository.AddAsync(Document.Create("Notes.pdf", "application/pdf", Content, CourseId, null));
-        await repository.AddAsync(Document.Create("Other.pdf", "application/pdf", Content, otherCourseId, null));
+        await repository.AddAsync(DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null));
+        await repository.AddAsync(DocumentLifecycle.Create("Other.pdf", "application/pdf", Content, otherCourseId, null));
         await repository.SaveChangesAsync();
 
         var documents = await repository.GetByCourseIdAsync(CourseId);
@@ -56,7 +58,7 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        await repository.AddAsync(Document.Create("Syllabus.pdf", "application/pdf", Content, null, SemesterId));
+        await repository.AddAsync(DocumentLifecycle.Create("Syllabus.pdf", "application/pdf", Content, null, SemesterId));
         await repository.SaveChangesAsync();
 
         var documents = await repository.GetBySemesterIdAsync(SemesterId);
@@ -69,8 +71,8 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        await repository.AddAsync(Document.Create("Zoology.pdf", "application/pdf", Content, CourseId, null));
-        await repository.AddAsync(Document.Create("Algorithms.pdf", "application/pdf", Content, CourseId, null));
+        await repository.AddAsync(DocumentLifecycle.Create("Zoology.pdf", "application/pdf", Content, CourseId, null));
+        await repository.AddAsync(DocumentLifecycle.Create("Algorithms.pdf", "application/pdf", Content, CourseId, null));
         await repository.SaveChangesAsync();
 
         var all = await repository.GetAllAsync();

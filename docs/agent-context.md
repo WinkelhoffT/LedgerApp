@@ -45,11 +45,14 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
 - `tests/StudyHub.Tests`: xUnit tests, mirroring the production layout
   (`Api/`, `Data/`, `Logic/Business/`, `Logic/Domain/`).
 - `docs/`: agent-facing context and project documentation.
+  `docs/mockup/StudyHub.html` is a static HTML/JS mockup of every page's intended UI — the
+  reference for new pages before they're implemented. `docs/plans/` holds feature implementation
+  plans (Medium/Large classification per `CLAUDE.md`).
 - `agents/`: task templates for a multi-agent orchestration workflow (architect, orchestrator,
   consolidator, implementer, reviewer, verification).
 - `StudyHub.slnx`: solution entry point.
 
-## Domain Invariants and Glossary
+## Domain Glossary
 
 StudyHub centralizes a computer science student's study material and planning around semesters
 and courses.
@@ -60,11 +63,13 @@ and courses.
 - `Document`: an uploaded file (course material, script, notes) associated with **either** a
   `Course` or a `Semester` — never both, never neither (enforced in the `Document` domain
   constructor and, per `review.md` §3, intended as a DB check constraint).
+- `Note`: a Markdown note following the same "exactly one of Course or Semester" ownership pattern
+  as `Document` (see `docs/plans/markdown-notes-plan.md`).
 - `SemesterProgress`: a computed value describing how far along a semester is, produced by
   `ISemesterProgressCalculator`/`SemesterProgressCalculator`.
-- Soft delete: `Course`/`Semester` (and `Document`, per the document-management plan) use an
-  `IsArchived` flag with `Archive()`/`Restore()` domain methods and a dedicated
-  `*ArchivedException`, rather than hard deletes.
+- Soft delete: `Course`/`Semester`/`Document`/`Note` use an `IsArchived` flag with
+  `Archive()`/`Restore()` domain methods and a dedicated `*ArchivedException`, rather than hard
+  deletes. Foreign keys use `DeleteBehavior.Restrict` for exactly this reason.
 
 ## Technology Snapshot
 
@@ -73,7 +78,8 @@ and courses.
 - Frontend: Blazor Web App (`StudyHub.UI`), Bootstrap for styling.
 - Data: EF Core, code-first migrations, SQLite provider (`Microsoft.Data.Sqlite` /
   `UseSqlite`).
-- Tests: xUnit.
+- Tests: xUnit + Moq (Business layer), EF Core `UseInMemoryDatabase` (Data-layer tests),
+  `WebApplicationFactory<Program>` (Api layer).
 
 ## Architecture and API Notes
 
@@ -199,7 +205,8 @@ and courses.
 - New frontend display behavior: update the relevant page under
   `src/UI/StudyHub.UI/Components/Pages/` with a matching `.razor.cs` code-behind, and extend the
   domain's Accessor in `src/Logic/StudyHub.Logic.Integration/<Domain>/` if it needs a new
-  operation.
+  operation. Check `docs/mockup/StudyHub.html` for the intended layout before implementing a new
+  page.
 - New Api/Integration/Business-crossing DTO, request, error code, or exception: place it in
   `src/Shared/StudyHub.Shared/<Domain>/` (see `CLAUDE.md`, "Contracts First") — not in
   `StudyHub.Logic.Business`/`StudyHub.Logic.Domain`, since `Logic.Integration` cannot depend on

@@ -1,12 +1,16 @@
 using Moq;
-using StudyHub.Logic.Business.Dashboard;
-using StudyHub.Logic.Domain.SemesterProgress;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Data.Contract;
+using StudyHub.Logic.Business;
+using StudyHub.Logic.Domain;
+using StudyHub.Logic.Domain.Contract;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Dashboard;
 
 public class DashboardOrchestratorTests
 {
+    private static readonly SemesterLifecycle SemesterLifecycle = new();
+
     private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.UtcNow);
     private static readonly DateOnly StartDate = Today.AddDays(-10);
     private static readonly DateOnly EndDate = Today.AddDays(10);
@@ -41,7 +45,7 @@ public class DashboardOrchestratorTests
     [Fact]
     public async Task GetSemesterProgressAsync_WhenProviderFindsActiveSemester_MapsCalculatorResultIntoDto()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         _activeSemesterProvider
             .Setup(p => p.GetActive(It.IsAny<IReadOnlyList<Semester>>(), It.IsAny<DateOnly>()))
             .Returns(semester);
@@ -67,7 +71,7 @@ public class DashboardOrchestratorTests
     [Fact]
     public async Task GetSemesterProgressAsync_PassesRepositorySemestersToProvider()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         var semesters = new List<Semester> { semester };
         _semesterRepository.Setup(r => r.GetAllAsync(default)).ReturnsAsync(semesters);
         _activeSemesterProvider

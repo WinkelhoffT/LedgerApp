@@ -1,0 +1,17 @@
+@if (Commands.Count > 0)
+{
+    <div class="slash-menu" style="top:@(TopPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; left:@(LeftPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px;">
+        @for (var i = 0; i < Commands.Count; i++)
+        {
+            var index = i;
+            var command = Commands[index];
+            <div class="slash-menu-item @(index == SelectedIndex ? "active" : "")"
+                 @onmousedown:preventDefault="true"
+                 @onmousedown="() => OnSelect.InvokeAsync(command)"
+                 @onmouseenter="() => OnHover.InvokeAsync(index)">
+                <span class="slash-menu-label">@command.Label</span>
+                <span class="slash-menu-desc">@command.Description</span>
+            </div>
+        }
+    </div>
+}

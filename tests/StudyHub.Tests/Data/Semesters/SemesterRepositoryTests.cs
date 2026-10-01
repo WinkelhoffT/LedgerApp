@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Data.Semesters;
-using StudyHub.Logic.Domain.Semesters;
+using StudyHub.Logic.Domain;
+using StudyHub.Logic.Domain.Contract;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Data.Semesters;
 
 public class SemesterRepositoryTests
 {
+    private static readonly SemesterLifecycle SemesterLifecycle = new();
+
     private static readonly DateOnly StartDate = new(2025, 10, 1);
     private static readonly DateOnly EndDate = new(2026, 3, 31);
 
@@ -24,7 +27,7 @@ public class SemesterRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new SemesterRepository(dbContext);
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
 
         await repository.AddAsync(semester);
         await repository.SaveChangesAsync();
@@ -39,7 +42,7 @@ public class SemesterRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new SemesterRepository(dbContext);
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         await repository.AddAsync(semester);
         await repository.SaveChangesAsync();
 
@@ -53,7 +56,7 @@ public class SemesterRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new SemesterRepository(dbContext);
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         await repository.AddAsync(semester);
         await repository.SaveChangesAsync();
 
@@ -67,8 +70,8 @@ public class SemesterRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new SemesterRepository(dbContext);
-        await repository.AddAsync(Semester.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30)));
-        await repository.AddAsync(Semester.Create("Winter 2025/26", StartDate, EndDate));
+        await repository.AddAsync(SemesterLifecycle.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30)));
+        await repository.AddAsync(SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate));
         await repository.SaveChangesAsync();
 
         var all = await repository.GetAllAsync();

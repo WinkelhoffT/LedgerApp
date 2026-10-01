@@ -109,6 +109,86 @@ namespace StudyHub.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.Note", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SemesterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("SemesterId");
+
+                    b.HasIndex("Title")
+                        .IsUnique();
+
+                    b.ToTable("Notes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Notes_ExactlyOneParent", "((\"CourseId\" IS NOT NULL AND \"SemesterId\" IS NULL) OR (\"CourseId\" IS NULL AND \"SemesterId\" IS NOT NULL))");
+                        });
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteDocument", b =>
+                {
+                    b.Property<Guid>("NoteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("NoteId", "DocumentId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("NoteDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteLink", b =>
+                {
+                    b.Property<Guid>("SourceNoteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TargetNoteId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SourceNoteId", "TargetNoteId");
+
+                    b.HasIndex("TargetNoteId");
+
+                    b.ToTable("NoteLinks", (string)null);
+                });
+
             modelBuilder.Entity("StudyHub.Logic.Domain.Semesters.Semester", b =>
                 {
                     b.Property<Guid>("Id")
@@ -163,6 +243,49 @@ namespace StudyHub.Data.Migrations
                         .WithMany()
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.Note", b =>
+                {
+                    b.HasOne("StudyHub.Logic.Domain.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Logic.Domain.Semesters.Semester", null)
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteDocument", b =>
+                {
+                    b.HasOne("StudyHub.Logic.Domain.Documents.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                        .WithMany()
+                        .HasForeignKey("NoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteLink", b =>
+                {
+                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                        .WithMany()
+                        .HasForeignKey("SourceNoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                        .WithMany()
+                        .HasForeignKey("TargetNoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

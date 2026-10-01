@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StudyHub.Api;
 using StudyHub.Data;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Semesters;
@@ -28,19 +29,28 @@ public class CourseEndpointsTests
             // the production default ("/app/data") so that resolution doesn't throw in tests.
             builder.UseSetting(
                 "ConnectionStrings:DefaultConnection",
-                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}");
+                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}"
+            );
 
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(databaseName));
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseInMemoryDatabase(databaseName)
+                );
             });
         });
     }
 
-    private static async Task<Guid> CreateSemesterAsync(HttpClient client, string name = "Winter 2025/26")
+    private static async Task<Guid> CreateSemesterAsync(
+        HttpClient client,
+        string name = "Winter 2025/26"
+    )
     {
-        var response = await client.PostAsJsonAsync("api/semesters", new CreateSemesterRequest(name, StartDate, EndDate));
+        var response = await client.PostAsJsonAsync(
+            "api/semesters",
+            new CreateSemesterRequest(name, StartDate, EndDate)
+        );
         response.EnsureSuccessStatusCode();
         var semester = await response.Content.ReadFromJsonAsync<SemesterDto>();
         return semester!.Id;
@@ -65,7 +75,9 @@ public class CourseEndpointsTests
         var semesterId = await CreateSemesterAsync(client);
 
         var createResponse = await client.PostAsJsonAsync(
-            "api/courses", new CreateCourseRequest("Algorithms", "Description", "#2563eb", semesterId));
+            "api/courses",
+            new CreateCourseRequest("Algorithms", "Description", "#2563eb", semesterId)
+        );
         createResponse.EnsureSuccessStatusCode();
         var created = await createResponse.Content.ReadFromJsonAsync<CourseDto>();
 
@@ -82,8 +94,14 @@ public class CourseEndpointsTests
         using var client = factory.CreateClient();
         var semesterId = await CreateSemesterAsync(client);
 
-        await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
-        var response = await client.PostAsJsonAsync("api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+        await client.PostAsJsonAsync(
+            "api/courses",
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId)
+        );
+        var response = await client.PostAsJsonAsync(
+            "api/courses",
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId)
+        );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(CourseErrorCodes.DuplicateCourseName, await GetErrorCodeAsync(response));
@@ -96,7 +114,9 @@ public class CourseEndpointsTests
         using var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(
-            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", Guid.NewGuid()));
+            "api/courses",
+            new CreateCourseRequest("Algorithms", null, "#2563eb", Guid.NewGuid())
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(SemesterErrorCodes.SemesterNotFound, await GetErrorCodeAsync(response));
@@ -111,7 +131,9 @@ public class CourseEndpointsTests
         await client.PostAsync($"api/semesters/{semesterId}/archive", content: null);
 
         var response = await client.PostAsJsonAsync(
-            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+            "api/courses",
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId)
+        );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(SemesterErrorCodes.SemesterArchived, await GetErrorCodeAsync(response));
@@ -137,7 +159,9 @@ public class CourseEndpointsTests
         var semesterId = await CreateSemesterAsync(client);
 
         var createResponse = await client.PostAsJsonAsync(
-            "api/courses", new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId));
+            "api/courses",
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semesterId)
+        );
         var course = await createResponse.Content.ReadFromJsonAsync<CourseDto>();
 
         await client.PostAsync($"api/semesters/{semesterId}/archive", content: null);
@@ -150,9 +174,11 @@ public class CourseEndpointsTests
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
-        if (problemDetails is null
+        if (
+            problemDetails is null
             || !problemDetails.Extensions.TryGetValue("errorCode", out var value)
-            || value is not JsonElement element)
+            || value is not JsonElement element
+        )
         {
             return null;
         }

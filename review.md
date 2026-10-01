@@ -190,3 +190,99 @@ Schritt grün bleiben.
    nachgezogen werden? nein, die listing wegmachen
 4. In welcher Reihenfolge/mit welchem Umfang soll die eigentliche Code-Umstellung (Abschnitt 1–2)
    angegangen werden? entscheide du das.
+
+---
+
+## 5. Code-Review: PR #18 „Feature/markdown notes"
+
+Grundlage: eigenständiges Review des Diffs `main...feature/markdown-notes`
+(https://github.com/WinkelhoffT/LedgerApp/pull/18, Head-Commit `648ef9b`), zusätzlich zum bereits
+vom Nutzer selbst abgegebenen GitHub-Review. Die dort bereits genannten Punkte (Titel-Normalisierung
+im Repository statt in der Domäne, Konstanten in eigene Klassen auslagern, Trennung von Model und
+Logik in `Note`/`NoteDocument`) werden hier nicht wiederholt, sondern nur um zusätzliche, eigenständig
+gefundene Befunde ergänzt.
+
+### 5.1 Positiv: Architektur folgt jetzt dem Zielbild aus Abschnitt 1–2
+
+Die Notes-Feature-Schicht ist die erste, die dem in Abschnitt 2 festgelegten Zielworkflow tatsächlich
+folgt: `NoteController` (reines Transport-Mapping) → `NoteOrchestrator` (Business-Contract via
+`INoteOrchestrator`) → `INoteRepository`/`Note` (Domain) bzw. `NoteRepository` (Data), plus
+`NoteAccessor`/`INoteAccessor` in `StudyHub.Logic.Integration` statt eines fetten API-Clients in der
+UI (vgl. 1.3). Auch Code-Behind (`Notes.razor.cs`) statt `@code`-Block (vgl. 1.6) ist umgesetzt.
+
+### 5.2 Korrektheit
+
+1. **Fehlende Fehlerbehandlung bei Archive/Restore/Attach/Detach lässt den Blazor-Server-Circuit
+   abstürzen.** `ArchiveSelectedAsync`/`RestoreSelectedAsync`
+   (`src/UI/StudyHub.UI/Components/Pages/Notes.razor.cs:508-534`) sowie
+   `AttachAsync`/`DetachAsync` in `NoteAttachmentPicker.razor.cs` rufen den jeweiligen Accessor ohne
+   `try`/`catch`/`finally` auf. Anders als `SaveAsync` (das ein `finally { IsSaving = false; }` hat)
+   bleibt `IsSaving` bei einem Fehler dauerhaft `true` (Buttons bleiben deaktiviert), und eine nicht
+   abgefangene Exception in einem Blazor-Server-Eventhandler beendet den Circuit – der Nutzer sieht
+   „An unhandled error has occurred, reload". Tritt z. B. auf, wenn dieselbe Notiz in zwei Tabs offen
+   ist und in Tab B bereits archiviert/gelöscht wurde, während in Tab A auf „Archive" geklickt wird.
+
+2. **`SaveAsync` fängt `NoteNotFoundException` nicht ab**
+   (`Notes.razor.cs:474-501`). Die Catch-Liste deckt `DuplicateNoteTitleException`,
+   `NoteValidationException`, `NoteArchivedException` sowie Course-/Semester-Fehler ab, aber nicht
+   den Fall, dass die Notiz zwischen Laden und Speichern in einem anderen Tab bereits entfernt wurde
+   (`NoteOrchestrator.UpdateAsync` wirft dann `NoteNotFoundException`). Gleicher
+   Circuit-Absturz wie oben.
+
+3. **DB-eindeutiger Index auf `Notes.Title` ist case-sensitive, die Anwendungslogik prüft aber
+   case-insensitive.** Migration `20260916201326_AddNote.cs` legt `IX_Notes_Title` als `UNIQUE` auf
+   eine reine `TEXT`-Spalte ohne `COLLATE NOCASE` an; SQLite vergleicht `TEXT`-Spalten standardmäßig
+   binär/case-sensitive. `NoteRepository.ExistsByTitleAsync` (und `GetIdsByTitlesAsync`) vergleichen
+   dagegen über `.ToLower()` bzw. `StringComparer.OrdinalIgnoreCase` – case-insensitive. Die
+   Datenbank erzwingt die eigentlich gewollte Invariante ("Titel eindeutig, unabhängig von
+   Groß-/Kleinschreibung") also nicht: Bei zwei nahezu gleichzeitigen Create-Requests mit
+   unterschiedlicher Groß-/Kleinschreibung ("Foo" / "foo") kann die App-seitige Prüfung durch die
+   Race Condition umgangen werden, und die DB lässt beide Zeilen zu. Danach ist auch unklar, welcher
+   der beiden Titel bei `GetIdsByTitlesAsync` (das einen `Dictionary` mit `OrdinalIgnoreCase` baut)
+   für die Wiki-Link-Auflösung gewinnt.
+
+4. **Wiki-Link-Backlinks veralten, wenn das Ziel erst nach der Quelle angelegt wird.** Schreibt man
+   `[[Future Note]]` in eine Notiz, bevor „Future Note" existiert, wird der Link laut Plan-Dokument
+   bewusst nur als reiner Text angezeigt (kein Auto-Create). Sobald „Future Note" später angelegt
+   wird, rendert die *Vorschau* der alten Notiz den Link aber automatisch als klickbar (weil
+   `PreviewHtml`/`TitleToNoteId` bei jedem Aufruf live gegen `NoteList` auflöst) – während die
+   `NoteLinks`-Tabelle (und damit die Backlinks-Anzeige auf „Future Note") nicht nachgezogen wird,
+   weil `ResolveLinksAsync` nur beim Create/Update der Quelle läuft. Vorschau und Backlinks-Panel
+   können dadurch dauerhaft auseinanderlaufen, bis die alte Notiz erneut gespeichert wird. Im
+   Plan-Dokument nicht als bekannte Einschränkung dokumentiert.
+
+### 5.3 Performance / Wartbarkeit
+
+5. **`PreviewHtml` und `TitleToNoteId` sind ungecachte Properties, die bei jedem Render mehrfach neu
+   berechnet werden** (`Notes.razor.cs:144-212`). `HeadingOutline` liest `PreviewHtml`, das Markup
+   selbst liest `PreviewHtml` erneut – zwei volle Markdig-Durchläufe pro Render. Zusätzlich wird
+   `TitleToNoteId` (ein `ToDictionary(...)` über die komplette `NoteList`) für **jeden** `[[Title]]`-
+   Treffer im `Regex.Replace`-Delegate neu aufgebaut, nicht einmal pro Aufruf. Bei mehreren Wiki-Links
+   in einer Notiz und einer wachsenden Notizliste macht das jeden Tastendruck im Editor spürbar
+   teurer, als es sein müsste.
+
+6. **Wiki-Link-Regex/-Extraktion ist dupliziert.** `NoteOrchestrator.WikiLinkPattern`
+   (`\[\[(.+?)\]\]`) in der Business-Schicht und `Notes.WikiLinkPattern` in der Razor-Komponente
+   implementieren unabhängig voneinander dieselbe Parsing-Logik. Ändert sich die Link-Syntax (z. B.
+   `[[Titel|Alias]]`), muss das an zwei Stellen synchron gehalten werden; verpasst man eine, zeigt die
+   Vorschau Links an, die serverseitig nie in `NoteLinks` landen (oder umgekehrt). Verstößt gegen
+   CLAUDE.md „Keep Razor components thin" / „Move business logic into Business layer" – die
+   Extraktion gehört an eine Stelle, auf die beide Seiten zugreifen (z. B. Shared).
+
+7. **`highlightCode` in `notes-editor.js` kann denselben Codeblock mehrfach mit einem „Copy"-Button
+   versehen** (`wwwroot/js/notes-editor.js:78-99`). Der Kommentar im Code geht davon aus, dass die
+   `<pre>`-Knoten bei jedem Render neu erzeugt werden, weil Blazor `MarkupString` „wholesale" ersetzt.
+   Das stimmt aber nur, wenn sich der `PreviewHtml`-String tatsächlich ändert – bleibt er gleich (z. B.
+   weil nur `ShowArchived` umgeschaltet oder ein anderer Filter geändert wird, während dieselbe Notiz
+   offen ist), rendert Blazor die Region nicht neu, `OnAfterRenderAsync` ruft `highlightCode` aber
+   trotzdem bedingungslos auf. Jeder solche Render hängt einen weiteren „Copy"-Button an denselben,
+   unveränderten `<pre>`-Block.
+
+### 5.4 Priorisierung
+
+Vor dem Merge sollten mindestens **5.2.1** und **5.2.2** behoben werden (Blazor-Server-Circuit-Abstürze
+sind ein direkter Produktionsausfall für die gesamte offene Session, nicht nur einen Klick). **5.2.3**
+(Collation) ist ein Datenintegritätsproblem, das in einer Single-User-App selten, aber real auftreten
+kann – einfach zu fixen (`.UseCollation("NOCASE")` auf der Spalte bzw. im Index). 5.2.4, 5.3.5–5.3.7
+sind nicht blockierend, aber günstig genug, um in diesem PR mitzunehmen, bevor weitere Features auf
+der duplizierten Link-Logik bzw. den ungecachten Properties aufbauen.
