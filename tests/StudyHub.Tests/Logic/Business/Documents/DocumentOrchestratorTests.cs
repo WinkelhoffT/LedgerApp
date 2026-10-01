@@ -1,5 +1,5 @@
 using Moq;
-using StudyHub.Logic.Business.Documents;
+using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Semesters;

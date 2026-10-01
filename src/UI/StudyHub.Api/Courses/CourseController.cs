@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Logic.Business.Contract;
-using StudyHub.Logic.Business.Courses;
 using StudyHub.Shared.Courses;
 
 namespace StudyHub.Api.Courses;

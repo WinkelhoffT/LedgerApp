@@ -1,10 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Business.Contract;
-using StudyHub.Logic.Business.Courses;
-using StudyHub.Logic.Business.Dashboard;
-using StudyHub.Logic.Business.Documents;
-using StudyHub.Logic.Business.Notes;
-using StudyHub.Logic.Business.Semesters;
 using StudyHub.Logic.Domain.SemesterProgress;
 using StudyHub.Logic.Domain.Semesters;
 

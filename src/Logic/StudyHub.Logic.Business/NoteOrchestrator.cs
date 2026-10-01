@@ -9,7 +9,7 @@ using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Business.Notes;
+namespace StudyHub.Logic.Business;
 
 public sealed partial class NoteOrchestrator(
     INoteRepository noteRepository,

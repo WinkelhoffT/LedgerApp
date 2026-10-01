@@ -3,7 +3,7 @@ using StudyHub.Logic.Domain.SemesterProgress;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Dashboard;
 
-namespace StudyHub.Logic.Business.Dashboard;
+namespace StudyHub.Logic.Business;
 
 public sealed class DashboardOrchestrator(
     ISemesterRepository semesterRepository,

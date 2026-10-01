@@ -3,7 +3,7 @@ using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Business.Semesters;
+namespace StudyHub.Logic.Business;
 
 public sealed class SemesterOrchestrator(
     ISemesterRepository semesterRepository,

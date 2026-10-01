@@ -6,7 +6,7 @@ using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Business.Documents;
+namespace StudyHub.Logic.Business;
 
 public sealed class DocumentOrchestrator(
     IDocumentRepository documentRepository,
