@@ -1,6 +1,4 @@
-using StudyHub.Shared.Documents;
-
-namespace StudyHub.Logic.Domain.Documents;
+namespace StudyHub.Shared.Documents;
 
 public sealed record Document
 {

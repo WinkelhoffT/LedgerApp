@@ -1,6 +1,5 @@
 using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Contract;
-using StudyHub.Logic.Domain.Courses;
 using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business;

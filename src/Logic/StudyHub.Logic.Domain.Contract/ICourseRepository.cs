@@ -1,4 +1,6 @@
-namespace StudyHub.Logic.Domain.Courses;
+using StudyHub.Shared.Courses;
+
+namespace StudyHub.Logic.Domain.Contract;
 
 public interface ICourseRepository
 {

@@ -1,8 +1,6 @@
 using Moq;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain.Contract;
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Documents;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Semesters;

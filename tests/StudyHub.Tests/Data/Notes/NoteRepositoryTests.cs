@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
 using StudyHub.Data.Notes;
-using StudyHub.Logic.Domain.Documents;
+using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;
 
 namespace StudyHub.Tests.Data.Notes;

@@ -4,8 +4,6 @@ using StudyHub.Data.Documents;
 using StudyHub.Data.Notes;
 using StudyHub.Data.Semesters;
 using StudyHub.Logic.Domain.Contract;
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Documents;
 
 namespace StudyHub.Data;
 

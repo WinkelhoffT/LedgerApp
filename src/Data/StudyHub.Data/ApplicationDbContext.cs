@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Logic.Domain.Courses;
-using StudyHub.Logic.Domain.Documents;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;

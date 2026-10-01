@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Logic.Domain.Documents;
+using StudyHub.Logic.Domain.Contract;
+using StudyHub.Shared.Documents;
 
 namespace StudyHub.Data.Documents;
 

@@ -1,6 +1,4 @@
-using StudyHub.Shared.Courses;
-
-namespace StudyHub.Logic.Domain.Courses;
+namespace StudyHub.Shared.Courses;
 
 public sealed record Course
 {

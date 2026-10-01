@@ -6,8 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\src\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
-    </ItemGroup>
-
 </Project>

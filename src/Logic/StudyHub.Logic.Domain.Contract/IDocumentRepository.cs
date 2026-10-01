@@ -1,4 +1,6 @@
-namespace StudyHub.Logic.Domain.Documents;
+using StudyHub.Shared.Documents;
+
+namespace StudyHub.Logic.Domain.Contract;
 
 public interface IDocumentRepository
 {
