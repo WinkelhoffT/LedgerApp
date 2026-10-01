@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Business.Contract;
+using StudyHub.Logic.Domain;
+using StudyHub.Logic.Domain.Contract;
 using StudyHub.Logic.Domain.SemesterProgress;
-using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Logic.Business;
 

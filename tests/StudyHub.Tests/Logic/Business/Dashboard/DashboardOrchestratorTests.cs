@@ -1,7 +1,6 @@
 using Moq;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain.SemesterProgress;
-using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Dashboard;
 

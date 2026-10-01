@@ -6,7 +6,6 @@ using StudyHub.Data.Semesters;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
-using StudyHub.Logic.Domain.Semesters;
 
 namespace StudyHub.Data;
 

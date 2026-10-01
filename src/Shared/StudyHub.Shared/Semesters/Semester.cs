@@ -1,7 +1,6 @@
-using StudyHub.Shared.Semesters;
+namespace StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Domain.Semesters;
-
+//TODO: Checken, wohin das muss und dann diese hässliche Klasse fixen
 public sealed record Semester
 {
     private Semester()

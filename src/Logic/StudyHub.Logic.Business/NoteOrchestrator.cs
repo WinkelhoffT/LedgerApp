@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
 using StudyHub.Logic.Business.Contract;
+using StudyHub.Logic.Domain.Contract;
 using StudyHub.Logic.Domain.Courses;
 using StudyHub.Logic.Domain.Documents;
 using StudyHub.Logic.Domain.Notes;
-using StudyHub.Logic.Domain.Semesters;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;

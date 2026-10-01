@@ -1,4 +1,7 @@
-namespace StudyHub.Logic.Domain.Semesters;
+using StudyHub.Logic.Domain.Contract;
+using StudyHub.Shared.Semesters;
+
+namespace StudyHub.Logic.Domain;
 
 public sealed class ActiveSemesterProvider : IActiveSemesterProvider
 {

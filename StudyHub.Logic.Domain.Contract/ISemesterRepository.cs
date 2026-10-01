@@ -1,4 +1,6 @@
-namespace StudyHub.Logic.Domain.Semesters;
+using StudyHub.Shared.Semesters;
+
+namespace StudyHub.Logic.Domain.Contract;
 
 public interface ISemesterRepository
 {

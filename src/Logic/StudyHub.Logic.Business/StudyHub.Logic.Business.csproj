@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\..\..\StudyHub.Logic.Domain.Contract\StudyHub.Logic.Domain.Contract.csproj" />
     <ProjectReference Include="..\..\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
     <ProjectReference Include="..\..\StudyHub.Logic.Business.Contract\StudyHub.Logic.Business.Contract.csproj" />
     <ProjectReference Include="..\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
