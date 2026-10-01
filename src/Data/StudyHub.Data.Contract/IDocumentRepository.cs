@@ -14,5 +14,7 @@ public interface IDocumentRepository
 
     Task AddAsync(Document document, CancellationToken cancellationToken = default);
 
+    void Update(Document document);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

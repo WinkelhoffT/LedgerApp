@@ -1,18 +1,3 @@
 namespace StudyHub.Shared.Notes;
 
-public sealed class NoteDocument
-{
-    private NoteDocument()
-    {
-    }
-
-    public Guid NoteId { get; private set; }
-
-    public Guid DocumentId { get; private set; }
-
-    public static NoteDocument Create(Guid noteId, Guid documentId) => new()
-    {
-        NoteId = noteId,
-        DocumentId = documentId,
-    };
-}
+public sealed record NoteDocument(Guid NoteId, Guid DocumentId);

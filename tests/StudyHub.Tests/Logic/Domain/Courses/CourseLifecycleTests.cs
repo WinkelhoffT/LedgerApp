@@ -1,15 +1,18 @@
+using StudyHub.Logic.Domain;
 using StudyHub.Shared.Courses;
 
 namespace StudyHub.Tests.Logic.Domain.Courses;
 
-public class CourseTests
+public class CourseLifecycleTests
 {
+    private static readonly CourseLifecycle CourseLifecycle = new();
+
     private static readonly Guid SemesterId = Guid.NewGuid();
 
     [Fact]
     public void Create_WithValidData_SetsProperties()
     {
-        var course = Course.Create("Algorithms", "Intro to algorithms", "#2563eb", SemesterId);
+        var course = CourseLifecycle.Create("Algorithms", "Intro to algorithms", "#2563eb", SemesterId);
 
         Assert.NotEqual(Guid.Empty, course.Id);
         Assert.Equal("Algorithms", course.Name);
@@ -25,7 +28,7 @@ public class CourseTests
     [InlineData(null)]
     public void Create_WithoutName_ThrowsValidationException(string? name)
     {
-        Assert.Throws<CourseValidationException>(() => Course.Create(name!, null, "#2563eb", SemesterId));
+        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create(name!, null, "#2563eb", SemesterId));
     }
 
     [Fact]
@@ -33,28 +36,28 @@ public class CourseTests
     {
         var name = new string('a', CreateCourseRequest.NameMaxLength + 1);
 
-        Assert.Throws<CourseValidationException>(() => Course.Create(name, null, "#2563eb", SemesterId));
+        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create(name, null, "#2563eb", SemesterId));
     }
 
     [Fact]
     public void Create_WithoutColor_ThrowsValidationException()
     {
-        Assert.Throws<CourseValidationException>(() => Course.Create("Algorithms", null, "", SemesterId));
+        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create("Algorithms", null, "", SemesterId));
     }
 
     [Fact]
     public void Create_WithoutSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<CourseValidationException>(() => Course.Create("Algorithms", null, "#2563eb", Guid.Empty));
+        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.Empty));
     }
 
     [Fact]
     public void Update_WhenNotArchived_UpdatesFields()
     {
-        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
         var otherSemesterId = Guid.NewGuid();
 
-        course.Update("Data Structures", "Updated description", "#16a34a", otherSemesterId);
+        course = CourseLifecycle.Update(course, "Data Structures", "Updated description", "#16a34a", otherSemesterId);
 
         Assert.Equal("Data Structures", course.Name);
         Assert.Equal("Updated description", course.Description);
@@ -65,26 +68,26 @@ public class CourseTests
     [Fact]
     public void Update_WithoutSemesterId_ThrowsValidationException()
     {
-        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
 
-        Assert.Throws<CourseValidationException>(() => course.Update("Data Structures", null, "#16a34a", Guid.Empty));
+        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", Guid.Empty));
     }
 
     [Fact]
     public void Update_WhenArchived_ThrowsCourseArchivedException()
     {
-        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
-        course.Archive();
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
+        course = CourseLifecycle.Archive(course);
 
-        Assert.Throws<CourseArchivedException>(() => course.Update("Data Structures", null, "#16a34a", SemesterId));
+        Assert.Throws<CourseArchivedException>(() => CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", SemesterId));
     }
 
     [Fact]
     public void Archive_SetsIsArchivedTrue()
     {
-        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
 
-        course.Archive();
+        course = CourseLifecycle.Archive(course);
 
         Assert.True(course.IsArchived);
     }
@@ -92,10 +95,10 @@ public class CourseTests
     [Fact]
     public void Restore_AfterArchive_SetsIsArchivedFalse()
     {
-        var course = Course.Create("Algorithms", null, "#2563eb", SemesterId);
-        course.Archive();
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
+        course = CourseLifecycle.Archive(course);
 
-        course.Restore();
+        course = CourseLifecycle.Restore(course);
 
         Assert.False(course.IsArchived);
     }

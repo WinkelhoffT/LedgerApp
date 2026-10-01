@@ -13,7 +13,8 @@ public sealed partial class NoteOrchestrator(
     INoteRepository noteRepository,
     IDocumentRepository documentRepository,
     ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository
+    ISemesterRepository semesterRepository,
+    INoteLifecycle noteLifecycle
 ) : INoteOrchestrator
 {
     public async Task<IReadOnlyList<NoteDto>> GetAllAsync(
@@ -60,7 +61,7 @@ public sealed partial class NoteOrchestrator(
             cancellationToken
         );
 
-        var note = Note.Create(
+        var note = noteLifecycle.Create(
             request.Title,
             request.Content,
             request.Tags,
@@ -90,13 +91,15 @@ public sealed partial class NoteOrchestrator(
             cancellationToken
         );
 
-        note.Update(
+        note = noteLifecycle.Update(
+            note,
             request.Title,
             request.Content,
             request.Tags,
             request.CourseId,
             request.SemesterId
         );
+        noteRepository.Update(note);
 
         await noteRepository.SaveChangesAsync(cancellationToken);
 
@@ -109,7 +112,8 @@ public sealed partial class NoteOrchestrator(
     {
         var note = await GetExistingNoteAsync(id, cancellationToken);
 
-        note.Archive();
+        note = noteLifecycle.Archive(note);
+        noteRepository.Update(note);
 
         await noteRepository.SaveChangesAsync(cancellationToken);
 
@@ -120,7 +124,8 @@ public sealed partial class NoteOrchestrator(
     {
         var note = await GetExistingNoteAsync(id, cancellationToken);
 
-        note.Restore();
+        note = noteLifecycle.Restore(note);
+        noteRepository.Update(note);
 
         await noteRepository.SaveChangesAsync(cancellationToken);
 

@@ -10,7 +10,8 @@ namespace StudyHub.Logic.Business;
 public sealed class DocumentOrchestrator(
     IDocumentRepository documentRepository,
     ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository
+    ISemesterRepository semesterRepository,
+    IDocumentLifecycle documentLifecycle
 ) : IDocumentOrchestrator
 {
     private const long MaxFileSizeBytes = 25 * 1024 * 1024;
@@ -88,7 +89,7 @@ public sealed class DocumentOrchestrator(
             await EnsureSemesterIsAssignableAsync(semesterId, cancellationToken);
         }
 
-        var document = Document.Create(
+        var document = documentLifecycle.Create(
             request.FileName,
             request.ContentType,
             request.Content,
@@ -109,7 +110,8 @@ public sealed class DocumentOrchestrator(
     {
         var document = await GetExistingDocumentAsync(id, cancellationToken);
 
-        document.Archive();
+        document = documentLifecycle.Archive(document);
+        documentRepository.Update(document);
 
         await documentRepository.SaveChangesAsync(cancellationToken);
 
@@ -123,7 +125,8 @@ public sealed class DocumentOrchestrator(
     {
         var document = await GetExistingDocumentAsync(id, cancellationToken);
 
-        document.Restore();
+        document = documentLifecycle.Restore(document);
+        documentRepository.Update(document);
 
         await documentRepository.SaveChangesAsync(cancellationToken);
 

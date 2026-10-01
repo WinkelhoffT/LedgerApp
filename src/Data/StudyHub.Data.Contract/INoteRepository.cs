@@ -17,6 +17,8 @@ public interface INoteRepository
 
     Task AddAsync(Note note, CancellationToken cancellationToken = default);
 
+    void Update(Note note);
+
     Task<IReadOnlyList<Guid>> GetAttachedDocumentIdsAsync(Guid noteId, CancellationToken cancellationToken = default);
 
     Task AddAttachmentAsync(Guid noteId, Guid documentId, CancellationToken cancellationToken = default);

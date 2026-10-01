@@ -5,6 +5,8 @@ namespace StudyHub.Tests.Logic.Domain.Semesters;
 
 public class ActiveSemesterProviderTests
 {
+    private static readonly SemesterLifecycle SemesterLifecycle = new();
+
     private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.UtcNow);
 
     private readonly ActiveSemesterProvider _sut = new();
@@ -61,10 +63,10 @@ public class ActiveSemesterProviderTests
 
     private static Semester CreateSemester(DateOnly startDate, DateOnly endDate, bool isArchived)
     {
-        var semester = Semester.Create("Winter 2025/26", startDate, endDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", startDate, endDate);
         if (isArchived)
         {
-            semester.Archive();
+            semester = SemesterLifecycle.Archive(semester);
         }
 
         return semester;

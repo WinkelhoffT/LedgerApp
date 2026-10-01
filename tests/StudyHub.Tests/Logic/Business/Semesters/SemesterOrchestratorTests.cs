@@ -1,6 +1,7 @@
 using Moq;
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
+using StudyHub.Logic.Domain;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Semesters;
@@ -9,6 +10,9 @@ namespace StudyHub.Tests.Logic.Business.Semesters;
 
 public class SemesterOrchestratorTests
 {
+    private static readonly SemesterLifecycle SemesterLifecycle = new();
+    private static readonly CourseLifecycle CourseLifecycle = new();
+
     private static readonly DateOnly StartDate = new(2025, 10, 1);
     private static readonly DateOnly EndDate = new(2026, 3, 31);
 
@@ -18,7 +22,7 @@ public class SemesterOrchestratorTests
 
     public SemesterOrchestratorTests()
     {
-        _sut = new SemesterOrchestrator(_repository.Object, _courseRepository.Object);
+        _sut = new SemesterOrchestrator(_repository.Object, _courseRepository.Object, SemesterLifecycle, CourseLifecycle);
 
         _courseRepository.Setup(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync([]);
@@ -62,8 +66,8 @@ public class SemesterOrchestratorTests
     [Fact]
     public async Task UpdateAsync_WhenSemesterArchived_ThrowsSemesterArchivedException()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
-        semester.Archive();
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
+        semester = SemesterLifecycle.Archive(semester);
 
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
         _repository.Setup(r => r.ExistsByNameAsync("New Name", semester.Id, default)).ReturnsAsync(false);
@@ -75,34 +79,36 @@ public class SemesterOrchestratorTests
     [Fact]
     public async Task ArchiveAsync_SetsSemesterArchivedAndSaves()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
 
         var result = await _sut.ArchiveAsync(semester.Id);
 
         Assert.True(result.IsArchived);
+        _repository.Verify(r => r.Update(It.Is<Semester>(s => s.IsArchived)), Times.Once);
         _repository.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
     public async Task RestoreAsync_SetsSemesterNotArchivedAndSaves()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
-        semester.Archive();
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
+        semester = SemesterLifecycle.Archive(semester);
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
 
         var result = await _sut.RestoreAsync(semester.Id);
 
         Assert.False(result.IsArchived);
+        _repository.Verify(r => r.Update(It.Is<Semester>(s => !s.IsArchived)), Times.Once);
         _repository.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
     public async Task ArchiveAsync_AlsoArchivesAllCoursesInSemester()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
-        var course1 = Course.Create("Algorithms", null, "#2563eb", semester.Id);
-        var course2 = Course.Create("Databases", null, "#16a34a", semester.Id);
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
+        var course1 = CourseLifecycle.Create("Algorithms", null, "#2563eb", semester.Id);
+        var course2 = CourseLifecycle.Create("Databases", null, "#16a34a", semester.Id);
 
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
         _courseRepository.Setup(r => r.GetBySemesterIdAsync(semester.Id, default))
@@ -110,23 +116,23 @@ public class SemesterOrchestratorTests
 
         await _sut.ArchiveAsync(semester.Id);
 
-        Assert.True(course1.IsArchived);
-        Assert.True(course2.IsArchived);
+        _courseRepository.Verify(r => r.Update(It.Is<Course>(c => c.Id == course1.Id && c.IsArchived)), Times.Once);
+        _courseRepository.Verify(r => r.Update(It.Is<Course>(c => c.Id == course2.Id && c.IsArchived)), Times.Once);
     }
 
     [Fact]
     public async Task RestoreAsync_DoesNotRestoreCourses()
     {
-        var semester = Semester.Create("Winter 2025/26", StartDate, EndDate);
-        semester.Archive();
-        var course = Course.Create("Algorithms", null, "#2563eb", semester.Id);
-        course.Archive();
+        var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
+        semester = SemesterLifecycle.Archive(semester);
+        var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", semester.Id);
+        course = CourseLifecycle.Archive(course);
 
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
 
         await _sut.RestoreAsync(semester.Id);
 
-        Assert.True(course.IsArchived);
+        _courseRepository.Verify(r => r.Update(It.IsAny<Course>()), Times.Never);
         _courseRepository.Verify(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default), Times.Never);
     }
 

@@ -1,6 +1,7 @@
 using Moq;
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
+using StudyHub.Logic.Domain;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
@@ -10,6 +11,10 @@ namespace StudyHub.Tests.Logic.Business.Documents;
 
 public class DocumentOrchestratorTests
 {
+    private static readonly SemesterLifecycle SemesterLifecycle = new();
+    private static readonly CourseLifecycle CourseLifecycle = new();
+    private static readonly DocumentLifecycle DocumentLifecycle = new();
+
     private static readonly Guid CourseId = Guid.NewGuid();
     private static readonly Guid SemesterId = Guid.NewGuid();
     private static readonly byte[] Content = [1, 2, 3];
@@ -21,13 +26,13 @@ public class DocumentOrchestratorTests
 
     public DocumentOrchestratorTests()
     {
-        _sut = new DocumentOrchestrator(_documentRepository.Object, _courseRepository.Object, _semesterRepository.Object);
+        _sut = new DocumentOrchestrator(_documentRepository.Object, _courseRepository.Object, _semesterRepository.Object, DocumentLifecycle);
 
         _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
-            .ReturnsAsync(Course.Create("Algorithms", null, "#2563eb", Guid.NewGuid()));
+            .ReturnsAsync(CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.NewGuid()));
 
         _semesterRepository.Setup(r => r.GetByIdAsync(SemesterId, default))
-            .ReturnsAsync(Semester.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));
+            .ReturnsAsync(SemesterLifecycle.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));
     }
 
     [Fact]
@@ -92,8 +97,8 @@ public class DocumentOrchestratorTests
     [Fact]
     public async Task UploadAsync_WhenCourseArchived_ThrowsCourseArchivedException()
     {
-        var archivedCourse = Course.Create("Algorithms", null, "#2563eb", Guid.NewGuid());
-        archivedCourse.Archive();
+        var archivedCourse = CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.NewGuid());
+        archivedCourse = CourseLifecycle.Archive(archivedCourse);
         _courseRepository.Setup(r => r.GetByIdAsync(archivedCourse.Id, default)).ReturnsAsync(archivedCourse);
         var request = new UploadDocumentRequest("Notes.pdf", "application/pdf", Content, archivedCourse.Id, null);
 
@@ -105,8 +110,8 @@ public class DocumentOrchestratorTests
     [Fact]
     public async Task UploadAsync_WhenSemesterArchived_ThrowsSemesterArchivedException()
     {
-        var archivedSemester = Semester.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30));
-        archivedSemester.Archive();
+        var archivedSemester = SemesterLifecycle.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30));
+        archivedSemester = SemesterLifecycle.Archive(archivedSemester);
         _semesterRepository.Setup(r => r.GetByIdAsync(archivedSemester.Id, default)).ReturnsAsync(archivedSemester);
         var request = new UploadDocumentRequest("Notes.pdf", "application/pdf", Content, null, archivedSemester.Id);
 
@@ -127,7 +132,7 @@ public class DocumentOrchestratorTests
     [Fact]
     public async Task DownloadAsync_ReturnsFileNameContentTypeAndContent()
     {
-        var document = Document.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
         _documentRepository.Setup(r => r.GetByIdAsync(document.Id, default)).ReturnsAsync(document);
 
         var result = await _sut.DownloadAsync(document.Id);
@@ -140,25 +145,27 @@ public class DocumentOrchestratorTests
     [Fact]
     public async Task ArchiveAsync_SetsDocumentArchivedAndSaves()
     {
-        var document = Document.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
         _documentRepository.Setup(r => r.GetByIdAsync(document.Id, default)).ReturnsAsync(document);
 
         var result = await _sut.ArchiveAsync(document.Id);
 
         Assert.True(result.IsArchived);
+        _documentRepository.Verify(r => r.Update(It.Is<Document>(d => d.IsArchived)), Times.Once);
         _documentRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
     public async Task RestoreAsync_SetsDocumentNotArchivedAndSaves()
     {
-        var document = Document.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
-        document.Archive();
+        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        document = DocumentLifecycle.Archive(document);
         _documentRepository.Setup(r => r.GetByIdAsync(document.Id, default)).ReturnsAsync(document);
 
         var result = await _sut.RestoreAsync(document.Id);
 
         Assert.False(result.IsArchived);
+        _documentRepository.Verify(r => r.Update(It.Is<Document>(d => !d.IsArchived)), Times.Once);
         _documentRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
 }

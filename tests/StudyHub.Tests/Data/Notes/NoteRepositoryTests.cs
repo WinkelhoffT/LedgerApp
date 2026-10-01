@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
+using StudyHub.Logic.Domain;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;
 
@@ -7,6 +8,9 @@ namespace StudyHub.Tests.Data.Notes;
 
 public class NoteRepositoryTests
 {
+    private static readonly DocumentLifecycle DocumentLifecycle = new();
+    private static readonly NoteLifecycle NoteLifecycle = new();
+
     private static readonly Guid CourseId = Guid.NewGuid();
     private static readonly Guid SemesterId = Guid.NewGuid();
 
@@ -24,7 +28,7 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        var note = Note.Create("Lecture 1", "Content", "tag1", CourseId, null);
+        var note = NoteLifecycle.Create("Lecture 1", "Content", "tag1", CourseId, null);
 
         await repository.AddAsync(note);
         await repository.SaveChangesAsync();
@@ -40,8 +44,8 @@ public class NoteRepositoryTests
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
         var otherCourseId = Guid.NewGuid();
-        await repository.AddAsync(Note.Create("Note A", "Content", null, CourseId, null));
-        await repository.AddAsync(Note.Create("Note B", "Content", null, otherCourseId, null));
+        await repository.AddAsync(NoteLifecycle.Create("Note A", "Content", null, CourseId, null));
+        await repository.AddAsync(NoteLifecycle.Create("Note B", "Content", null, otherCourseId, null));
         await repository.SaveChangesAsync();
 
         var notes = await repository.GetByCourseIdAsync(CourseId);
@@ -54,7 +58,7 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        await repository.AddAsync(Note.Create("Syllabus", "Content", null, null, SemesterId));
+        await repository.AddAsync(NoteLifecycle.Create("Syllabus", "Content", null, null, SemesterId));
         await repository.SaveChangesAsync();
 
         var notes = await repository.GetBySemesterIdAsync(SemesterId);
@@ -67,8 +71,8 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        await repository.AddAsync(Note.Create("Zeta", "Content", null, CourseId, null));
-        await repository.AddAsync(Note.Create("Alpha", "Content", null, CourseId, null));
+        await repository.AddAsync(NoteLifecycle.Create("Zeta", "Content", null, CourseId, null));
+        await repository.AddAsync(NoteLifecycle.Create("Alpha", "Content", null, CourseId, null));
         await repository.SaveChangesAsync();
 
         var all = await repository.GetAllAsync();
@@ -81,7 +85,7 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        var note = Note.Create("Lecture 1", "Content", null, CourseId, null);
+        var note = NoteLifecycle.Create("Lecture 1", "Content", null, CourseId, null);
         await repository.AddAsync(note);
         await repository.SaveChangesAsync();
 
@@ -95,8 +99,8 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        var note = Note.Create("Lecture 1", "Content", null, CourseId, null);
-        var document = Document.Create("Notes.pdf", "application/pdf", [1, 2, 3], CourseId, null);
+        var note = NoteLifecycle.Create("Lecture 1", "Content", null, CourseId, null);
+        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", [1, 2, 3], CourseId, null);
         dbContext.Documents.Add(document);
         await repository.AddAsync(note);
         await repository.SaveChangesAsync();
@@ -117,8 +121,8 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        var source = Note.Create("Source", "Content", null, CourseId, null);
-        var target = Note.Create("Target", "Content", null, CourseId, null);
+        var source = NoteLifecycle.Create("Source", "Content", null, CourseId, null);
+        var target = NoteLifecycle.Create("Target", "Content", null, CourseId, null);
         await repository.AddAsync(source);
         await repository.AddAsync(target);
         await repository.SaveChangesAsync();
@@ -141,7 +145,7 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        var note = Note.Create("Graph Theory", "Content", null, CourseId, null);
+        var note = NoteLifecycle.Create("Graph Theory", "Content", null, CourseId, null);
         await repository.AddAsync(note);
         await repository.SaveChangesAsync();
 

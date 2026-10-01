@@ -12,5 +12,7 @@ public interface ISemesterRepository
 
     Task AddAsync(Semester semester, CancellationToken cancellationToken = default);
 
+    void Update(Semester semester);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

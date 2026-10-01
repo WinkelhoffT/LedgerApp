@@ -8,23 +8,26 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
 {
     public async Task<IReadOnlyList<Note>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await dbContext.Notes
+            .AsNoTracking()
             .OrderBy(n => n.Title)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Note>> GetByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default) =>
         await dbContext.Notes
+            .AsNoTracking()
             .Where(n => n.CourseId == courseId)
             .OrderBy(n => n.Title)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Note>> GetBySemesterIdAsync(Guid semesterId, CancellationToken cancellationToken = default) =>
         await dbContext.Notes
+            .AsNoTracking()
             .Where(n => n.SemesterId == semesterId)
             .OrderBy(n => n.Title)
             .ToListAsync(cancellationToken);
 
     public Task<Note?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        dbContext.Notes.FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
+        dbContext.Notes.AsNoTracking().FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Note>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
     {
@@ -34,6 +37,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
         }
 
         return await dbContext.Notes
+            .AsNoTracking()
             .Where(n => ids.Contains(n.Id))
             .ToListAsync(cancellationToken);
     }
@@ -43,12 +47,16 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
         var normalizedTitle = title.Trim().ToLower();
 
         return dbContext.Notes
+            .AsNoTracking()
             .Where(n => excludingId == null || n.Id != excludingId)
             .AnyAsync(n => n.Title.ToLower() == normalizedTitle, cancellationToken);
     }
 
     public async Task AddAsync(Note note, CancellationToken cancellationToken = default) =>
         await dbContext.Notes.AddAsync(note, cancellationToken);
+
+    public void Update(Note note) =>
+        dbContext.Notes.Update(note);
 
     public async Task<IReadOnlyList<Guid>> GetAttachedDocumentIdsAsync(Guid noteId, CancellationToken cancellationToken = default) =>
         await dbContext.NoteDocuments
@@ -63,7 +71,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
 
         if (!exists)
         {
-            await dbContext.NoteDocuments.AddAsync(NoteDocument.Create(noteId, documentId), cancellationToken);
+            await dbContext.NoteDocuments.AddAsync(new NoteDocument(noteId, documentId), cancellationToken);
         }
     }
 
@@ -88,7 +96,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
 
         foreach (var targetNoteId in targetNoteIds)
         {
-            await dbContext.NoteLinks.AddAsync(NoteLink.Create(sourceNoteId, targetNoteId), cancellationToken);
+            await dbContext.NoteLinks.AddAsync(new NoteLink(sourceNoteId, targetNoteId), cancellationToken);
         }
     }
 
@@ -114,6 +122,7 @@ public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteReposi
         var normalizedTitles = titles.Select(t => t.Trim().ToLower()).ToList();
 
         var matches = await dbContext.Notes
+            .AsNoTracking()
             .Where(n => normalizedTitles.Contains(n.Title.ToLower()))
             .Select(n => new { n.Id, n.Title })
             .ToListAsync(cancellationToken);

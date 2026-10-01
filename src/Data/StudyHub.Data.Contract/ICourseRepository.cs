@@ -14,5 +14,7 @@ public interface ICourseRepository
 
     Task AddAsync(Course course, CancellationToken cancellationToken = default);
 
+    void Update(Course course);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

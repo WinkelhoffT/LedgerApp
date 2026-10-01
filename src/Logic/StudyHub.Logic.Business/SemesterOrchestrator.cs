@@ -7,7 +7,9 @@ namespace StudyHub.Logic.Business;
 
 public sealed class SemesterOrchestrator(
     ISemesterRepository semesterRepository,
-    ICourseRepository courseRepository
+    ICourseRepository courseRepository,
+    ISemesterLifecycle semesterLifecycle,
+    ICourseLifecycle courseLifecycle
 ) : ISemesterOrchestrator
 {
     public async Task<IReadOnlyList<SemesterDto>> GetAllAsync(
@@ -34,7 +36,7 @@ public sealed class SemesterOrchestrator(
     {
         await EnsureNameIsUniqueAsync(request.Name, excludingId: null, cancellationToken);
 
-        var semester = Semester.Create(request.Name, request.StartDate, request.EndDate);
+        var semester = semesterLifecycle.Create(request.Name, request.StartDate, request.EndDate);
 
         await semesterRepository.AddAsync(semester, cancellationToken);
         await semesterRepository.SaveChangesAsync(cancellationToken);
@@ -51,7 +53,13 @@ public sealed class SemesterOrchestrator(
 
         await EnsureNameIsUniqueAsync(request.Name, request.Id, cancellationToken);
 
-        semester.Update(request.Name, request.StartDate, request.EndDate);
+        semester = semesterLifecycle.Update(
+            semester,
+            request.Name,
+            request.StartDate,
+            request.EndDate
+        );
+        semesterRepository.Update(semester);
 
         await semesterRepository.SaveChangesAsync(cancellationToken);
 
@@ -65,12 +73,13 @@ public sealed class SemesterOrchestrator(
     {
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
 
-        semester.Archive();
+        semester = semesterLifecycle.Archive(semester);
+        semesterRepository.Update(semester);
 
         var courses = await courseRepository.GetBySemesterIdAsync(id, cancellationToken);
         foreach (var course in courses.Where(c => !c.IsArchived))
         {
-            course.Archive();
+            courseRepository.Update(courseLifecycle.Archive(course));
         }
 
         await semesterRepository.SaveChangesAsync(cancellationToken);
@@ -85,7 +94,8 @@ public sealed class SemesterOrchestrator(
     {
         var semester = await GetExistingSemesterAsync(id, cancellationToken);
 
-        semester.Restore();
+        semester = semesterLifecycle.Restore(semester);
+        semesterRepository.Update(semester);
 
         await semesterRepository.SaveChangesAsync(cancellationToken);
 

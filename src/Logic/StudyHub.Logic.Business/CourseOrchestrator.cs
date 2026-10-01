@@ -1,5 +1,6 @@
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business.Contract;
+using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Semesters;
 
@@ -7,7 +8,8 @@ namespace StudyHub.Logic.Business;
 
 public sealed class CourseOrchestrator(
     ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository
+    ISemesterRepository semesterRepository,
+    ICourseLifecycle courseLifecycle
 ) : ICourseOrchestrator
 {
     public async Task<IReadOnlyList<CourseDto>> GetAllAsync(
@@ -35,7 +37,7 @@ public sealed class CourseOrchestrator(
         await EnsureNameIsUniqueAsync(request.Name, excludingId: null, cancellationToken);
         await EnsureSemesterIsAssignableAsync(request.SemesterId, cancellationToken);
 
-        var course = Course.Create(
+        var course = courseLifecycle.Create(
             request.Name,
             request.Description,
             request.Color,
@@ -58,7 +60,14 @@ public sealed class CourseOrchestrator(
         await EnsureNameIsUniqueAsync(request.Name, request.Id, cancellationToken);
         await EnsureSemesterIsAssignableAsync(request.SemesterId, cancellationToken);
 
-        course.Update(request.Name, request.Description, request.Color, request.SemesterId);
+        course = courseLifecycle.Update(
+            course,
+            request.Name,
+            request.Description,
+            request.Color,
+            request.SemesterId
+        );
+        courseRepository.Update(course);
 
         await courseRepository.SaveChangesAsync(cancellationToken);
 
@@ -72,7 +81,8 @@ public sealed class CourseOrchestrator(
     {
         var course = await GetExistingCourseAsync(id, cancellationToken);
 
-        course.Archive();
+        course = courseLifecycle.Archive(course);
+        courseRepository.Update(course);
 
         await courseRepository.SaveChangesAsync(cancellationToken);
 
@@ -86,7 +96,8 @@ public sealed class CourseOrchestrator(
     {
         var course = await GetExistingCourseAsync(id, cancellationToken);
 
-        course.Restore();
+        course = courseLifecycle.Restore(course);
+        courseRepository.Update(course);
 
         await courseRepository.SaveChangesAsync(cancellationToken);
 
