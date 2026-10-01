@@ -1,4 +1,5 @@
 using StudyHub.Logic.Domain;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Domain.Semesters;
 
