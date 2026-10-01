@@ -1,4 +1,4 @@
-namespace StudyHub.Logic.Domain.Notes;
+namespace StudyHub.Shared.Notes;
 
 public sealed class NoteLink
 {

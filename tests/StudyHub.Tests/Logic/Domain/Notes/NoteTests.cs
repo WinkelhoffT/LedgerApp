@@ -1,4 +1,3 @@
-using StudyHub.Logic.Domain.Notes;
 using StudyHub.Shared.Notes;
 
 namespace StudyHub.Tests.Logic.Domain.Notes;

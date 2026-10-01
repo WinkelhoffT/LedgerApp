@@ -1,4 +1,4 @@
-using StudyHub.Logic.Domain.SemesterProgress;
+using StudyHub.Logic.Domain;
 
 namespace StudyHub.Tests.Logic.Domain.SemesterProgress;
 

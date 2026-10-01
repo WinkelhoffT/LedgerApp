@@ -1,4 +1,4 @@
-namespace StudyHub.Logic.Domain.SemesterProgress;
+namespace StudyHub.Shared.Semesters;
 
 public sealed record SemesterProgress(
     int TotalDays,
