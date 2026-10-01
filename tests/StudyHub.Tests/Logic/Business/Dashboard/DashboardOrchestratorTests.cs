@@ -1,4 +1,5 @@
 using Moq;
+using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Semesters;

@@ -3,6 +3,7 @@
     <Project Path="src/Shared/StudyHub.Shared/StudyHub.Shared.csproj" />
   </Folder>
   <Folder Name="/02_Data/">
+    <Project Path="src/Data/StudyHub.Data.Contract/StudyHub.Data.Contract.csproj" />
     <Project Path="src/Data/StudyHub.Data/StudyHub.Data.csproj" />
   </Folder>
   <Folder Name="/03_Logic/">

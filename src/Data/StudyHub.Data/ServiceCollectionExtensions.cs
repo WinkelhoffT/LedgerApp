@@ -1,8 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using StudyHub.Data.Courses;
-using StudyHub.Data.Documents;
-using StudyHub.Data.Notes;
-using StudyHub.Data.Semesters;
+using StudyHub.Data.Contract;
 using StudyHub.Logic.Domain.Contract;
 
 namespace StudyHub.Data;

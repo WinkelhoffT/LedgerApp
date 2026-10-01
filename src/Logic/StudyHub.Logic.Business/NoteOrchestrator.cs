@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using StudyHub.Data.Contract;
 using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Courses;

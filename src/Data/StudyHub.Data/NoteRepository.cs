@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Logic.Domain.Contract;
+using StudyHub.Data.Contract;
 using StudyHub.Shared.Notes;
 
-namespace StudyHub.Data.Notes;
+namespace StudyHub.Data;
 
 public sealed class NoteRepository(ApplicationDbContext dbContext) : INoteRepository
 {

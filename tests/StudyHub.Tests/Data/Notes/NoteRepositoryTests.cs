@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Data.Notes;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Notes;
 

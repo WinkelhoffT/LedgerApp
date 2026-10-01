@@ -1,7 +1,6 @@
 using StudyHub.Shared.Notes;
 
-namespace StudyHub.Logic.Domain.Contract;
-//TODO: Datastoring contract. 
+namespace StudyHub.Data.Contract;
 public interface INoteRepository
 {
     Task<IReadOnlyList<Note>> GetAllAsync(CancellationToken cancellationToken = default);

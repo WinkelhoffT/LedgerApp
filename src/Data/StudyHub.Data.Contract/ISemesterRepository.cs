@@ -1,6 +1,6 @@
 using StudyHub.Shared.Semesters;
 
-namespace StudyHub.Logic.Domain.Contract;
+namespace StudyHub.Data.Contract;
 
 public interface ISemesterRepository
 {

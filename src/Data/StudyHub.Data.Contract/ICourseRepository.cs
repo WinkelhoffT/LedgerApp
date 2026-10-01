@@ -1,6 +1,6 @@
 using StudyHub.Shared.Courses;
 
-namespace StudyHub.Logic.Domain.Contract;
+namespace StudyHub.Data.Contract;
 
 public interface ICourseRepository
 {

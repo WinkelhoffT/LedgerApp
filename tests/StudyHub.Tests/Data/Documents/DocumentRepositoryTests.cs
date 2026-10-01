@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Data;
-using StudyHub.Data.Documents;
 using StudyHub.Shared.Documents;
 
 namespace StudyHub.Tests.Data.Documents;

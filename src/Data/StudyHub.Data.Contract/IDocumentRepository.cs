@@ -1,6 +1,6 @@
 using StudyHub.Shared.Documents;
 
-namespace StudyHub.Logic.Domain.Contract;
+namespace StudyHub.Data.Contract;
 
 public interface IDocumentRepository
 {
