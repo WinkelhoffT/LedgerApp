@@ -43,48 +43,64 @@
 }
 else
 {
-    <div class="notes-layout">
-        <div class="notes-list card">
-            <div class="notes-list-head">
-                <div class="note-search">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-                    <input class="form-control" placeholder="Search notes…" @bind="SearchText" @bind:event="oninput" />
-                </div>
-                @if (AllTags.Count > 0)
-                {
-                    <div class="note-tags-row">
-                        <button class="note-tag-f @(ActiveTag is null ? "active" : "")" type="button" @onclick="() => SetActiveTag(null)">All</button>
-                        @foreach (var tag in AllTags)
-                        {
-                            <button class="note-tag-f @(ActiveTag == tag ? "active" : "")" type="button" @onclick="() => SetActiveTag(tag)">#@tag</button>
-                        }
-                    </div>
-                }
+    <div class="notes-layout @(IsListCollapsed ? "list-collapsed" : "")">
+        @if (IsListCollapsed)
+        {
+            <div class="notes-list-rail card">
+                <button class="icon-btn" type="button" title="Show notes list" aria-label="Show notes list" @onclick="ToggleListCollapsed">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                </button>
             </div>
-            <div class="notes-scroll">
-                @if (VisibleNotes.Count == 0)
-                {
-                    <p class="placeholder-hint" style="margin:16px">No notes match.</p>
-                }
-                @foreach (var note in VisibleNotes)
-                {
-                    <div class="note-list-item @(note.Id == SelectedNoteId ? "active" : "")" @onclick="() => OpenNoteAsync(note.Id)">
-                        <div class="nli-title">
-                            @note.Title
-                            @if (note.IsArchived)
+        }
+        else
+        {
+            <div class="notes-list card">
+                <div class="notes-list-head">
+                    <div class="note-search-row">
+                        <div class="note-search">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+                            <input class="form-control" placeholder="Search notes…" @bind="SearchText" @bind:event="oninput" />
+                        </div>
+                        <button class="icon-btn" type="button" title="Collapse notes list" aria-label="Collapse notes list" @onclick="ToggleListCollapsed">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        </button>
+                    </div>
+                    @if (AllTags.Count > 0)
+                    {
+                        <div class="note-tags-row">
+                            <button class="note-tag-f @(ActiveTag is null ? "active" : "")" type="button" @onclick="() => SetActiveTag(null)">All</button>
+                            @foreach (var tag in AllTags)
                             {
-                                <span class="badge-archived">Archived</span>
+                                <button class="note-tag-f @(ActiveTag == tag ? "active" : "")" type="button" @onclick="() => SetActiveTag(tag)">#@tag</button>
                             }
                         </div>
-                        <div class="nli-excerpt">@GetExcerpt(note)</div>
-                        <div class="nli-meta">
-                            <span>@GetParentName(note)</span>
-                            <span class="nli-date">@note.UpdatedAt.ToLocalTime().ToString("d")</span>
+                    }
+                </div>
+                <div class="notes-scroll">
+                    @if (VisibleNotes.Count == 0)
+                    {
+                        <p class="placeholder-hint" style="margin:16px">No notes match.</p>
+                    }
+                    @foreach (var note in VisibleNotes)
+                    {
+                        <div class="note-list-item @(note.Id == SelectedNoteId ? "active" : "")" @onclick="() => OpenNoteAsync(note.Id)">
+                            <div class="nli-title">
+                                @note.Title
+                                @if (note.IsArchived)
+                                {
+                                    <span class="badge-archived">Archived</span>
+                                }
+                            </div>
+                            <div class="nli-excerpt">@GetExcerpt(note)</div>
+                            <div class="nli-meta">
+                                <span>@GetParentName(note)</span>
+                                <span class="nli-date">@note.UpdatedAt.ToLocalTime().ToString("d")</span>
+                            </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
-        </div>
+        }
 
         <div class="note-editor card">
             @if (!IsCreating && SelectedNote is null)
