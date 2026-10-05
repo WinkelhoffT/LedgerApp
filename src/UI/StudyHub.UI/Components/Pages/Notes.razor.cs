@@ -112,6 +112,8 @@ public partial class Notes
 
     private bool ShowPreview { get; set; }
 
+    private bool IsListCollapsed { get; set; }
+
     private bool IsEditingContent { get; set; }
 
     private bool ShowEditor => IsCreating || IsEditingContent;
@@ -382,6 +384,8 @@ public partial class Notes
     private void SetActiveTag(string? tag) => ActiveTag = tag;
 
     private void TogglePreview() => ShowPreview = !ShowPreview;
+
+    private void ToggleListCollapsed() => IsListCollapsed = !IsListCollapsed;
 
     private void StartEditing() => IsEditingContent = true;
 

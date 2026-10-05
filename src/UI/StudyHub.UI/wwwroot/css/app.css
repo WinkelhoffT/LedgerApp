@@ -350,6 +350,11 @@ select:focus-visible,
 .notes-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
 .notes-list { display: flex; flex-direction: column; height: calc(100vh - 220px); min-height: 420px; overflow: hidden; }
 .notes-list-head { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+.notes-layout.list-collapsed { grid-template-columns: 54px 1fr; }
+.notes-list-rail { display: flex; justify-content: center; padding: 8px 0; height: calc(100vh - 220px); min-height: 420px; }
+.note-search-row { display: flex; align-items: center; gap: 6px; }
+.note-search-row .note-search { flex: 1; }
+.note-search-row .icon-btn { flex-shrink: 0; }
 .note-search { position: relative; display: flex; align-items: center; }
 .note-search svg { position: absolute; left: 11px; color: var(--text-3); pointer-events: none; }
 .note-search input { padding-left: 32px; }
@@ -461,6 +466,8 @@ select:focus-visible,
 @media (max-width: 900px) {
   .notes-layout { grid-template-columns: 1fr; }
   .notes-list { height: auto; max-height: 320px; }
+  .notes-layout.list-collapsed { grid-template-columns: 1fr; }
+  .notes-list-rail { height: auto; min-height: 0; justify-content: flex-start; padding: 8px; }
   .editor-split { grid-template-columns: 1fr; }
   .editor-pane { border-right: none; border-bottom: 1px solid var(--border); }
   .note-side-panels { grid-template-columns: 1fr; }
