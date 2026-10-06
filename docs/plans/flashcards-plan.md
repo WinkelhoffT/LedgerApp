@@ -23,8 +23,10 @@ section 8).
 In scope:
 
 - Generate a deck from exactly one Markdown `Note`.
-- Options per generation: target number of cards (e.g. 5–50), card language (note language /
-  German / English), optional focus hint (free text, e.g. "only the section on B-trees",
+- Cards are **always generated in German** (decision per review), regardless of the note's
+  language; technical terms may keep their established English name (e.g. "Hash Map",
+  "Deadlock") where that is common usage.
+- Options per generation: target number of cards (e.g. 5–50), optional focus hint (free text, e.g. "only the section on B-trees",
   "definitions").
 - Persist the generated deck and its cards, linked to the source note.
 - List decks, view a deck, edit / delete single cards, archive a deck (soft delete).
@@ -46,8 +48,9 @@ Out of scope (later milestones):
 ### 3.1 Claude API access
 
 - **Official Anthropic C# SDK** (NuGet `Anthropic`), no hand-written HTTP client.
-- **Model: `claude-opus-5-5`**, configurable via options (`Anthropic:Model`) so it can be switched
-  (e.g. to `claude-sonnet-5-5` for lower cost) without code changes.
+- **Model: `claude-sonnet-5-5`** (decision per review: the cheaper model is sufficient for turning
+  a note into flashcards). Configurable via options (`Anthropic:Model`) so it can be switched
+  (e.g. to `claude-opus-5-5`) without code changes.
 - **Effort: `medium`** (set explicitly via `OutputConfig.Effort`; extracting and phrasing cards is
   not a hard reasoning task). Configurable (`Anthropic:Effort`).
 - **Structured output** (`OutputConfig.Format` with a JSON schema) so the response is guaranteed to
@@ -70,7 +73,7 @@ Out of scope (later milestones):
     keep code/formulas intact;
   - not produce solutions to assignments/exams contained in the material;
   - use HTML for formatting in answers (`<br>`, `<code>`, `<b>`), since Anki renders HTML;
-  - return at most *N* cards in the requested language, with 1–3 short tags.
+  - return at most *N* cards, **always in German**, with 1–3 short tags.
 
 ### 3.2 Persistence
 
@@ -116,7 +119,7 @@ End-to-end flow (same as every other domain):
 
 | Layer / project | New types |
 | --- | --- |
-| `StudyHub.Shared/Flashcards/` | `FlashcardDeck`, `Flashcard` (records, like `Note`), `FlashcardDeckDto`, `FlashcardDto`, `GenerateFlashcardsRequest` (`NoteId`, `CardCount`, `Language`, `FocusHint`), `UpdateFlashcardRequest`, `FlashcardExportDto`, `FlashcardErrorCodes`, `FlashcardDeckNotFoundException`, `FlashcardNotFoundException`, `FlashcardValidationException`, `FlashcardGenerationFailedException`, `AiNotConfiguredException`, `GeneratedFlashcard` |
+| `StudyHub.Shared/Flashcards/` | `FlashcardDeck`, `Flashcard` (records, like `Note`), `FlashcardDeckDto`, `FlashcardDto`, `GenerateFlashcardsRequest` (`NoteId`, `CardCount`, `FocusHint`), `UpdateFlashcardRequest`, `FlashcardExportDto`, `FlashcardErrorCodes`, `FlashcardDeckNotFoundException`, `FlashcardNotFoundException`, `FlashcardValidationException`, `FlashcardGenerationFailedException`, `AiNotConfiguredException`, `GeneratedFlashcard` |
 | `StudyHub.Shared/Configuration/` | `AnthropicOptions` (Model, Effort, MaxTokens, MaxCards) |
 | `StudyHub.Logic.Domain.Contract` | `IFlashcardDeckLifecycle`, `IAnkiCsvSerializer` |
 | `StudyHub.Logic.Domain` | `FlashcardDeckLifecycle` (validation: front/back required + max length, card count limits), `AnkiCsvSerializer` (pure, escaping rules above) |
@@ -178,7 +181,7 @@ Migration `AddFlashcards`:
 7. `FlashcardAccessor` + registration in `AddStudyHubIntegration`.
 8. `/flashcards` page: deck list (Bootstrap cards, filter by course/semester), empty state
    ("No flashcard decks yet" per mockup), "Generate deck" button.
-9. `FlashcardGenerateDialog`: note picker, card count, language, focus hint, spinner while
+9. `FlashcardGenerateDialog`: note picker, card count, focus hint, spinner while
    generating (expect 15–60 s), error display.
 10. Deck detail: card table with inline edit/delete, "Export for Anki" button
     (→ `FlashcardExportEndpoints`), archive.
@@ -210,9 +213,9 @@ Migration `AddFlashcards`:
 ## 8. Risks / Assumptions / Open Questions
 
 - **Cost:** each generation is a paid API call. Because only notes are allowed (max 50,000
-  characters ≈ 12–15k tokens), cost per generation is bounded: typically ~0.05–0.10 $ with
-  `claude-opus-5-5` (≈ half with `claude-sonnet-5-5`), worst case (full-length note, 50 cards)
-  ~0.25 $. Mitigations: card-count cap, effort `medium`, model configurable, no automatic
+  characters ≈ 12–15k tokens), cost per generation is bounded (estimate, not measured): with the
+  chosen `claude-sonnet-5-5` ($2 input / $10 output per 1M tokens) typically ~0.03–0.05 $, worst
+  case (full-length note, 50 cards) ~0.12 $ — about half of what `claude-opus-5-5` would cost. Mitigations: card-count cap, effort `medium`, model configurable, no automatic
   regeneration.
 - **Latency:** generation can take up to a minute or more → long accessor timeout + spinner;
   Blazor Server circuit stays alive meanwhile. Streaming is a later improvement.
@@ -235,5 +238,3 @@ Migration `AddFlashcards`:
   1. Persist decks/cards (this plan — cards only, never the CSV) or start even smaller with
      "generate → preview → download" and no database? Persisting costs one migration but keeps
      paid results and allows editing.
-  2. Default model `claude-opus-5-5` vs. the cheaper `claude-sonnet-5-5`?
-  3. Default card language: same as the source, or always German?
