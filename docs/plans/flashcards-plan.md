@@ -1,6 +1,6 @@
 # Feature Plan: AI Flashcard Generation (Anki CSV Export)
 
-Status: Draft — waiting for confirmation
+Status: Implemented (see "Implementation notes" at the end for deviations from this plan)
 Classification (per `CLAUDE.md`): **Large** (AI integration) — implementation starts only after
 this plan is reviewed and explicitly confirmed.
 
@@ -240,3 +240,29 @@ without changing the generation/export flow:
   export**, never stored.
 - `FlashcardDto`/`AnkiCsvSerializer`/`IFlashcardGenerator` stay as they are; the orchestrator
   gains save/list/archive methods, and the page gains a deck list.
+
+## 10. Implementation notes
+
+Deviations from the plan above, found while implementing:
+
+- **CSV header:** the plan's example had a literal `Front;Back;Tags` row after the `#` header lines.
+  Anki would import that row as a card, so the export uses Anki's `#columns:Front;Back;Tags` header
+  line instead. Every field (including tags) is quoted.
+- **Card-count limit:** lives in `GenerateFlashcardsRequest` (`MinCardCount`/`MaxCardCount`,
+  validated by the Domain `FlashcardValidator`) instead of `AnthropicOptions.MaxCards`, since it is
+  a domain rule, not a provider setting. `AnthropicOptions` holds `ApiKey`, `Model`, `Effort`,
+  `MaxTokens`, `RequestTimeout`.
+- **Invalid AI output:** cards that break a card rule are dropped (and the result capped at the
+  requested count) instead of failing the whole generation; only "no usable card at all" fails with
+  `FlashcardGenerationFailedException` (`InvalidResponse`).
+- **Failure reasons:** `FlashcardGenerationFailedException` carries a
+  `FlashcardGenerationFailureReason` (`Refused`, `Truncated`, `RateLimited`, `ServiceUnavailable`,
+  …) that the Api returns as `reason` in the problem details (HTTP 502). "AI not configured" is a
+  503.
+- **UI language:** labels follow the rest of the (English) UI ("Generate", "Export for Anki",
+  "Generate flashcards" on the Notes page); the cards themselves are always German.
+- **Preview safety:** the card preview HTML-encodes everything and only re-enables `<br>`, `<b>`,
+  `<i>`, `<code>` (`FlashcardHtmlFormatter`), so AI output cannot inject markup into the page.
+- **Download:** `FileDownloadAccessor` streams the CSV to the browser via `DotNetStreamReference`
+  (`wwwroot/js/file-download.js`).
+- **Timeouts:** SDK request timeout 150 s with one retry; the UI accessor waits up to 6 minutes.

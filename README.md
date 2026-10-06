@@ -46,6 +46,9 @@ implemented versus planned.
   migrations applied automatically on Api startup.
 - Docker/Docker Compose deployment with separate UI and Api containers; the SQLite database is
   persisted outside the Api container via a bind mount.
+- AI flashcard generation from a Markdown note (Claude via the Anthropic API), with review/editing
+  in the app and export as an Anki-importable CSV file (see
+  [Configure AI features](#configure-ai-features-flashcards)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -229,6 +232,22 @@ The database is owned by `StudyHub.Api` (not the UI). Its location is set via th
 Pending migrations are applied automatically at Api startup — there is no separate manual step for
 a fresh environment.
 
+### Configure AI features (flashcards)
+
+Flashcard generation calls Claude through the Anthropic API from `StudyHub.Api` (the UI never talks
+to Anthropic). It needs an API key, which is **never** committed: `StudyHub.Api` reads it from the
+`ANTHROPIC_API_KEY` environment variable or, in Development, from user secrets:
+
+```bash
+dotnet user-secrets set "ANTHROPIC_API_KEY" "<your key>" \
+  --project src/UI/StudyHub.Api/StudyHub.Api.csproj
+```
+
+Without a key the app still starts; the Flashcards page then shows an "AI features are not
+configured" message. Model and effort default to `claude-sonnet-5-5` / `medium` and can be changed
+via the `Anthropic` configuration section (`Anthropic:Model`, `Anthropic:Effort`,
+`Anthropic:MaxTokens`). Each generation is a paid API call; note content is sent to Anthropic.
+
 ### Run the application (locally, without Docker)
 
 The UI calls the Api over HTTP, so both processes need to run at the same time (in separate
@@ -270,6 +289,10 @@ This is the recommended way to run StudyHub as a portable, self-contained deploy
 ```bash
 docker compose up --build -d
 ```
+
+To enable flashcard generation, export `ANTHROPIC_API_KEY` in the shell (or put it in a `.env`
+file next to `docker-compose.yml`, which is not committed) before starting; `docker-compose.yml`
+passes it to the `studyhub-api` container only.
 
 This builds two images — `studyhub-api` and `studyhub` — and starts both containers. The UI is
 published on <http://localhost:8080>; the Api container is only reachable from the UI container
