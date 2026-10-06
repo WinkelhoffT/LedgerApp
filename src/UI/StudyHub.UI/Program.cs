@@ -13,6 +13,7 @@ builder.Services.AddScoped<IPageHeaderStateHolder, PageHeaderStateHolder>();
 builder.Services.AddScoped<ISidebarStateHolder, SidebarStateHolder>();
 builder.Services.AddScoped<IThemeAccessor, ThemeAccessor>();
 builder.Services.AddScoped<IThemeStateHolder, ThemeStateHolder>();
+builder.Services.AddScoped<IFileDownloadAccessor, FileDownloadAccessor>();
 
 builder.Services.AddStudyHubIntegration(builder.Configuration);
 
