@@ -14,12 +14,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardOrchestrator, DashboardOrchestrator>();
         services.AddScoped<IDocumentOrchestrator, DocumentOrchestrator>();
         services.AddScoped<INoteOrchestrator, NoteOrchestrator>();
+        services.AddScoped<IFlashcardOrchestrator, FlashcardOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
         services.AddScoped<ICourseLifecycle, CourseLifecycle>();
         services.AddScoped<IDocumentLifecycle, DocumentLifecycle>();
         services.AddScoped<INoteLifecycle, NoteLifecycle>();
+        services.AddScoped<IFlashcardValidator, FlashcardValidator>();
+        services.AddScoped<IAnkiCsvSerializer, AnkiCsvSerializer>();
 
         return services;
     }
