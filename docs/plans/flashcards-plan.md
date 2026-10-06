@@ -74,6 +74,10 @@ Out of scope (later milestones):
 
 - New aggregate **`FlashcardDeck`** with child **`Flashcard`** records, persisted in SQLite, so a
   (paid) generation is not lost on page reload and cards can be edited before export.
+- **The CSV itself is never stored.** Only the structured cards (front/back/tags) are persisted;
+  the Anki CSV is built on the fly from the current cards on every export
+  (`GET decks/{id}/export`). This keeps a single source of truth — edits to a card are
+  automatically reflected in the next export, and no stale file copies pile up in the database.
 - Ownership follows the existing pattern: exactly one of `CourseId` / `SemesterId`, copied from
   the source note/document. The deck also stores `SourceType` (`Note` | `Document`), `SourceId`,
   `SourceTitle` (snapshot), and the `Model` used.
@@ -106,7 +110,7 @@ Front;Back;Tags
 End-to-end flow (same as every other domain):
 `Flashcards.razor` → `IFlashcardAccessor` (Logic.Integration) → `FlashcardController` (Api) →
 `FlashcardOrchestrator` (Business) → `IFlashcardDeckLifecycle` / `IAnkiCsvSerializer` (Domain) +
-`IFlashcardDeckRepository` (Data) + **`IFlashcardGenerator`** (Integration, Claude).
+`IFlashcardDeckRepository` (Data) + **`IFlashcardGenerator`** (`StudyHub.Logic.Integration`, Claude).
 
 | Layer / project | New types |
 | --- | --- |
@@ -116,8 +120,7 @@ End-to-end flow (same as every other domain):
 | `StudyHub.Logic.Domain` | `FlashcardDeckLifecycle` (validation: front/back required + max length, card count limits, exactly-one owner), `AnkiCsvSerializer` (pure, escaping rules above) |
 | `StudyHub.Data.Contract` | `IFlashcardDeckRepository` |
 | `StudyHub.Data` | `FlashcardDeckRepository`, EF configuration (`IEntityTypeConfiguration`), migration `AddFlashcards` |
-| `StudyHub.Logic.Integration.Contract` (currently empty) | `IFlashcardGenerator` — input: source text *or* PDF bytes + options; output: `IReadOnlyList<GeneratedFlashcard>` |
-| `StudyHub.Logic.Integration/Ai/` | `ClaudeFlashcardGenerator` (Anthropic SDK, prompt, JSON schema, error mapping), `DocxTextExtractor`, `AddStudyHubAi(IConfiguration)` registration (called from the **Api** composition root only) |
+| `StudyHub.Logic.Integration/Ai/` | **All AI integration logic lives in `StudyHub.Logic.Integration.csproj`** (not in `Logic.Integration.Contract`): `IFlashcardGenerator` (input: source text *or* PDF bytes + options; output: `IReadOnlyList<GeneratedFlashcard>`), `ClaudeFlashcardGenerator` (Anthropic SDK, prompt, JSON schema, error mapping), `DocxTextExtractor`, `AddStudyHubAi(IConfiguration)` registration (called from the **Api** composition root only) |
 | `StudyHub.Logic.Integration/Flashcards/` | `IFlashcardAccessor` / `FlashcardAccessor` (UI → Api; longer `HttpClient.Timeout`, e.g. 3 min) |
 | `StudyHub.Logic.Business.Contract` | `IFlashcardOrchestrator` |
 | `StudyHub.Logic.Business` | `FlashcardOrchestrator`: loads note/document via existing repositories, rejects archived sources, calls `IFlashcardGenerator`, builds the deck through the lifecycle, saves, maps DTOs, exports via `IAnkiCsvSerializer` |
@@ -138,8 +141,9 @@ End-to-end flow (same as every other domain):
 
 ### Dependency notes
 
-- `Logic.Business` gets a reference to `Logic.Integration.Contract` (for `IFlashcardGenerator`);
-  `Logic.Integration` references `Logic.Integration.Contract` + `Shared`. LAY-7 stays intact:
+- `Logic.Business` already references `Logic.Integration` and uses `IFlashcardGenerator` from
+  there — no new project reference needed. `Logic.Integration` keeps referencing only `Shared`
+  (plus the new NuGet packages). LAY-7 stays intact:
   Integration still never references Business/Domain.
 - The Anthropic SDK and OpenXml packages are only referenced by `Logic.Integration`. The UI also
   references `Logic.Integration` (for accessors) but never registers/uses the AI generator.
@@ -164,8 +168,8 @@ Migration `AddFlashcards`:
 1. `Shared/Flashcards` records, DTOs, requests, error codes, exceptions; `AnthropicOptions`.
 2. Domain: `FlashcardDeckLifecycle`, `AnkiCsvSerializer` + contracts.
 3. Data: repository, EF configuration, migration `AddFlashcards`.
-4. Integration: `IFlashcardGenerator`, `ClaudeFlashcardGenerator`, `DocxTextExtractor`,
-   `AddStudyHubAi`; add NuGet `Anthropic`, `DocumentFormat.OpenXml`.
+4. Integration (`StudyHub.Logic.Integration`): `IFlashcardGenerator`, `ClaudeFlashcardGenerator`,
+   `DocxTextExtractor`, `AddStudyHubAi`; add NuGet `Anthropic`, `DocumentFormat.OpenXml`.
 5. Business: `IFlashcardOrchestrator`, `FlashcardOrchestrator`, DI registration.
 6. Api: controller, exception handler, `AddStudyHubAi(...)` in `Program.cs`,
    `ANTHROPIC_API_KEY` in `docker-compose.yml` (`- ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}`).
@@ -226,9 +230,11 @@ Migration `AddFlashcards`:
      `*.Contract` projects (`Logic.Domain.Contract`, `Logic.Business.Contract`,
      `Data.Contract`, `Logic.Integration.Contract`), entity records in `Shared`, and `*Lifecycle`
      domain services. This plan follows the **current code**; the docs should be updated
-     separately.
+     separately. Exception (per review): the AI integration contract `IFlashcardGenerator` lives
+     in `StudyHub.Logic.Integration` itself, not in `Logic.Integration.Contract`.
 - **Open questions for review:**
-  1. Persist decks (this plan) or start even smaller with "generate → preview → download" and no
-     database? Persisting costs one migration but keeps paid results and allows editing.
+  1. Persist decks/cards (this plan — cards only, never the CSV) or start even smaller with
+     "generate → preview → download" and no database? Persisting costs one migration but keeps
+     paid results and allows editing.
   2. Default model `claude-opus-5-5` vs. the cheaper `claude-sonnet-5-5`?
   3. Default card language: same as the source, or always German?
