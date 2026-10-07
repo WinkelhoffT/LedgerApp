@@ -314,11 +314,13 @@ Before completing any implementation:
 - Fix compiler warnings introduced by the change.
 - Verify that architecture boundaries remain intact.
 
-Typical commands:
+Typical commands (the same checks run in CI, see `.github/workflows/ci.yml`):
 
 ```bash
 dotnet build
 dotnet test
+dotnet tool restore
+dotnet csharpier format .
 ```
 
 ---

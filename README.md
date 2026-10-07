@@ -310,6 +310,32 @@ resolves inside the Docker Compose network.
 dotnet test
 ```
 
+### Formatting
+
+C# and project files are formatted with [CSharpier](https://csharpier.com/), pinned as a local
+dotnet tool in `dotnet-tools.json`:
+
+```bash
+dotnet tool restore
+dotnet csharpier format .   # apply formatting
+dotnet csharpier check .    # what CI runs
+```
+
+EF Core migrations are excluded via `.csharpierignore` because they are generated code.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request, on pushes to `main`, weekly, and on demand:
+
+| Job | What it checks |
+| --- | --- |
+| CSharpier | `dotnet csharpier check .` |
+| Build & test | Release build with warnings as errors, then `dotnet test` |
+| Trivy (repository) | Secrets and Dockerfile misconfigurations (HIGH/CRITICAL) |
+| Trivy (api/ui image) | Builds both Docker images and scans OS and NuGet packages for fixable HIGH/CRITICAL vulnerabilities |
+
+Accepted Trivy findings live in `.trivyignore`, each with a reason.
+
 ---
 
 ## Running with Docker Compose
