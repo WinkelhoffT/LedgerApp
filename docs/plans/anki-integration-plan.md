@@ -1,6 +1,6 @@
 # Feature Plan: Anki Integration (Dashboard "cards due" widget)
 
-Status: Draft
+Status: Implemented
 Classification (per `CLAUDE.md`): **Large** — first integration with an external
 service (comparable to "AI integration" in the Large list), plus a deployment/network
 change (`docker-compose.yml`, see section 6) that `SCP-001` only allows on explicit
@@ -192,44 +192,44 @@ unreachable — then `Status = Unavailable`, counts 0).
 
 ### Backend
 
-- [ ] Shared: `AnkiConnectOptions`, `AnkiDeckCountsDto`, `AnkiStudyStatusDto`,
+- [x] Shared: `AnkiConnectOptions`, `AnkiDeckCountsDto`, `AnkiStudyStatusDto`,
       `AnkiConnectionStatus`, `AnkiConnectUnavailableException`.
-- [ ] Integration: `IAnkiConnectAccessor`/`AnkiConnectAccessor` (`deckNames` →
+- [x] Integration: `IAnkiConnectAccessor`/`AnkiConnectAccessor` (`deckNames` →
       `getDeckStats`), error translation, `AddStudyHubAnkiConnect` registration.
-- [ ] Domain: `IAnkiDueCardsCalculator`/`AnkiDueCardsCalculator` (top-level filter,
+- [x] Domain: `IAnkiDueCardsCalculator`/`AnkiDueCardsCalculator` (top-level filter,
       totals, `HasCardsToStudy`).
-- [ ] Business: `DashboardOrchestrator.GetAnkiStudyStatusAsync` (Disabled /
+- [x] Business: `DashboardOrchestrator.GetAnkiStudyStatusAsync` (Disabled /
       Unavailable / Connected mapping).
-- [ ] Api: `DashboardController` endpoint, options binding + startup validation,
+- [x] Api: `DashboardController` endpoint, options binding + startup validation,
       `appsettings.json` section.
-- [ ] Integration (UI side): `IDashboardAccessor.GetAnkiStudyStatusAsync`.
+- [x] Integration (UI side): `IDashboardAccessor.GetAnkiStudyStatusAsync`.
 
 ### UI
 
-- [ ] `AnkiStatusCard` component (+ code-behind): "X cards due today" with
+- [x] `AnkiStatusCard` component (+ code-behind): "X cards due today" with
       new/learn/review breakdown and a top-decks list; highlighted when
       `HasCardsToStudy`; "All done for today" when nothing is due; muted hint
       "Anki not connected – start Anki with AnkiConnect" when `Unavailable`; hidden
       when `Disabled`.
-- [ ] `Dashboard.razor(.cs)`: load the status independently; place the card in the
+- [x] `Dashboard.razor(.cs)`: load the status independently; place the card in the
       dashboard grid (replacing nothing that is already real data).
 
 ### Deployment / Docs (after approval)
 
-- [ ] `docker-compose.yml`: `extra_hosts` for `studyhub-api`.
-- [ ] `README.md`: AnkiConnect setup (install add-on, `webBindAddress`, optional API
+- [x] `docker-compose.yml`: `extra_hosts` for `studyhub-api`.
+- [x] `README.md`: AnkiConnect setup (install add-on, `webBindAddress`, optional API
       key via env var).
 
 ### Tests (xUnit + Moq, existing stack)
 
-- [ ] `AnkiDueCardsCalculatorTests`: subdecks not double-counted, totals, `HasCardsToStudy`
+- [x] `AnkiDueCardsCalculatorTests`: subdecks not double-counted, totals, `HasCardsToStudy`
       true/false, empty deck list.
-- [ ] `DashboardOrchestratorTests`: `Disabled` without calling the accessor;
+- [x] `DashboardOrchestratorTests`: `Disabled` without calling the accessor;
       `Unavailable` on `AnkiConnectUnavailableException`; `Connected` mapping.
-- [ ] `AnkiConnectAccessorTests` (fake `HttpMessageHandler`): request envelope
+- [x] `AnkiConnectAccessorTests` (fake `HttpMessageHandler`): request envelope
       (`action`, `version: 6`, `key`), parsing of `getDeckStats` result, non-null
       `error` → exception, connection failure/timeout → exception.
-- [ ] `DashboardEndpointsTests`: `GET api/dashboard/anki-status` returns 200 with the
+- [x] `DashboardEndpointsTests`: `GET api/dashboard/anki-status` returns 200 with the
       orchestrator's DTO (accessor mocked via `WebApplicationFactory`).
 
 ## 8. Validation Plan
@@ -258,3 +258,16 @@ unreachable — then `Status = Unavailable`, counts 0).
   isolated in `AnkiConnectAccessor` so changes stay local.
 - UI strings are hardcoded like the rest of the current Dashboard; `UIX-002`
   (localization) is not addressed here because no localization infrastructure exists yet.
+
+## 10. Implementation Notes
+
+- **`deckNamesAndIds` instead of `deckNames`:** AnkiConnect's `getDeckStats` reports a deck's
+  *leaf* name only (`Algorithmen`, not `Informatik::Algorithmen`), which would defeat the
+  top-level filter. The accessor therefore fetches names with ids and maps the stats (keyed by
+  deck id) back to full names. `getDeckStats` is called for all decks; the top-level filter stays
+  in the Domain calculator.
+- `AnkiDueCards` (the calculator's result) lives in `Logic.Domain.Contract` next to its
+  interface, as it never crosses the Api boundary.
+- The local `dotnet run` override of `BaseAddress` is set in the Api's `launchSettings.json`
+  instead of `appsettings.Development.json`, because `appsettings.Development.json` is gitignored.
+- `AnkiConnect__ApiKey` is forwarded in `docker-compose.yml` from `ANKICONNECT_API_KEY`.

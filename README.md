@@ -49,6 +49,8 @@ implemented versus planned.
 - AI flashcard generation from a Markdown note (Claude via the Anthropic API), with review/editing
   in the app and export as an Anki-importable CSV file (see
   [Configure AI features](#configure-ai-features-flashcards)).
+- Dashboard card showing today's due Anki cards (new / learning / review), read live from the Anki
+  desktop app via AnkiConnect (see [Configure Anki](#configure-anki-dashboard-due-today-card)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -251,6 +253,27 @@ The model is chosen per generation on the Flashcards page. The choices come from
 (`claude-sonnet-5-5`); the Api rejects any model that isn't in that list. Further settings:
 `Anthropic:Effort` (`medium`) and `Anthropic:MaxTokens`. Each generation is a paid API call (Opus
 costs about twice as much as Sonnet); note content is sent to Anthropic.
+
+### Configure Anki (Dashboard "due today" card)
+
+The Dashboard shows how many Anki cards are due today (new / learning / review), read live from the
+Anki desktop app via the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) add-on. Anki
+must be running for the counts to appear; otherwise the card shows "Anki not connected" and the
+rest of the Dashboard is unaffected.
+
+1. In Anki: **Tools → Add-ons → Get Add-ons…**, enter code `2055492159`, restart Anki.
+2. Settings live in the `AnkiConnect` section of `src/UI/StudyHub.Api/appsettings.json`
+   (`Enabled`, `BaseAddress`, `TimeoutSeconds`). Set `Enabled` to `false` to hide the card.
+   Local `dotnet run` uses `http://127.0.0.1:8765/` (set in the Api's `launchSettings.json`);
+   Docker uses `http://host.docker.internal:8765/`.
+3. **Docker on Linux only:** AnkiConnect listens on `127.0.0.1` by default, which the container
+   can't reach. In Anki open **Tools → Add-ons → AnkiConnect → Config** and set
+   `"webBindAddress": "0.0.0.0"`. This exposes AnkiConnect to your local network, so also set an
+   `"apiKey"` there and pass the same value to StudyHub via `ANKICONNECT_API_KEY` (shell or `.env`
+   next to `docker-compose.yml`), which `docker-compose.yml` forwards as `AnkiConnect__ApiKey`.
+   Docker Desktop on Windows/macOS works without this step.
+
+StudyHub only reads deck statistics; it never changes your Anki collection.
 
 ### Run the application (locally, without Docker)
 
