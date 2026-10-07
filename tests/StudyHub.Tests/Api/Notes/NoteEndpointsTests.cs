@@ -1,9 +1,11 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StudyHub.Api;
@@ -35,7 +37,10 @@ public class NoteEndpointsTests
 
             builder.ConfigureServices(services =>
             {
+                // EF Core 10 also registers the provider through IDbContextOptionsConfiguration, so
+                // both registrations must go before switching to the InMemory provider.
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+                services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
                 services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseInMemoryDatabase(databaseName)
                 );
@@ -196,9 +201,11 @@ public class NoteEndpointsTests
         );
         var note = await noteResponse.Content.ReadFromJsonAsync<NoteDto>();
 
+        var fileContent = new ByteArrayContent([1, 2, 3]);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
         using var uploadContent = new MultipartFormDataContent
         {
-            { new ByteArrayContent([1, 2, 3]), "file", "Slides.pdf" },
+            { fileContent, "file", "Slides.pdf" },
             { new StringContent(courseId.ToString()), "courseId" },
         };
         var uploadResponse = await client.PostAsync("api/documents", uploadContent);

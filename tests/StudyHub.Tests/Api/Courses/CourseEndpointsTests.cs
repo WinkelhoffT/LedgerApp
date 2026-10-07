@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StudyHub.Api;
@@ -34,7 +35,10 @@ public class CourseEndpointsTests
 
             builder.ConfigureServices(services =>
             {
+                // EF Core 10 also registers the provider through IDbContextOptionsConfiguration, so
+                // both registrations must go before switching to the InMemory provider.
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+                services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
                 services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseInMemoryDatabase(databaseName)
                 );
