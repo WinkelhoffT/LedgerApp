@@ -250,8 +250,8 @@ Deviations from the plan above, found while implementing:
   line instead. Every field (including tags) is quoted.
 - **Card-count limit:** lives in `GenerateFlashcardsRequest` (`MinCardCount`/`MaxCardCount`,
   validated by the Domain `FlashcardValidator`) instead of `AnthropicOptions.MaxCards`, since it is
-  a domain rule, not a provider setting. `AnthropicOptions` holds `ApiKey`, `Model`, `Effort`,
-  `MaxTokens`, `RequestTimeout`.
+  a domain rule, not a provider setting. `AnthropicOptions` holds `ApiKey`, `DefaultModel`, `Models`,
+  `Effort`, `MaxTokens`, `RequestTimeout`.
 - **Invalid AI output:** cards that break a card rule are dropped (and the result capped at the
   requested count) instead of failing the whole generation; only "no usable card at all" fails with
   `FlashcardGenerationFailedException` (`InvalidResponse`).
@@ -266,3 +266,15 @@ Deviations from the plan above, found while implementing:
 - **Download:** `FileDownloadAccessor` streams the CSV to the browser via `DotNetStreamReference`
   (`wwwroot/js/file-download.js`).
 - **Timeouts:** SDK request timeout 150 s with one retry; the UI accessor waits up to 6 minutes.
+- **Model selection (added after review):** the model is picked per generation on the Flashcards
+  page instead of being fixed. `GET api/flashcards/models` returns the allowlist from
+  `Anthropic:Models` (+ `Anthropic:DefaultModel`, preselected) via `IAiModelCatalog`;
+  `GenerateFlashcardsRequest.Model` is validated against it (unknown model → 400), and
+  `FlashcardSetDto.Model` reports the model used. Defaults: Claude Sonnet 5.5 and Claude Opus 5.5
+  (both support `effort` and the `"default"` refusal fallback; Haiku 4.5 is left out because it
+  rejects `effort`).
+- **API key (changed after review):** read only from `Anthropic:ApiKey` (committed empty in the
+  Api's `appsettings.json`; set locally with `dotnet user-secrets set "Anthropic:ApiKey" …`, in
+  Docker via `Anthropic__ApiKey`). The `ANTHROPIC_API_KEY` configuration fallback was removed so
+  there is one documented source; `docker-compose.yml` maps the shell's `ANTHROPIC_API_KEY` to
+  `Anthropic__ApiKey`. `AnthropicOptions.Model` was renamed to `DefaultModel`.

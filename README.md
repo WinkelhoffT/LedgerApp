@@ -235,18 +235,22 @@ a fresh environment.
 ### Configure AI features (flashcards)
 
 Flashcard generation calls Claude through the Anthropic API from `StudyHub.Api` (the UI never talks
-to Anthropic). It needs an API key, which is **never** committed: `StudyHub.Api` reads it from the
-`ANTHROPIC_API_KEY` environment variable or, in Development, from user secrets:
+to Anthropic). All settings live in the `Anthropic` section of `src/UI/StudyHub.Api/appsettings.json`.
+`Anthropic:ApiKey` is committed **empty** — set the real key locally as a user secret, which
+overrides the empty value when `ASPNETCORE_ENVIRONMENT=Development`:
 
 ```bash
-dotnet user-secrets set "ANTHROPIC_API_KEY" "<your key>" \
+dotnet user-secrets set "Anthropic:ApiKey" "<your key>" \
   --project src/UI/StudyHub.Api/StudyHub.Api.csproj
 ```
 
-Without a key the app still starts; the Flashcards page then shows an "AI features are not
-configured" message. Model and effort default to `claude-sonnet-5-5` / `medium` and can be changed
-via the `Anthropic` configuration section (`Anthropic:Model`, `Anthropic:Effort`,
-`Anthropic:MaxTokens`). Each generation is a paid API call; note content is sent to Anthropic.
+Without a key the app still starts; the Flashcards page then shows an "AI not configured" message.
+
+The model is chosen per generation on the Flashcards page. The choices come from
+`Anthropic:Models` (a list of `Id` + `DisplayName`), preselected with `Anthropic:DefaultModel`
+(`claude-sonnet-5-5`); the Api rejects any model that isn't in that list. Further settings:
+`Anthropic:Effort` (`medium`) and `Anthropic:MaxTokens`. Each generation is a paid API call (Opus
+costs about twice as much as Sonnet); note content is sent to Anthropic.
 
 ### Run the application (locally, without Docker)
 
@@ -292,7 +296,8 @@ docker compose up --build -d
 
 To enable flashcard generation, export `ANTHROPIC_API_KEY` in the shell (or put it in a `.env`
 file next to `docker-compose.yml`, which is not committed) before starting; `docker-compose.yml`
-passes it to the `studyhub-api` container only.
+passes it to the `studyhub-api` container only, as `Anthropic__ApiKey` (user secrets are not used
+outside Development).
 
 This builds two images — `studyhub-api` and `studyhub` — and starts both containers. The UI is
 published on <http://localhost:8080>; the Api container is only reachable from the UI container

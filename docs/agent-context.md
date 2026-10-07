@@ -31,7 +31,8 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   for HttpClient/DI registration. Depends only on `StudyHub.Shared` — never on `Logic.Business` or
   `Logic.Domain` (LAY-7 in `docs/agent-rule-catalog.md`). Also home of AI provider adapters:
   `Ai/` holds `IFlashcardGenerator`/`ClaudeFlashcardGenerator` (official Anthropic SDK, structured
-  output) plus `AddStudyHubAi`, which only the **Api** composition root calls — the UI references
+  output), `IAiModelCatalog`/`ConfiguredAiModelCatalog` (the user-selectable models from
+  `Anthropic:Models`) plus `AddStudyHubAi`, which only the **Api** composition root calls — the UI references
   `Logic.Integration` for its accessors but never registers or uses the AI generator.
 - `src/Infrastructure/StudyHub.Infrastructure`: currently empty (just a no-op
   `ServiceCollectionExtensions`) — reserved for genuine external-infrastructure concerns (file
