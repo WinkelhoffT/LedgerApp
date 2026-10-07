@@ -1,4 +1,5 @@
 @page "/"
+@using StudyHub.UI.Components.Dashboard
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -53,6 +54,8 @@
         </div>
     }
 </div>
+
+<AnkiStatusCard Status="AnkiStatus" />
 
 <div class="grid stat-grid" style="margin-bottom:16px">
     @foreach (var stat in Stats)

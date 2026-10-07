@@ -1,0 +1,66 @@
+@using StudyHub.Shared.Dashboard
+
+@if (Status is null)
+{
+    <div class="card card-pad anki-card">
+        <div class="section-title">Anki – due today</div>
+        <p class="placeholder-hint">Loading Anki status…</p>
+    </div>
+}
+else if (Status.Status == AnkiConnectionStatus.Unavailable)
+{
+    <div class="card card-pad anki-card">
+        <div class="section-title">Anki – due today</div>
+        <p class="anki-muted">Anki not connected – start Anki with AnkiConnect to see your due cards.</p>
+    </div>
+}
+else if (Status.Status == AnkiConnectionStatus.Connected && !Status.HasCardsToStudy)
+{
+    <div class="card card-pad anki-card">
+        <div class="section-title">Anki – due today</div>
+        <p class="anki-done">All done for today – no cards due.</p>
+    </div>
+}
+else if (Status.Status == AnkiConnectionStatus.Connected)
+{
+    <div class="card card-pad anki-card anki-card-due">
+        <div class="anki-head">
+            <div>
+                <div class="section-title">Anki – due today</div>
+                <div class="anki-total">@Status.TotalCount @(Status.TotalCount == 1 ? "card" : "cards") to study today</div>
+            </div>
+        </div>
+
+        <div class="anki-count-grid">
+            <div class="anki-count-tile">
+                <div class="hero-info-label">New</div>
+                <div class="hero-info-val">@Status.NewCount</div>
+            </div>
+            <div class="anki-count-tile">
+                <div class="hero-info-label">Learning</div>
+                <div class="hero-info-val">@Status.LearnCount</div>
+            </div>
+            <div class="anki-count-tile">
+                <div class="hero-info-label">Review</div>
+                <div class="hero-info-val">@Status.ReviewCount</div>
+            </div>
+        </div>
+
+        @if (TopDecks.Count > 0)
+        {
+            <ul class="anki-deck-list">
+                @foreach (var deck in TopDecks)
+                {
+                    <li class="anki-deck-row">
+                        <span class="anki-deck-name">@deck.DeckName</span>
+                        <span class="anki-deck-counts">
+                            <span title="New">@deck.NewCount</span> ·
+                            <span title="Learning">@deck.LearnCount</span> ·
+                            <span title="Review">@deck.ReviewCount</span>
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}

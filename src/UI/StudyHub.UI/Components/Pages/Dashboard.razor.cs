@@ -15,10 +15,30 @@ public partial class Dashboard
 
     private SemesterProgressDto? Progress { get; set; }
 
+    private AnkiStudyStatusDto? AnkiStatus { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         PageHeader.SetHeader("Dashboard", "Welcome back, Anna");
+
+        // Loaded independently so a slow or unreachable Anki never delays the semester progress.
+        var ankiStatusTask = LoadAnkiStatusAsync();
         Progress = await DashboardAccessor.GetSemesterProgressAsync();
+        await ankiStatusTask;
+    }
+
+    private async Task LoadAnkiStatusAsync()
+    {
+        try
+        {
+            AnkiStatus = await DashboardAccessor.GetAnkiStudyStatusAsync();
+        }
+        catch (HttpRequestException)
+        {
+            AnkiStatus = AnkiStudyStatusDto.WithoutCounts(AnkiConnectionStatus.Unavailable);
+        }
+
+        StateHasChanged();
     }
 
     private static string FormatPercent(double? percentComplete) =>

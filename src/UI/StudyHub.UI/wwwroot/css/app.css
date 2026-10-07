@@ -493,3 +493,21 @@ select:focus-visible,
 .flashcard-index { width: 40px; color: var(--text-3); }
 .flashcard-tags-col { width: 180px; }
 .flashcard-actions-col { width: 150px; white-space: nowrap; text-align: right; }
+
+/* ---------- Dashboard: Anki due cards ---------- */
+.anki-card { margin-bottom: 16px; }
+.anki-card-due { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft), var(--shadow-sm); }
+.anki-card .section-title { margin-bottom: 6px; }
+.anki-total { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: var(--text); margin-bottom: 14px; }
+.anki-muted { font-size: 13px; color: var(--text-3); margin: 0; }
+.anki-done { font-size: 13px; color: var(--success); font-weight: 600; margin: 0; }
+.anki-count-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.anki-count-tile { background: var(--accent-softer); border-radius: 10px; padding: 10px 12px; }
+.anki-deck-list { list-style: none; margin: 14px 0 0; padding: 0; }
+.anki-deck-row {
+  display: flex; justify-content: space-between; gap: 12px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.anki-deck-row:last-child { border-bottom: none; }
+.anki-deck-name { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anki-deck-counts { color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
