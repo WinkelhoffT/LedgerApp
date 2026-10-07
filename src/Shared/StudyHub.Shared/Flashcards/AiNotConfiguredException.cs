@@ -1,4 +1,4 @@
 namespace StudyHub.Shared.Flashcards;
 
 public sealed class AiNotConfiguredException()
-    : Exception("AI features are not configured: set the ANTHROPIC_API_KEY environment variable for StudyHub.Api.");
+    : Exception("AI features are not configured: set Anthropic:ApiKey for StudyHub.Api (user secret locally, Anthropic__ApiKey in Docker).");

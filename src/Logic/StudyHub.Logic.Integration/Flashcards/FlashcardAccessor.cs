@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
 
@@ -8,6 +9,13 @@ namespace StudyHub.Logic.Integration.Flashcards;
 
 public sealed class FlashcardAccessor(HttpClient httpClient) : IFlashcardAccessor
 {
+    public async Task<IReadOnlyList<AiModelDto>> GetModelsAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await httpClient.GetAsync("api/flashcards/models", cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return (await response.Content.ReadFromJsonAsync<IReadOnlyList<AiModelDto>>(cancellationToken))!;
+    }
+
     public async Task<FlashcardSetDto> GenerateAsync(GenerateFlashcardsRequest request, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.PostAsJsonAsync("api/flashcards/generate", request, cancellationToken);

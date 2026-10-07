@@ -2,6 +2,7 @@ using StudyHub.Data.Contract;
 using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Logic.Integration.Ai;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
 
@@ -13,10 +14,13 @@ public sealed class FlashcardOrchestrator(
     ISemesterRepository semesterRepository,
     IFlashcardValidator flashcardValidator,
     IAnkiCsvSerializer ankiCsvSerializer,
-    IFlashcardGenerator flashcardGenerator
+    IFlashcardGenerator flashcardGenerator,
+    IAiModelCatalog aiModelCatalog
 ) : IFlashcardOrchestrator
 {
     private const string CsvContentType = "text/csv";
+
+    public IReadOnlyList<AiModelDto> GetAvailableModels() => aiModelCatalog.GetModels();
 
     public async Task<FlashcardSetDto> GenerateAsync(
         GenerateFlashcardsRequest request,
@@ -24,6 +28,12 @@ public sealed class FlashcardOrchestrator(
     )
     {
         flashcardValidator.ValidateGenerationOptions(request.CardCount, request.FocusHint);
+
+        var model = string.IsNullOrWhiteSpace(request.Model) ? aiModelCatalog.DefaultModelId : request.Model.Trim();
+        if (!aiModelCatalog.IsAvailable(model))
+        {
+            throw new FlashcardValidationException($"The model '{model}' is not available.");
+        }
 
         var note =
             await noteRepository.GetByIdAsync(request.NoteId, cancellationToken)
@@ -42,7 +52,7 @@ public sealed class FlashcardOrchestrator(
         var parentName = await GetParentNameAsync(note, cancellationToken);
 
         var generatedCards = await flashcardGenerator.GenerateAsync(
-            new FlashcardGenerationInput(note.Title, note.Content, request.CardCount, request.FocusHint),
+            new FlashcardGenerationInput(model, note.Title, note.Content, request.CardCount, request.FocusHint),
             cancellationToken
         );
 
@@ -59,6 +69,7 @@ public sealed class FlashcardOrchestrator(
             note.Id,
             ankiCsvSerializer.CreateDeckName(parentName, note.Title),
             ankiCsvSerializer.CreateFileName(note.Title),
+            model,
             cards
         );
     }

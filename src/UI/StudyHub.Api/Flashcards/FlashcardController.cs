@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Logic.Business.Contract;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Api.Flashcards;
@@ -8,6 +9,9 @@ namespace StudyHub.Api.Flashcards;
 [Route("api/flashcards")]
 public sealed class FlashcardController(IFlashcardOrchestrator flashcardOrchestrator) : ControllerBase
 {
+    [HttpGet("models")]
+    public IReadOnlyList<AiModelDto> GetModels() => flashcardOrchestrator.GetAvailableModels();
+
     // Nothing is persisted: the cards are returned to the caller, which keeps them until export.
     [HttpPost("generate")]
     public Task<FlashcardSetDto> GenerateAsync(

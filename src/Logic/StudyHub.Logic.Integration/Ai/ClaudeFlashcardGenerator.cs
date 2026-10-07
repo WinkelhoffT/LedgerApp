@@ -59,7 +59,7 @@ public sealed class ClaudeFlashcardGenerator(
 
         var parameters = new MessageCreateParams
         {
-            Model = settings.Model,
+            Model = input.Model,
             MaxTokens = settings.MaxTokens,
             Betas = [ServerSideFallbackBeta],
             Fallbacks = new Default(),

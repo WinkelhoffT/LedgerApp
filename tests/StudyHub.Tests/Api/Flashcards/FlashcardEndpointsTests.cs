@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using StudyHub.Api;
 using StudyHub.Data;
+using StudyHub.Shared.Ai;
 using StudyHub.Logic.Integration.Ai;
 using StudyHub.Shared.Configuration;
 using StudyHub.Shared.Courses;
@@ -100,7 +101,33 @@ public class FlashcardEndpointsTests
         var set = await response.Content.ReadFromJsonAsync<FlashcardSetDto>();
         Assert.Equal("StudyHub::Algorithms::Dijkstra", set!.DeckName);
         Assert.Equal("Dijkstra.csv", set.FileName);
+        Assert.Equal("claude-sonnet-5-5", set.Model);
         Assert.Equal("Frage", Assert.Single(set.Cards).Front);
+    }
+
+    [Fact]
+    public async Task GetModels_ReturnsConfiguredModelsWithDefault()
+    {
+        using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+
+        var models = await client.GetFromJsonAsync<List<AiModelDto>>("api/flashcards/models");
+
+        Assert.Contains(models!, m => m.Id == "claude-sonnet-5-5" && m.IsDefault);
+        Assert.Contains(models!, m => m.Id == "claude-opus-5-5" && !m.IsDefault);
+    }
+
+    [Fact]
+    public async Task Generate_WithUnknownModel_Returns400WithErrorCode()
+    {
+        using var factory = CreateFactory(FakeGenerator(new FlashcardDto("Frage", "Antwort", [])));
+        using var client = factory.CreateClient();
+        var note = await CreateNoteAsync(client);
+
+        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 5, null, "not-a-model"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(FlashcardErrorCodes.FlashcardValidationFailed, await GetProblemValueAsync(response, "errorCode"));
     }
 
     [Fact]

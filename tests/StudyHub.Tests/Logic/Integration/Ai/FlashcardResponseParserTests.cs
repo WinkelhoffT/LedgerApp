@@ -70,6 +70,6 @@ public class FlashcardResponseParserTests
             NullLogger<ClaudeFlashcardGenerator>.Instance);
 
         await Assert.ThrowsAsync<AiNotConfiguredException>(
-            () => generator.GenerateAsync(new FlashcardGenerationInput("Title", "Content", 5, null)));
+            () => generator.GenerateAsync(new FlashcardGenerationInput("claude-sonnet-5-5", "Title", "Content", 5, null)));
     }
 }

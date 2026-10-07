@@ -1,6 +1,7 @@
 namespace StudyHub.Shared.Flashcards;
 
-public sealed record GenerateFlashcardsRequest(Guid NoteId, int CardCount, string? FocusHint)
+/// <param name="Model">Model id from <c>GET api/flashcards/models</c>; <c>null</c> uses the configured default.</param>
+public sealed record GenerateFlashcardsRequest(Guid NoteId, int CardCount, string? FocusHint, string? Model = null)
 {
     public const int MinCardCount = 1;
     public const int MaxCardCount = 50;

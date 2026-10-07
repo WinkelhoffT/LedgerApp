@@ -1,9 +1,11 @@
 using System.Text;
+using Microsoft.Extensions.Options;
 using Moq;
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Integration.Ai;
+using StudyHub.Shared.Configuration;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
@@ -30,7 +32,12 @@ public class FlashcardOrchestratorTests
             _semesterRepository.Object,
             new FlashcardValidator(),
             new AnkiCsvSerializer(),
-            _generator.Object);
+            _generator.Object,
+            new ConfiguredAiModelCatalog(Options.Create(new AnthropicOptions
+            {
+                DefaultModel = "claude-sonnet-5-5",
+                Models = [new AnthropicModelOption { Id = "claude-opus-5-5", DisplayName = "Opus" }],
+            })));
 
         _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
             .ReturnsAsync(new Course(CourseId, "Algorithms", null, "#2563eb", SemesterId, false, DateTime.UtcNow, DateTime.UtcNow));
@@ -61,10 +68,32 @@ public class FlashcardOrchestratorTests
         Assert.Equal(note.Id, result.NoteId);
         Assert.Equal("StudyHub::Algorithms::Dijkstra", result.DeckName);
         Assert.Equal("Dijkstra.csv", result.FileName);
+        Assert.Equal("claude-sonnet-5-5", result.Model);
         Assert.Equal(["Frage 1", "Frage 2"], result.Cards.Select(c => c.Front));
         _generator.Verify(g => g.GenerateAsync(
-            It.Is<FlashcardGenerationInput>(i => i.NoteTitle == "Dijkstra" && i.NoteContent == note.Content && i.CardCount == 10 && i.FocusHint == "Laufzeit"),
+            It.Is<FlashcardGenerationInput>(i => i.Model == "claude-sonnet-5-5" && i.NoteTitle == "Dijkstra" && i.NoteContent == note.Content && i.CardCount == 10 && i.FocusHint == "Laufzeit"),
             default), Times.Once);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithSelectedModel_PassesModelToGenerator()
+    {
+        var note = SetupNote();
+
+        var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "claude-opus-5-5"));
+
+        Assert.Equal("claude-opus-5-5", result.Model);
+        _generator.Verify(g => g.GenerateAsync(It.Is<FlashcardGenerationInput>(i => i.Model == "claude-opus-5-5"), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithUnknownModel_ThrowsValidationWithoutCallingAi()
+    {
+        var note = SetupNote();
+
+        await Assert.ThrowsAsync<FlashcardValidationException>(
+            () => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "gpt-unknown")));
+        _generator.Verify(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default), Times.Never);
     }
 
     [Fact]
