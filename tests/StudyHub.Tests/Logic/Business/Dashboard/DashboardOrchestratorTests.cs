@@ -1,8 +1,13 @@
+using Microsoft.Extensions.Options;
 using Moq;
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Domain.Contract;
+using StudyHub.Logic.Integration.Anki;
+using StudyHub.Shared.Anki;
+using StudyHub.Shared.Configuration;
+using StudyHub.Shared.Dashboard;
 using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Dashboard;
@@ -18,11 +23,20 @@ public class DashboardOrchestratorTests
     private readonly Mock<ISemesterRepository> _semesterRepository = new();
     private readonly Mock<IActiveSemesterProvider> _activeSemesterProvider = new();
     private readonly Mock<ISemesterProgressCalculator> _progressCalculator = new();
+    private readonly Mock<IAnkiConnectAccessor> _ankiConnectAccessor = new();
+    private readonly Mock<IAnkiDueCardsCalculator> _ankiDueCardsCalculator = new();
+    private readonly AnkiConnectOptions _ankiConnectOptions = new() { Enabled = true };
     private readonly DashboardOrchestrator _sut;
 
     public DashboardOrchestratorTests()
     {
-        _sut = new DashboardOrchestrator(_semesterRepository.Object, _activeSemesterProvider.Object, _progressCalculator.Object);
+        _sut = new DashboardOrchestrator(
+            _semesterRepository.Object,
+            _activeSemesterProvider.Object,
+            _progressCalculator.Object,
+            _ankiConnectAccessor.Object,
+            _ankiDueCardsCalculator.Object,
+            Options.Create(_ankiConnectOptions));
 
         _semesterRepository.Setup(r => r.GetAllAsync(default)).ReturnsAsync([]);
     }
@@ -84,5 +98,57 @@ public class DashboardOrchestratorTests
         await _sut.GetSemesterProgressAsync();
 
         _activeSemesterProvider.Verify(p => p.GetActive(semesters, It.IsAny<DateOnly>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAnkiStudyStatusAsync_WhenDisabled_ReturnsDisabledWithoutCallingAnki()
+    {
+        _ankiConnectOptions.Enabled = false;
+
+        var result = await _sut.GetAnkiStudyStatusAsync();
+
+        Assert.Equal(AnkiConnectionStatus.Disabled, result.Status);
+        Assert.False(result.HasCardsToStudy);
+        _ankiConnectAccessor.Verify(a => a.GetDeckCountsAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAnkiStudyStatusAsync_WhenAnkiIsUnreachable_ReturnsUnavailableWithZeroCounts()
+    {
+        _ankiConnectAccessor
+            .Setup(a => a.GetDeckCountsAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new AnkiConnectUnavailableException("Connection refused"));
+
+        var result = await _sut.GetAnkiStudyStatusAsync();
+
+        Assert.Equal(AnkiConnectionStatus.Unavailable, result.Status);
+        Assert.False(result.HasCardsToStudy);
+        Assert.Equal(0, result.TotalCount);
+        Assert.Empty(result.Decks);
+    }
+
+    [Fact]
+    public async Task GetAnkiStudyStatusAsync_WhenConnected_MapsCalculatorResultIntoDto()
+    {
+        IReadOnlyList<AnkiDeckCountsDto> deckCounts =
+        [
+            new("Informatik", NewCount: 10, LearnCount: 2, ReviewCount: 30),
+            new("Informatik::Algorithmen", NewCount: 4, LearnCount: 1, ReviewCount: 10),
+        ];
+        _ankiConnectAccessor.Setup(a => a.GetDeckCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(deckCounts);
+
+        var dueCards = new AnkiDueCards(
+            NewCount: 10, LearnCount: 2, ReviewCount: 30, HasCardsToStudy: true, TopLevelDecks: [deckCounts[0]]);
+        _ankiDueCardsCalculator.Setup(c => c.Calculate(deckCounts)).Returns(dueCards);
+
+        var result = await _sut.GetAnkiStudyStatusAsync();
+
+        Assert.Equal(AnkiConnectionStatus.Connected, result.Status);
+        Assert.True(result.HasCardsToStudy);
+        Assert.Equal(10, result.NewCount);
+        Assert.Equal(2, result.LearnCount);
+        Assert.Equal(30, result.ReviewCount);
+        Assert.Equal(42, result.TotalCount);
+        Assert.Equal([deckCounts[0]], result.Decks);
     }
 }

@@ -9,6 +9,7 @@ using StudyHub.Data;
 using StudyHub.Infrastructure;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Integration.Ai;
+using StudyHub.Logic.Integration.Anki;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ builder.Services.AddStudyHubDataRepositories();
 builder.Services.AddStudyHubInfrastructure();
 builder.Services.AddStudyHubBusiness();
 builder.Services.AddStudyHubAi(builder.Configuration);
+builder.Services.AddStudyHubAnkiConnect(builder.Configuration);
 builder.Services.AddControllers();
 
 builder.Services.AddExceptionHandler<CourseExceptionHandler>();

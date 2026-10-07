@@ -13,4 +13,8 @@ public sealed class DashboardController(IDashboardOrchestrator dashboardOrchestr
     public Task<SemesterProgressDto> GetSemesterProgressAsync(
         CancellationToken cancellationToken
     ) => dashboardOrchestrator.GetSemesterProgressAsync(cancellationToken);
+
+    [HttpGet("anki-status")]
+    public Task<AnkiStudyStatusDto> GetAnkiStudyStatusAsync(CancellationToken cancellationToken) =>
+        dashboardOrchestrator.GetAnkiStudyStatusAsync(cancellationToken);
 }

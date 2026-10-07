@@ -11,4 +11,11 @@ public sealed class DashboardAccessor(HttpClient httpClient) : IDashboardAccesso
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<SemesterProgressDto>(cancellationToken))!;
     }
+
+    public async Task<AnkiStudyStatusDto> GetAnkiStudyStatusAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await httpClient.GetAsync("api/dashboard/anki-status", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<AnkiStudyStatusDto>(cancellationToken))!;
+    }
 }

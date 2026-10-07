@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INoteOrchestrator, NoteOrchestrator>();
         services.AddScoped<IFlashcardOrchestrator, FlashcardOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
+        services.AddScoped<IAnkiDueCardsCalculator, AnkiDueCardsCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
         services.AddScoped<ICourseLifecycle, CourseLifecycle>();
