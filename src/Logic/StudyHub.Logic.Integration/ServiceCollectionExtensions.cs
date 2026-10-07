@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Dashboard;
 using StudyHub.Logic.Integration.Documents;
+using StudyHub.Logic.Integration.Flashcards;
 using StudyHub.Logic.Integration.Notes;
 using StudyHub.Logic.Integration.Semesters;
 
@@ -19,6 +20,13 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IDocumentAccessor, DocumentAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<IDashboardAccessor, DashboardAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<INoteAccessor, NoteAccessor>(client => client.BaseAddress = apiBaseAddress);
+
+        // Generation waits for Claude (typically 15-60 s, up to the SDK timeout plus one retry).
+        services.AddHttpClient<IFlashcardAccessor, FlashcardAccessor>(client =>
+        {
+            client.BaseAddress = apiBaseAddress;
+            client.Timeout = TimeSpan.FromMinutes(6);
+        });
 
         return services;
     }

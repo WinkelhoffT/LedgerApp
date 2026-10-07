@@ -46,6 +46,9 @@ implemented versus planned.
   migrations applied automatically on Api startup.
 - Docker/Docker Compose deployment with separate UI and Api containers; the SQLite database is
   persisted outside the Api container via a bind mount.
+- AI flashcard generation from a Markdown note (Claude via the Anthropic API), with review/editing
+  in the app and export as an Anki-importable CSV file (see
+  [Configure AI features](#configure-ai-features-flashcards)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -229,6 +232,26 @@ The database is owned by `StudyHub.Api` (not the UI). Its location is set via th
 Pending migrations are applied automatically at Api startup — there is no separate manual step for
 a fresh environment.
 
+### Configure AI features (flashcards)
+
+Flashcard generation calls Claude through the Anthropic API from `StudyHub.Api` (the UI never talks
+to Anthropic). All settings live in the `Anthropic` section of `src/UI/StudyHub.Api/appsettings.json`.
+`Anthropic:ApiKey` is committed **empty** — set the real key locally as a user secret, which
+overrides the empty value when `ASPNETCORE_ENVIRONMENT=Development`:
+
+```bash
+dotnet user-secrets set "Anthropic:ApiKey" "<your key>" \
+  --project src/UI/StudyHub.Api/StudyHub.Api.csproj
+```
+
+Without a key the app still starts; the Flashcards page then shows an "AI not configured" message.
+
+The model is chosen per generation on the Flashcards page. The choices come from
+`Anthropic:Models` (a list of `Id` + `DisplayName`), preselected with `Anthropic:DefaultModel`
+(`claude-sonnet-5-5`); the Api rejects any model that isn't in that list. Further settings:
+`Anthropic:Effort` (`medium`) and `Anthropic:MaxTokens`. Each generation is a paid API call (Opus
+costs about twice as much as Sonnet); note content is sent to Anthropic.
+
 ### Run the application (locally, without Docker)
 
 The UI calls the Api over HTTP, so both processes need to run at the same time (in separate
@@ -270,6 +293,11 @@ This is the recommended way to run StudyHub as a portable, self-contained deploy
 ```bash
 docker compose up --build -d
 ```
+
+To enable flashcard generation, export `ANTHROPIC_API_KEY` in the shell (or put it in a `.env`
+file next to `docker-compose.yml`, which is not committed) before starting; `docker-compose.yml`
+passes it to the `studyhub-api` container only, as `Anthropic__ApiKey` (user secrets are not used
+outside Development).
 
 This builds two images — `studyhub-api` and `studyhub` — and starts both containers. The UI is
 published on <http://localhost:8080>; the Api container is only reachable from the UI container

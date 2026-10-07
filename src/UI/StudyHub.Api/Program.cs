@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using StudyHub.Api;
 using StudyHub.Api.Courses;
 using StudyHub.Api.Documents;
+using StudyHub.Api.Flashcards;
 using StudyHub.Api.Notes;
 using StudyHub.Api.Semesters;
 using StudyHub.Data;
 using StudyHub.Infrastructure;
 using StudyHub.Logic.Business;
+using StudyHub.Logic.Integration.Ai;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,12 +16,14 @@ builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.Cont
 builder.Services.AddStudyHubDataRepositories();
 builder.Services.AddStudyHubInfrastructure();
 builder.Services.AddStudyHubBusiness();
+builder.Services.AddStudyHubAi(builder.Configuration);
 builder.Services.AddControllers();
 
 builder.Services.AddExceptionHandler<CourseExceptionHandler>();
 builder.Services.AddExceptionHandler<SemesterExceptionHandler>();
 builder.Services.AddExceptionHandler<DocumentExceptionHandler>();
 builder.Services.AddExceptionHandler<NoteExceptionHandler>();
+builder.Services.AddExceptionHandler<FlashcardExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks();
