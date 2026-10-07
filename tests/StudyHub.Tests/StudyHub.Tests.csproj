@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -33,5 +32,4 @@
     <ProjectReference Include="..\..\src\Shared\StudyHub.Shared\StudyHub.Shared.csproj" />
     <ProjectReference Include="..\..\src\UI\StudyHub.Api\StudyHub.Api.csproj" />
   </ItemGroup>
-
 </Project>

@@ -78,7 +78,9 @@ public partial class FlashcardGenerator
     private string? ErrorMessage { get; set; }
 
     private string? CurrentNoteTitle =>
-        CurrentSet is not null && NotesById.TryGetValue(CurrentSet.NoteId, out var note) ? note.Title : null;
+        CurrentSet is not null && NotesById.TryGetValue(CurrentSet.NoteId, out var note)
+            ? note.Title
+            : null;
 
     private string TargetDeckLabel =>
         Decks.FirstOrDefault(d => d.Id == TargetDeckId)?.Name
@@ -102,10 +104,16 @@ public partial class FlashcardGenerator
 
         var courseGroups = courses
             .OrderBy(c => c.Name)
-            .Select(c => new NoteGroup(c.Name, notes.Where(n => n.CourseId == c.Id).OrderBy(n => n.Title).ToList()));
+            .Select(c => new NoteGroup(
+                c.Name,
+                notes.Where(n => n.CourseId == c.Id).OrderBy(n => n.Title).ToList()
+            ));
         var semesterGroups = semesters
             .OrderBy(s => s.Name)
-            .Select(s => new NoteGroup(s.Name, notes.Where(n => n.SemesterId == s.Id).OrderBy(n => n.Title).ToList()));
+            .Select(s => new NoteGroup(
+                s.Name,
+                notes.Where(n => n.SemesterId == s.Id).OrderBy(n => n.Title).ToList()
+            ));
 
         NoteGroups = courseGroups.Concat(semesterGroups).Where(g => g.Notes.Count > 0).ToList();
 
@@ -143,11 +151,19 @@ public partial class FlashcardGenerator
                     SelectedNoteId,
                     CardCount,
                     string.IsNullOrWhiteSpace(FocusHint) ? null : FocusHint,
-                    SelectedModel));
+                    SelectedModel
+                )
+            );
             Cards = CurrentSet.Cards.Select(EditableFlashcard.FromDto).ToList();
         }
-        catch (Exception ex) when (ex is FlashcardValidationException or FlashcardGenerationFailedException
-                                       or AiNotConfiguredException or NoteNotFoundException or NoteArchivedException)
+        catch (Exception ex)
+            when (ex
+                    is FlashcardValidationException
+                        or FlashcardGenerationFailedException
+                        or AiNotConfiguredException
+                        or NoteNotFoundException
+                        or NoteArchivedException
+            )
         {
             ErrorMessage = ex.Message;
         }
@@ -182,12 +198,18 @@ public partial class FlashcardGenerator
                 card.IsEditing = false;
             }
 
-            var deck = TargetDeckId == Guid.Empty
-                ? await CreateDeckForNoteAsync(CurrentSet.NoteId)
-                : Decks.First(d => d.Id == TargetDeckId);
+            var deck =
+                TargetDeckId == Guid.Empty
+                    ? await CreateDeckForNoteAsync(CurrentSet.NoteId)
+                    : Decks.First(d => d.Id == TargetDeckId);
 
             var saved = await DeckAccessor.AddCardsAsync(
-                new AddFlashcardsRequest(deck.Id, Cards.Select(c => c.ToDto()).ToList(), CurrentSet.NoteId));
+                new AddFlashcardsRequest(
+                    deck.Id,
+                    Cards.Select(c => c.ToDto()).ToList(),
+                    CurrentSet.NoteId
+                )
+            );
 
             SavedDeck = deck;
             SavedCardCount = saved.Count;
@@ -196,14 +218,23 @@ public partial class FlashcardGenerator
             Decks = await DeckAccessor.GetAllAsync(includeArchived: false);
             TargetDeckId = deck.Id;
         }
-        catch (Exception ex) when (ex is FlashcardValidationException or DuplicateFlashcardDeckNameException
-                                       or FlashcardDeckArchivedException or FlashcardDeckNotFoundException
-                                       or NoteNotFoundException or CourseArchivedException or SemesterArchivedException)
+        catch (Exception ex)
+            when (ex
+                    is FlashcardValidationException
+                        or DuplicateFlashcardDeckNameException
+                        or FlashcardDeckArchivedException
+                        or FlashcardDeckNotFoundException
+                        or NoteNotFoundException
+                        or CourseArchivedException
+                        or SemesterArchivedException
+            )
         {
             ErrorMessage = ex switch
             {
-                CourseArchivedException => "The note's course is archived. Choose an existing deck instead.",
-                SemesterArchivedException => "The note's semester is archived. Choose an existing deck instead.",
+                CourseArchivedException =>
+                    "The note's course is archived. Choose an existing deck instead.",
+                SemesterArchivedException =>
+                    "The note's semester is archived. Choose an existing deck instead.",
                 _ => ex.Message,
             };
         }
@@ -222,12 +253,15 @@ public partial class FlashcardGenerator
     {
         var note = NotesById.GetValueOrDefault(noteId);
 
-        return DeckAccessor.CreateAsync(new CreateFlashcardDeckRequest(
-            NewDeckName,
-            note?.CourseId,
-            note?.SemesterId,
-            FlashcardDeck.DefaultNewCardsPerDay,
-            FlashcardDeck.DefaultReviewsPerDay));
+        return DeckAccessor.CreateAsync(
+            new CreateFlashcardDeckRequest(
+                NewDeckName,
+                note?.CourseId,
+                note?.SemesterId,
+                FlashcardDeck.DefaultNewCardsPerDay,
+                FlashcardDeck.DefaultReviewsPerDay
+            )
+        );
     }
 
     private void RemoveCard(EditableFlashcard card) => Cards.Remove(card);

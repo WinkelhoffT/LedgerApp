@@ -7,7 +7,10 @@ namespace StudyHub.Tests.Logic.Domain.Flashcards;
 public class StudyDayProviderTests
 {
     private static StudyDayProvider CreateSut(DateTime utcNow, int dayStartHour = 4) =>
-        new(new FlashcardStudyOptions { TimeZone = "Europe/Berlin", DayStartHour = dayStartHour }, new FixedTimeProvider(utcNow));
+        new(
+            new FlashcardStudyOptions { TimeZone = "Europe/Berlin", DayStartHour = dayStartHour },
+            new FixedTimeProvider(utcNow)
+        );
 
     private static DateTime Utc(int year, int month, int day, int hour, int minute = 0) =>
         new(year, month, day, hour, minute, 0, DateTimeKind.Utc);
@@ -82,6 +85,8 @@ public class StudyDayProviderTests
     [Fact]
     public void Constructor_WithInvalidStartHour_Throws()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => CreateSut(Utc(2026, 10, 8, 10), dayStartHour: 24));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            CreateSut(Utc(2026, 10, 8, 10), dayStartHour: 24)
+        );
     }
 }

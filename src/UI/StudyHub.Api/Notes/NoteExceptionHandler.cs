@@ -10,18 +10,40 @@ namespace StudyHub.Api.Notes;
 // so this handler only needs to cover exceptions specific to the Notes feature.
 public sealed class NoteExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         var problemDetails = exception switch
         {
             NoteNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, NoteErrorCodes.NoteNotFound, "noteId", ex.NoteId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                NoteErrorCodes.NoteNotFound,
+                "noteId",
+                ex.NoteId
+            ),
             DuplicateNoteTitleException ex => Build(
-                StatusCodes.Status409Conflict, ex.Message, NoteErrorCodes.DuplicateNoteTitle, "noteTitle", ex.Title),
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                NoteErrorCodes.DuplicateNoteTitle,
+                "noteTitle",
+                ex.Title
+            ),
             NoteArchivedException ex => Build(
-                StatusCodes.Status409Conflict, ex.Message, NoteErrorCodes.NoteArchived, "noteId", ex.NoteId),
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                NoteErrorCodes.NoteArchived,
+                "noteId",
+                ex.NoteId
+            ),
             NoteValidationException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, NoteErrorCodes.NoteValidationFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                NoteErrorCodes.NoteValidationFailed
+            ),
             _ => null,
         };
 
@@ -35,13 +57,15 @@ public sealed class NoteExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static ProblemDetails Build(int status, string detail, string errorCode, string? extraKey = null, object? extraValue = null)
+    private static ProblemDetails Build(
+        int status,
+        string detail,
+        string errorCode,
+        string? extraKey = null,
+        object? extraValue = null
+    )
     {
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Detail = detail,
-        };
+        var problemDetails = new ProblemDetails { Status = status, Detail = detail };
 
         problemDetails.Extensions["errorCode"] = errorCode;
 

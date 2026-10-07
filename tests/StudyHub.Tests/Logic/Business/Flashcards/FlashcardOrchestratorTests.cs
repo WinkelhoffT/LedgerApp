@@ -24,22 +24,50 @@ public class FlashcardOrchestratorTests
             _noteRepository.Object,
             new FlashcardValidator(),
             _generator.Object,
-            new ConfiguredAiModelCatalog(Options.Create(new AnthropicOptions
-            {
-                DefaultModel = "claude-sonnet-5-5",
-                Models = [new AnthropicModelOption { Id = "claude-opus-5-5", DisplayName = "Opus" }],
-            })));
+            new ConfiguredAiModelCatalog(
+                Options.Create(
+                    new AnthropicOptions
+                    {
+                        DefaultModel = "claude-sonnet-5-5",
+                        Models =
+                        [
+                            new AnthropicModelOption
+                            {
+                                Id = "claude-opus-5-5",
+                                DisplayName = "Opus",
+                            },
+                        ],
+                    }
+                )
+            )
+        );
 
-        _generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
-            .ReturnsAsync([new FlashcardDto("Frage 1", "Antwort 1", ["graphen"]), new FlashcardDto("Frage 2", "Antwort 2", [])]);
+        _generator
+            .Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
+            .ReturnsAsync([
+                new FlashcardDto("Frage 1", "Antwort 1", ["graphen"]),
+                new FlashcardDto("Frage 2", "Antwort 2", []),
+            ]);
     }
 
-    private Note SetupNote(string content = "# Dijkstra\nNur nicht-negative Kanten.", bool isArchived = false, Guid? courseId = null, Guid? semesterId = null)
+    private Note SetupNote(
+        string content = "# Dijkstra\nNur nicht-negative Kanten.",
+        bool isArchived = false,
+        Guid? courseId = null,
+        Guid? semesterId = null
+    )
     {
         var note = new Note(
-            Guid.NewGuid(), "Dijkstra", content, null,
-            courseId ?? (semesterId is null ? CourseId : null), semesterId,
-            isArchived, DateTime.UtcNow, DateTime.UtcNow);
+            Guid.NewGuid(),
+            "Dijkstra",
+            content,
+            null,
+            courseId ?? (semesterId is null ? CourseId : null),
+            semesterId,
+            isArchived,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
         _noteRepository.Setup(r => r.GetByIdAsync(note.Id, default)).ReturnsAsync(note);
         return note;
     }
@@ -49,14 +77,27 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote();
 
-        var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, "Laufzeit"));
+        var result = await _sut.GenerateAsync(
+            new GenerateFlashcardsRequest(note.Id, 10, "Laufzeit")
+        );
 
         Assert.Equal(note.Id, result.NoteId);
         Assert.Equal("claude-sonnet-5-5", result.Model);
         Assert.Equal(["Frage 1", "Frage 2"], result.Cards.Select(c => c.Front));
-        _generator.Verify(g => g.GenerateAsync(
-            It.Is<FlashcardGenerationInput>(i => i.Model == "claude-sonnet-5-5" && i.NoteTitle == "Dijkstra" && i.NoteContent == note.Content && i.CardCount == 10 && i.FocusHint == "Laufzeit"),
-            default), Times.Once);
+        _generator.Verify(
+            g =>
+                g.GenerateAsync(
+                    It.Is<FlashcardGenerationInput>(i =>
+                        i.Model == "claude-sonnet-5-5"
+                        && i.NoteTitle == "Dijkstra"
+                        && i.NoteContent == note.Content
+                        && i.CardCount == 10
+                        && i.FocusHint == "Laufzeit"
+                    ),
+                    default
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -64,10 +105,19 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote();
 
-        var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "claude-opus-5-5"));
+        var result = await _sut.GenerateAsync(
+            new GenerateFlashcardsRequest(note.Id, 10, null, "claude-opus-5-5")
+        );
 
         Assert.Equal("claude-opus-5-5", result.Model);
-        _generator.Verify(g => g.GenerateAsync(It.Is<FlashcardGenerationInput>(i => i.Model == "claude-opus-5-5"), default), Times.Once);
+        _generator.Verify(
+            g =>
+                g.GenerateAsync(
+                    It.Is<FlashcardGenerationInput>(i => i.Model == "claude-opus-5-5"),
+                    default
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -75,15 +125,21 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote();
 
-        await Assert.ThrowsAsync<FlashcardValidationException>(
-            () => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "gpt-unknown")));
-        _generator.Verify(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default), Times.Never);
+        await Assert.ThrowsAsync<FlashcardValidationException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "gpt-unknown"))
+        );
+        _generator.Verify(
+            g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default),
+            Times.Never
+        );
     }
 
     [Fact]
     public async Task GenerateAsync_WithUnknownNote_ThrowsNotFound()
     {
-        await Assert.ThrowsAsync<NoteNotFoundException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(Guid.NewGuid(), 10, null)));
+        await Assert.ThrowsAsync<NoteNotFoundException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(Guid.NewGuid(), 10, null))
+        );
     }
 
     [Fact]
@@ -91,8 +147,13 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote(isArchived: true);
 
-        await Assert.ThrowsAsync<NoteArchivedException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null)));
-        _generator.Verify(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default), Times.Never);
+        await Assert.ThrowsAsync<NoteArchivedException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
+        );
+        _generator.Verify(
+            g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -100,8 +161,13 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote(content: "   ");
 
-        await Assert.ThrowsAsync<FlashcardValidationException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null)));
-        _generator.Verify(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default), Times.Never);
+        await Assert.ThrowsAsync<FlashcardValidationException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
+        );
+        _generator.Verify(
+            g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -109,17 +175,27 @@ public class FlashcardOrchestratorTests
     {
         var note = SetupNote();
 
-        await Assert.ThrowsAsync<FlashcardValidationException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 0, null)));
+        await Assert.ThrowsAsync<FlashcardValidationException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 0, null))
+        );
     }
 
     [Fact]
     public async Task GenerateAsync_WhenGeneratorFails_PropagatesException()
     {
         var note = SetupNote();
-        _generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
-            .ThrowsAsync(new FlashcardGenerationFailedException(FlashcardGenerationFailureReason.RateLimited, "rate limited"));
+        _generator
+            .Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
+            .ThrowsAsync(
+                new FlashcardGenerationFailedException(
+                    FlashcardGenerationFailureReason.RateLimited,
+                    "rate limited"
+                )
+            );
 
-        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null)));
+        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
+        );
 
         Assert.Equal(FlashcardGenerationFailureReason.RateLimited, ex.Reason);
     }
@@ -128,10 +204,13 @@ public class FlashcardOrchestratorTests
     public async Task GenerateAsync_WhenGeneratorReturnsOnlyInvalidCards_ThrowsInvalidResponse()
     {
         var note = SetupNote();
-        _generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
+        _generator
+            .Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
             .ReturnsAsync([new FlashcardDto("", "", [])]);
 
-        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null)));
+        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() =>
+            _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
+        );
 
         Assert.Equal(FlashcardGenerationFailureReason.InvalidResponse, ex.Reason);
     }

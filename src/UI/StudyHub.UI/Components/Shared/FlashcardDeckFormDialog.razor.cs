@@ -60,7 +60,9 @@ public partial class FlashcardDeckFormDialog
         Courses.Where(c => !c.IsArchived || c.Id == EditingDeck?.CourseId).OrderBy(c => c.Name);
 
     private IEnumerable<SemesterDto> SelectableSemesters =>
-        Semesters.Where(s => !s.IsArchived || s.Id == EditingDeck?.SemesterId).OrderByDescending(s => s.StartDate);
+        Semesters
+            .Where(s => !s.IsArchived || s.Id == EditingDeck?.SemesterId)
+            .OrderByDescending(s => s.StartDate);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -96,13 +98,35 @@ public partial class FlashcardDeckFormDialog
         try
         {
             var saved = EditingDeck is null
-                ? await DeckAccessor.CreateAsync(new CreateFlashcardDeckRequest(Name, courseId, semesterId, NewCardsPerDay, ReviewsPerDay))
-                : await DeckAccessor.UpdateAsync(new UpdateFlashcardDeckRequest(EditingDeck.Id, Name, courseId, semesterId, NewCardsPerDay, ReviewsPerDay));
+                ? await DeckAccessor.CreateAsync(
+                    new CreateFlashcardDeckRequest(
+                        Name,
+                        courseId,
+                        semesterId,
+                        NewCardsPerDay,
+                        ReviewsPerDay
+                    )
+                )
+                : await DeckAccessor.UpdateAsync(
+                    new UpdateFlashcardDeckRequest(
+                        EditingDeck.Id,
+                        Name,
+                        courseId,
+                        semesterId,
+                        NewCardsPerDay,
+                        ReviewsPerDay
+                    )
+                );
 
             await OnSaved.InvokeAsync(saved);
             await Close();
         }
-        catch (Exception ex) when (ex is FlashcardValidationException or DuplicateFlashcardDeckNameException or FlashcardDeckArchivedException)
+        catch (Exception ex)
+            when (ex
+                    is FlashcardValidationException
+                        or DuplicateFlashcardDeckNameException
+                        or FlashcardDeckArchivedException
+            )
         {
             ErrorMessage = ex.Message;
         }
@@ -129,7 +153,8 @@ public partial class FlashcardDeckFormDialog
     }
 
     private Guid? GetOwnerId(string prefix) =>
-        OwnerKey.StartsWith(prefix, StringComparison.Ordinal) && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
+        OwnerKey.StartsWith(prefix, StringComparison.Ordinal)
+        && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
             ? id
             : null;
 

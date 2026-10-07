@@ -70,8 +70,12 @@ public partial class FlashcardDeckDetail
             Cards = (await DeckAccessor.GetCardsAsync(DeckId, AppliedSearch)).ToList();
             OwnerName = Deck switch
             {
-                { CourseId: { } courseId } => (await CourseAccessor.GetAllAsync()).FirstOrDefault(c => c.Id == courseId)?.Name,
-                { SemesterId: { } semesterId } => (await SemesterAccessor.GetAllAsync()).FirstOrDefault(s => s.Id == semesterId)?.Name,
+                { CourseId: { } courseId } => (await CourseAccessor.GetAllAsync())
+                    .FirstOrDefault(c => c.Id == courseId)
+                    ?.Name,
+                { SemesterId: { } semesterId } => (await SemesterAccessor.GetAllAsync())
+                    .FirstOrDefault(s => s.Id == semesterId)
+                    ?.Name,
                 _ => null,
             };
             PageHeader.SetHeader(Deck.Name, "Flashcard deck");
@@ -112,11 +116,12 @@ public partial class FlashcardDeckDetail
 
     private Task RestoreAsync() => RunAsync(() => DeckAccessor.RestoreAsync(DeckId));
 
-    private Task DeleteCardAsync(DeckCardDto card) => RunAsync(async () =>
-    {
-        PendingDeleteId = null;
-        await DeckAccessor.DeleteCardAsync(card.Id);
-    });
+    private Task DeleteCardAsync(DeckCardDto card) =>
+        RunAsync(async () =>
+        {
+            PendingDeleteId = null;
+            await DeckAccessor.DeleteCardAsync(card.Id);
+        });
 
     private async Task ExportAsync()
     {
@@ -126,7 +131,11 @@ public partial class FlashcardDeckDetail
         try
         {
             var export = await TransferAccessor.ExportAsync(DeckId);
-            await FileDownloadAccessor.DownloadAsync(export.FileName, export.ContentType, export.Content);
+            await FileDownloadAccessor.DownloadAsync(
+                export.FileName,
+                export.ContentType,
+                export.Content
+            );
         }
         catch (HttpRequestException)
         {
@@ -148,7 +157,8 @@ public partial class FlashcardDeckDetail
             await action();
             await ReloadAsync();
         }
-        catch (Exception ex) when (ex is FlashcardDeckArchivedException or FlashcardNotFoundException)
+        catch (Exception ex)
+            when (ex is FlashcardDeckArchivedException or FlashcardNotFoundException)
         {
             ErrorMessage = ex.Message;
         }

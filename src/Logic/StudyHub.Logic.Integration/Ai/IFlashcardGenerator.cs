@@ -7,5 +7,8 @@ public interface IFlashcardGenerator
 {
     /// <exception cref="AiNotConfiguredException">No API key is configured.</exception>
     /// <exception cref="FlashcardGenerationFailedException">The provider failed, refused, or returned unusable output.</exception>
-    Task<IReadOnlyList<FlashcardDto>> GenerateAsync(FlashcardGenerationInput input, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<FlashcardDto>> GenerateAsync(
+        FlashcardGenerationInput input,
+        CancellationToken cancellationToken = default
+    );
 }

@@ -14,7 +14,13 @@ public class DocumentLifecycleTests
     [Fact]
     public void Create_WithCourseId_SetsProperties()
     {
-        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, semesterId: null);
+        var document = DocumentLifecycle.Create(
+            "Notes.pdf",
+            "application/pdf",
+            Content,
+            CourseId,
+            semesterId: null
+        );
 
         Assert.NotEqual(Guid.Empty, document.Id);
         Assert.Equal("Notes.pdf", document.FileName);
@@ -29,7 +35,13 @@ public class DocumentLifecycleTests
     [Fact]
     public void Create_WithSemesterId_SetsProperties()
     {
-        var document = DocumentLifecycle.Create("Syllabus.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Content, courseId: null, SemesterId);
+        var document = DocumentLifecycle.Create(
+            "Syllabus.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            Content,
+            courseId: null,
+            SemesterId
+        );
 
         Assert.Equal(SemesterId, document.SemesterId);
         Assert.Null(document.CourseId);
@@ -41,7 +53,9 @@ public class DocumentLifecycleTests
     [InlineData(null)]
     public void Create_WithoutFileName_ThrowsValidationException(string? fileName)
     {
-        Assert.Throws<DocumentValidationException>(() => DocumentLifecycle.Create(fileName!, "application/pdf", Content, CourseId, null));
+        Assert.Throws<DocumentValidationException>(() =>
+            DocumentLifecycle.Create(fileName!, "application/pdf", Content, CourseId, null)
+        );
     }
 
     [Fact]
@@ -49,31 +63,51 @@ public class DocumentLifecycleTests
     {
         var fileName = new string('a', UploadDocumentRequest.FileNameMaxLength + 1);
 
-        Assert.Throws<DocumentValidationException>(() => DocumentLifecycle.Create(fileName, "application/pdf", Content, CourseId, null));
+        Assert.Throws<DocumentValidationException>(() =>
+            DocumentLifecycle.Create(fileName, "application/pdf", Content, CourseId, null)
+        );
     }
 
     [Fact]
     public void Create_WithEmptyContent_ThrowsValidationException()
     {
-        Assert.Throws<DocumentValidationException>(() => DocumentLifecycle.Create("Notes.pdf", "application/pdf", [], CourseId, null));
+        Assert.Throws<DocumentValidationException>(() =>
+            DocumentLifecycle.Create("Notes.pdf", "application/pdf", [], CourseId, null)
+        );
     }
 
     [Fact]
     public void Create_WithBothCourseAndSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<DocumentValidationException>(() => DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, SemesterId));
+        Assert.Throws<DocumentValidationException>(() =>
+            DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, SemesterId)
+        );
     }
 
     [Fact]
     public void Create_WithNeitherCourseNorSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<DocumentValidationException>(() => DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, courseId: null, semesterId: null));
+        Assert.Throws<DocumentValidationException>(() =>
+            DocumentLifecycle.Create(
+                "Notes.pdf",
+                "application/pdf",
+                Content,
+                courseId: null,
+                semesterId: null
+            )
+        );
     }
 
     [Fact]
     public void Archive_SetsIsArchivedTrue()
     {
-        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create(
+            "Notes.pdf",
+            "application/pdf",
+            Content,
+            CourseId,
+            null
+        );
 
         document = DocumentLifecycle.Archive(document);
 
@@ -83,7 +117,13 @@ public class DocumentLifecycleTests
     [Fact]
     public void Restore_AfterArchive_SetsIsArchivedFalse()
     {
-        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create(
+            "Notes.pdf",
+            "application/pdf",
+            Content,
+            CourseId,
+            null
+        );
         document = DocumentLifecycle.Archive(document);
 
         document = DocumentLifecycle.Restore(document);

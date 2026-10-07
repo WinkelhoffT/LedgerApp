@@ -19,7 +19,8 @@ public interface ICalendarEventLifecycle
         DateOnly date,
         TimeOnly? startTime,
         int? durationMinutes,
-        string? location);
+        string? location
+    );
 
     /// <exception cref="CalendarEventValidationException">Kind, title, owner, time or location breaks an event rule.</exception>
     CalendarEvent Update(
@@ -31,5 +32,6 @@ public interface ICalendarEventLifecycle
         DateOnly date,
         TimeOnly? startTime,
         int? durationMinutes,
-        string? location);
+        string? location
+    );
 }

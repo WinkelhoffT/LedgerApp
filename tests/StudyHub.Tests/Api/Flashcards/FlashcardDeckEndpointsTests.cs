@@ -11,16 +11,29 @@ namespace StudyHub.Tests.Api.Flashcards;
 
 public class FlashcardDeckEndpointsTests
 {
-    private static async Task<FlashcardDeckDto> CreateDeckAsync(HttpClient client, string name = "Algorithmen")
+    private static async Task<FlashcardDeckDto> CreateDeckAsync(
+        HttpClient client,
+        string name = "Algorithmen"
+    )
     {
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest(name, null, null, 20, 200));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcard-decks",
+            new CreateFlashcardDeckRequest(name, null, null, 20, 200)
+        );
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<FlashcardDeckDto>())!;
     }
 
-    private static async Task<IReadOnlyList<DeckCardDto>> AddCardsAsync(HttpClient client, Guid deckId, params FlashcardDto[] cards)
+    private static async Task<IReadOnlyList<DeckCardDto>> AddCardsAsync(
+        HttpClient client,
+        Guid deckId,
+        params FlashcardDto[] cards
+    )
     {
-        var response = await client.PostAsJsonAsync($"api/flashcard-decks/{deckId}/cards", new AddFlashcardsRequest(deckId, cards, null));
+        var response = await client.PostAsJsonAsync(
+            $"api/flashcard-decks/{deckId}/cards",
+            new AddFlashcardsRequest(deckId, cards, null)
+        );
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<List<DeckCardDto>>())!;
     }
@@ -28,12 +41,19 @@ public class FlashcardDeckEndpointsTests
     private static async Task<string?> GetErrorCodeAsync(HttpResponseMessage response)
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        return problemDetails!.Extensions.TryGetValue("errorCode", out var value) && value is JsonElement element
+        return
+            problemDetails!.Extensions.TryGetValue("errorCode", out var value)
+            && value is JsonElement element
             ? element.GetString()
             : null;
     }
 
-    private static MultipartFormDataContent ImportForm(string csv, string fileName, Guid? targetDeckId, string duplicateMode)
+    private static MultipartFormDataContent ImportForm(
+        string csv,
+        string fileName,
+        Guid? targetDeckId,
+        string duplicateMode
+    )
     {
         var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(Encoding.UTF8.GetBytes(csv));
@@ -55,7 +75,12 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         var deck = await CreateDeckAsync(client);
 
-        await AddCardsAsync(client, deck.Id, new FlashcardDto("Q1", "A1", ["graphen"]), new FlashcardDto("Q2", "A2", []));
+        await AddCardsAsync(
+            client,
+            deck.Id,
+            new FlashcardDto("Q1", "A1", ["graphen"]),
+            new FlashcardDto("Q2", "A2", [])
+        );
         var decks = await client.GetFromJsonAsync<List<FlashcardDeckDto>>("api/flashcard-decks");
 
         var listed = Assert.Single(decks!);
@@ -70,10 +95,16 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         await CreateDeckAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("algorithmen", null, null, 20, 200));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcard-decks",
+            new CreateFlashcardDeckRequest("algorithmen", null, null, 20, 200)
+        );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal(FlashcardErrorCodes.DuplicateFlashcardDeckName, await GetErrorCodeAsync(response));
+        Assert.Equal(
+            FlashcardErrorCodes.DuplicateFlashcardDeckName,
+            await GetErrorCodeAsync(response)
+        );
     }
 
     [Fact]
@@ -95,13 +126,26 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         var deck = await CreateDeckAsync(client);
 
-        (await client.PostAsync($"api/flashcard-decks/{deck.Id}/archive", null)).EnsureSuccessStatusCode();
-        var response = await client.PostAsJsonAsync($"api/flashcard-decks/{deck.Id}/cards", new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], null));
+        (
+            await client.PostAsync($"api/flashcard-decks/{deck.Id}/archive", null)
+        ).EnsureSuccessStatusCode();
+        var response = await client.PostAsJsonAsync(
+            $"api/flashcard-decks/{deck.Id}/cards",
+            new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], null)
+        );
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(FlashcardErrorCodes.FlashcardDeckArchived, await GetErrorCodeAsync(response));
-        Assert.Empty((await client.GetFromJsonAsync<List<FlashcardDeckDto>>("api/flashcard-decks"))!);
-        Assert.Single((await client.GetFromJsonAsync<List<FlashcardDeckDto>>("api/flashcard-decks?includeArchived=true"))!);
+        Assert.Empty(
+            (await client.GetFromJsonAsync<List<FlashcardDeckDto>>("api/flashcard-decks"))!
+        );
+        Assert.Single(
+            (
+                await client.GetFromJsonAsync<List<FlashcardDeckDto>>(
+                    "api/flashcard-decks?includeArchived=true"
+                )
+            )!
+        );
     }
 
     [Fact]
@@ -110,13 +154,24 @@ public class FlashcardDeckEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
         var deck = await CreateDeckAsync(client);
-        var cards = await AddCardsAsync(client, deck.Id, new FlashcardDto("Q1", "A1", []), new FlashcardDto("Q2", "A2", []));
+        var cards = await AddCardsAsync(
+            client,
+            deck.Id,
+            new FlashcardDto("Q1", "A1", []),
+            new FlashcardDto("Q2", "A2", [])
+        );
 
         var update = await client.PutAsJsonAsync(
             $"api/flashcard-decks/cards/{cards[0].Id}",
-            new UpdateFlashcardRequest(Guid.Empty, new FlashcardDto("Was ist Dijkstra?", "Kürzeste Wege", ["graphen"])));
+            new UpdateFlashcardRequest(
+                Guid.Empty,
+                new FlashcardDto("Was ist Dijkstra?", "Kürzeste Wege", ["graphen"])
+            )
+        );
         update.EnsureSuccessStatusCode();
-        var found = await client.GetFromJsonAsync<List<DeckCardDto>>($"api/flashcard-decks/{deck.Id}/cards?search=dijkstra");
+        var found = await client.GetFromJsonAsync<List<DeckCardDto>>(
+            $"api/flashcard-decks/{deck.Id}/cards?search=dijkstra"
+        );
 
         var card = Assert.Single(found!);
         Assert.Equal(cards[0].Id, card.Id);
@@ -134,7 +189,13 @@ public class FlashcardDeckEndpointsTests
         var response = await client.DeleteAsync($"api/flashcard-decks/cards/{cards[0].Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        Assert.Empty((await client.GetFromJsonAsync<List<DeckCardDto>>($"api/flashcard-decks/{deck.Id}/cards"))!);
+        Assert.Empty(
+            (
+                await client.GetFromJsonAsync<List<DeckCardDto>>(
+                    $"api/flashcard-decks/{deck.Id}/cards"
+                )
+            )!
+        );
     }
 
     [Fact]
@@ -145,7 +206,8 @@ public class FlashcardDeckEndpointsTests
 
         var response = await client.PutAsJsonAsync(
             $"api/flashcard-decks/cards/{Guid.NewGuid()}",
-            new UpdateFlashcardRequest(Guid.Empty, new FlashcardDto("Q", "A", [])));
+            new UpdateFlashcardRequest(Guid.Empty, new FlashcardDto("Q", "A", []))
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(FlashcardErrorCodes.FlashcardNotFound, await GetErrorCodeAsync(response));
@@ -158,9 +220,13 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         var deck = await CreateDeckAsync(client);
         await AddCardsAsync(client, deck.Id, new FlashcardDto("Dijkstra?", "alt", []));
-        var csv = "#separator:tab\n#html:true\n#deck column:3\nDijkstra?\tneu\t\nHeap?\tBaum\t\nTCP?\tTransport\tNetze\n";
+        var csv =
+            "#separator:tab\n#html:true\n#deck column:3\nDijkstra?\tneu\t\nHeap?\tBaum\t\nTCP?\tTransport\tNetze\n";
 
-        var response = await client.PostAsync("api/flashcard-decks/import", ImportForm(csv, "export.txt", deck.Id, "KeepCurrent"));
+        var response = await client.PostAsync(
+            "api/flashcard-decks/import",
+            ImportForm(csv, "export.txt", deck.Id, "KeepCurrent")
+        );
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<FlashcardImportResultDto>();
@@ -178,7 +244,10 @@ public class FlashcardDeckEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsync("api/flashcard-decks/import", ImportForm("Q;A\n", "Betriebssysteme.csv", null, "UpdateCurrent"));
+        var response = await client.PostAsync(
+            "api/flashcard-decks/import",
+            ImportForm("Q;A\n", "Betriebssysteme.csv", null, "UpdateCurrent")
+        );
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<FlashcardImportResultDto>();
@@ -191,7 +260,10 @@ public class FlashcardDeckEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsync("api/flashcard-decks/import", ImportForm("#notetype:Cloze\n{{c1::x}};\n", "x.txt", null, "UpdateCurrent"));
+        var response = await client.PostAsync(
+            "api/flashcard-decks/import",
+            ImportForm("#notetype:Cloze\n{{c1::x}};\n", "x.txt", null, "UpdateCurrent")
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(FlashcardErrorCodes.FlashcardImportFailed, await GetErrorCodeAsync(response));
@@ -209,7 +281,11 @@ public class FlashcardDeckEndpointsTests
 
         response.EnsureSuccessStatusCode();
         Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("Informatik__Algorithmen.csv", response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName);
+        Assert.Equal(
+            "Informatik__Algorithmen.csv",
+            response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName
+        );
         var csv = Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
         Assert.Contains("#deck:Informatik::Algorithmen\n", csv);
         Assert.Contains("\"Größe?\";\"Antwort\";\"graphen\"", csv);
@@ -222,10 +298,18 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         var semesterResponse = await client.PostAsJsonAsync(
             "api/semesters",
-            new CreateSemesterRequest("Programmierworkshop", new DateOnly(2026, 10, 1), new DateOnly(2026, 12, 18)));
+            new CreateSemesterRequest(
+                "Programmierworkshop",
+                new DateOnly(2026, 10, 1),
+                new DateOnly(2026, 12, 18)
+            )
+        );
         var semester = (await semesterResponse.Content.ReadFromJsonAsync<SemesterDto>())!;
 
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Workshop", null, semester.Id, 20, 200));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcard-decks",
+            new CreateFlashcardDeckRequest("Workshop", null, semester.Id, 20, 200)
+        );
 
         response.EnsureSuccessStatusCode();
         var deck = await response.Content.ReadFromJsonAsync<FlashcardDeckDto>();
@@ -239,7 +323,10 @@ public class FlashcardDeckEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Workshop", null, Guid.NewGuid(), 20, 200));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcard-decks",
+            new CreateFlashcardDeckRequest("Workshop", null, Guid.NewGuid(), 20, 200)
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(SemesterErrorCodes.SemesterNotFound, await GetErrorCodeAsync(response));

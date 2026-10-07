@@ -11,7 +11,14 @@ public interface INoteLifecycle
     Note Create(string title, string content, string? tags, Guid? courseId, Guid? semesterId);
 
     /// <exception cref="NoteArchivedException">The note is archived.</exception>
-    Note Update(Note note, string title, string content, string? tags, Guid? courseId, Guid? semesterId);
+    Note Update(
+        Note note,
+        string title,
+        string content,
+        string? tags,
+        Guid? courseId,
+        Guid? semesterId
+    );
 
     Note Archive(Note note);
 

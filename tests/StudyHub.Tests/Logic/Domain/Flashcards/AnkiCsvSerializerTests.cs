@@ -12,7 +12,9 @@ public class AnkiCsvSerializerTests
         Encoding.UTF8.GetString(_sut.Serialize("StudyHub::Algorithms::Graphs", cards));
 
     private static string[] DataLines(string csv) =>
-        csv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Where(line => !line.StartsWith('#')).ToArray();
+        csv.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Where(line => !line.StartsWith('#'))
+            .ToArray();
 
     [Fact]
     public void Serialize_WritesAnkiHeaderLines()
@@ -21,21 +23,35 @@ public class AnkiCsvSerializerTests
 
         Assert.StartsWith(
             "#separator:Semicolon\n#html:true\n#notetype:Basic\n#deck:StudyHub::Algorithms::Graphs\n#columns:Front;Back;Tags\n#tags column:3\n",
-            csv);
+            csv
+        );
     }
 
     [Fact]
     public void Serialize_QuotesEveryFieldAndEscapesQuotes()
     {
-        var csv = SerializeToString(new FlashcardDto("Was bedeutet \"stabil\"?", "Gleiche Schlüssel; gleiche Reihenfolge", ["sortieren"]));
+        var csv = SerializeToString(
+            new FlashcardDto(
+                "Was bedeutet \"stabil\"?",
+                "Gleiche Schlüssel; gleiche Reihenfolge",
+                ["sortieren"]
+            )
+        );
 
-        Assert.Equal(["\"Was bedeutet \"\"stabil\"\"?\";\"Gleiche Schlüssel; gleiche Reihenfolge\";\"sortieren\""], DataLines(csv));
+        Assert.Equal(
+            [
+                "\"Was bedeutet \"\"stabil\"\"?\";\"Gleiche Schlüssel; gleiche Reihenfolge\";\"sortieren\"",
+            ],
+            DataLines(csv)
+        );
     }
 
     [Fact]
     public void Serialize_ConvertsLineBreaksToBr()
     {
-        var csv = SerializeToString(new FlashcardDto("Q", "Zeile 1\nZeile 2\r\nZeile 3\rZeile 4", []));
+        var csv = SerializeToString(
+            new FlashcardDto("Q", "Zeile 1\nZeile 2\r\nZeile 3\rZeile 4", [])
+        );
 
         Assert.Equal(["\"Q\";\"Zeile 1<br>Zeile 2<br>Zeile 3<br>Zeile 4\";\"\""], DataLines(csv));
     }

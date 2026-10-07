@@ -14,7 +14,11 @@ public partial class CalendarEventFormDialog
     private const string CoursePrefix = "course:";
     private const string SemesterPrefix = "semester:";
 
-    private static readonly CalendarEventKind[] Kinds = [CalendarEventKind.Exam, CalendarEventKind.Deadline];
+    private static readonly CalendarEventKind[] Kinds =
+    [
+        CalendarEventKind.Exam,
+        CalendarEventKind.Deadline,
+    ];
 
     [Inject]
     private ICalendarEventAccessor EventAccessor { get; set; } = default!;
@@ -74,16 +78,19 @@ public partial class CalendarEventFormDialog
     // Only a timed exam has a duration.
     private bool HasDuration => Kind == CalendarEventKind.Exam && StartTime is not null;
 
-    private string TimeHint => Kind == CalendarEventKind.Exam
-        ? "Without a start time the exam is shown as all-day."
-        : "Without a due time the deadline is shown as all-day.";
+    private string TimeHint =>
+        Kind == CalendarEventKind.Exam
+            ? "Without a start time the exam is shown as all-day."
+            : "Without a due time the deadline is shown as all-day.";
 
     // Archived courses and semesters are offered only when the event is already linked to one.
     private IEnumerable<CourseDto> SelectableCourses =>
         Courses.Where(c => !c.IsArchived || c.Id == EditingEvent?.CourseId).OrderBy(c => c.Name);
 
     private IEnumerable<SemesterDto> SelectableSemesters =>
-        Semesters.Where(s => !s.IsArchived || s.Id == EditingEvent?.SemesterId).OrderByDescending(s => s.StartDate);
+        Semesters
+            .Where(s => !s.IsArchived || s.Id == EditingEvent?.SemesterId)
+            .OrderByDescending(s => s.StartDate);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -119,24 +126,49 @@ public partial class CalendarEventFormDialog
         Semesters = await SemesterAccessor.GetAllAsync();
     }
 
-    private Task SubmitAsync() => RunAsync(async () =>
-    {
-        var courseId = GetOwnerId(CoursePrefix);
-        var semesterId = GetOwnerId(SemesterPrefix);
-        var durationMinutes = HasDuration ? DurationMinutes : null;
-        var saved = EditingEvent is null
-            ? await EventAccessor.CreateAsync(new CreateCalendarEventRequest(Kind, Title, courseId, semesterId, Date, StartTime, durationMinutes, Location))
-            : await EventAccessor.UpdateAsync(new UpdateCalendarEventRequest(EditingEvent.Id, Kind, Title, courseId, semesterId, Date, StartTime, durationMinutes, Location));
+    private Task SubmitAsync() =>
+        RunAsync(async () =>
+        {
+            var courseId = GetOwnerId(CoursePrefix);
+            var semesterId = GetOwnerId(SemesterPrefix);
+            var durationMinutes = HasDuration ? DurationMinutes : null;
+            var saved = EditingEvent is null
+                ? await EventAccessor.CreateAsync(
+                    new CreateCalendarEventRequest(
+                        Kind,
+                        Title,
+                        courseId,
+                        semesterId,
+                        Date,
+                        StartTime,
+                        durationMinutes,
+                        Location
+                    )
+                )
+                : await EventAccessor.UpdateAsync(
+                    new UpdateCalendarEventRequest(
+                        EditingEvent.Id,
+                        Kind,
+                        Title,
+                        courseId,
+                        semesterId,
+                        Date,
+                        StartTime,
+                        durationMinutes,
+                        Location
+                    )
+                );
 
-        await OnSaved.InvokeAsync(saved);
-    });
+            await OnSaved.InvokeAsync(saved);
+        });
 
-    private Task DeleteAsync() => RunAsync(async () =>
-    {
-        var calendarEvent = EditingEvent!;
-        await EventAccessor.DeleteAsync(calendarEvent.Id);
-        await OnDeleted.InvokeAsync(calendarEvent);
-    });
+    private Task DeleteAsync() =>
+        RunAsync(async () =>
+        {
+            var calendarEvent = EditingEvent!;
+            await EventAccessor.DeleteAsync(calendarEvent.Id);
+            await OnDeleted.InvokeAsync(calendarEvent);
+        });
 
     // Runs a save or delete, closing the dialog on success and showing the Api's message otherwise.
     private async Task RunAsync(Func<Task> action)
@@ -149,7 +181,8 @@ public partial class CalendarEventFormDialog
             await action();
             await Close();
         }
-        catch (Exception ex) when (ex is CalendarEventValidationException or CalendarEventNotFoundException)
+        catch (Exception ex)
+            when (ex is CalendarEventValidationException or CalendarEventNotFoundException)
         {
             ErrorMessage = ex.Message;
         }
@@ -181,7 +214,8 @@ public partial class CalendarEventFormDialog
     }
 
     private Guid? GetOwnerId(string prefix) =>
-        OwnerKey.StartsWith(prefix, StringComparison.Ordinal) && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
+        OwnerKey.StartsWith(prefix, StringComparison.Ordinal)
+        && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
             ? id
             : null;
 

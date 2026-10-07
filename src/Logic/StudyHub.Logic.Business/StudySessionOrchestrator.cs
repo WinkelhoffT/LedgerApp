@@ -26,10 +26,19 @@ public sealed class StudySessionOrchestrator(
             request.Date,
             request.StartTime,
             request.DurationMinutes,
-            request.Location);
+            request.Location
+        );
 
-        var course = await GetAssignableCourseAsync(session.CourseId, currentCourseId: null, cancellationToken);
-        var semester = await GetAssignableSemesterAsync(session.SemesterId, currentSemesterId: null, cancellationToken);
+        var course = await GetAssignableCourseAsync(
+            session.CourseId,
+            currentCourseId: null,
+            cancellationToken
+        );
+        var semester = await GetAssignableSemesterAsync(
+            session.SemesterId,
+            currentSemesterId: null,
+            cancellationToken
+        );
 
         await sessionRepository.AddAsync(session, cancellationToken);
         await sessionRepository.SaveChangesAsync(cancellationToken);
@@ -51,10 +60,19 @@ public sealed class StudySessionOrchestrator(
             request.Date,
             request.StartTime,
             request.DurationMinutes,
-            request.Location);
+            request.Location
+        );
 
-        var course = await GetAssignableCourseAsync(updated.CourseId, session.CourseId, cancellationToken);
-        var semester = await GetAssignableSemesterAsync(updated.SemesterId, session.SemesterId, cancellationToken);
+        var course = await GetAssignableCourseAsync(
+            updated.CourseId,
+            session.CourseId,
+            cancellationToken
+        );
+        var semester = await GetAssignableSemesterAsync(
+            updated.SemesterId,
+            session.SemesterId,
+            cancellationToken
+        );
 
         sessionRepository.Update(updated);
         await sessionRepository.SaveChangesAsync(cancellationToken);
@@ -70,18 +88,28 @@ public sealed class StudySessionOrchestrator(
         await sessionRepository.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<StudySession> GetExistingSessionAsync(Guid id, CancellationToken cancellationToken) =>
-        await sessionRepository.GetByIdAsync(id, cancellationToken) ?? throw new StudySessionNotFoundException(id);
+    private async Task<StudySession> GetExistingSessionAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await sessionRepository.GetByIdAsync(id, cancellationToken)
+        ?? throw new StudySessionNotFoundException(id);
 
     // An archived course cannot be newly linked; a session already linked to it may keep the link.
-    private async Task<Course?> GetAssignableCourseAsync(Guid? courseId, Guid? currentCourseId, CancellationToken cancellationToken)
+    private async Task<Course?> GetAssignableCourseAsync(
+        Guid? courseId,
+        Guid? currentCourseId,
+        CancellationToken cancellationToken
+    )
     {
         if (courseId is not { } id)
         {
             return null;
         }
 
-        var course = await courseRepository.GetByIdAsync(id, cancellationToken) ?? throw new CourseNotFoundException(id);
+        var course =
+            await courseRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new CourseNotFoundException(id);
         if (course.IsArchived && id != currentCourseId)
         {
             throw new CourseArchivedException(id);
@@ -91,14 +119,20 @@ public sealed class StudySessionOrchestrator(
     }
 
     // An archived semester cannot be newly linked; a session already linked to it may keep the link.
-    private async Task<Semester?> GetAssignableSemesterAsync(Guid? semesterId, Guid? currentSemesterId, CancellationToken cancellationToken)
+    private async Task<Semester?> GetAssignableSemesterAsync(
+        Guid? semesterId,
+        Guid? currentSemesterId,
+        CancellationToken cancellationToken
+    )
     {
         if (semesterId is not { } id)
         {
             return null;
         }
 
-        var semester = await semesterRepository.GetByIdAsync(id, cancellationToken) ?? throw new SemesterNotFoundException(id);
+        var semester =
+            await semesterRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new SemesterNotFoundException(id);
         if (semester.IsArchived && id != currentSemesterId)
         {
             throw new SemesterArchivedException(id);

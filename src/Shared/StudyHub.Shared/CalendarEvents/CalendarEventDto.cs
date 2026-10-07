@@ -17,4 +17,5 @@ public sealed record CalendarEventDto(
     string? OwnerName,
     string? Color,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

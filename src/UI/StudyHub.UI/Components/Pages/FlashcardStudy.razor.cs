@@ -66,12 +66,14 @@ public partial class FlashcardStudy
             DeckName ??= (await DeckAccessor.GetByIdAsync(DeckId)).Name;
             ShowCard(await StudyAccessor.GetNextAsync(DeckId));
         }
-        catch (Exception ex) when (ex is FlashcardDeckNotFoundException or FlashcardDeckArchivedException)
+        catch (Exception ex)
+            when (ex is FlashcardDeckNotFoundException or FlashcardDeckArchivedException)
         {
             Card = null;
-            ErrorMessage = ex is FlashcardDeckArchivedException
-                ? "This deck is archived. Restore it to study it again."
-                : "This deck could not be found.";
+            ErrorMessage =
+                ex is FlashcardDeckArchivedException
+                    ? "This deck is archived. Restore it to study it again."
+                    : "This deck could not be found.";
         }
         catch (HttpRequestException)
         {
@@ -110,14 +112,17 @@ public partial class FlashcardStudy
 
         try
         {
-            ShowCard(await StudyAccessor.AnswerAsync(new AnswerFlashcardRequest(Card.CardId, rating)));
+            ShowCard(
+                await StudyAccessor.AnswerAsync(new AnswerFlashcardRequest(Card.CardId, rating))
+            );
         }
         catch (FlashcardNotDueException)
         {
             // The card was answered in the meantime (e.g. in another tab): continue with the current queue.
             await LoadNextAsync();
         }
-        catch (Exception ex) when (ex is FlashcardNotFoundException or FlashcardDeckArchivedException)
+        catch (Exception ex)
+            when (ex is FlashcardNotFoundException or FlashcardDeckArchivedException)
         {
             ErrorMessage = ex.Message;
             await LoadNextAsync();

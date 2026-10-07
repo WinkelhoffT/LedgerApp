@@ -10,4 +10,5 @@ public sealed record FlashcardImportOutcome(
     IReadOnlyList<Flashcard> UpdatedCards,
     int SkippedDuplicates,
     IReadOnlyList<FlashcardImportFailureDto> Failures,
-    IReadOnlyList<ImportedFlashcardDeckDto> Decks);
+    IReadOnlyList<ImportedFlashcardDeckDto> Decks
+);

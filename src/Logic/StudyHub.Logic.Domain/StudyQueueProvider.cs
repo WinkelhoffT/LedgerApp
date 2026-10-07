@@ -12,7 +12,8 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
     public FlashcardStudyCountsDto GetCounts(
         FlashcardDeck deck,
         FlashcardDeckCardCounts? cardCounts,
-        FlashcardDeckReviewCounts? reviewCounts)
+        FlashcardDeckReviewCounts? reviewCounts
+    )
     {
         if (deck.IsArchived || cardCounts is null)
         {
@@ -25,7 +26,8 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
         return new FlashcardStudyCountsDto(
             New: Math.Min(cardCounts.New, newLeft),
             Learning: cardCounts.LearningDue,
-            Review: Math.Min(cardCounts.ReviewDue, reviewsLeft));
+            Review: Math.Min(cardCounts.ReviewDue, reviewsLeft)
+        );
     }
 
     // Anki's order: learning cards that are due now, then reviews, then new cards; a learning card
@@ -34,7 +36,8 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
         FlashcardDeck deck,
         StudyQueueCandidates candidates,
         FlashcardStudyCountsDto counts,
-        StudyDay today)
+        StudyDay today
+    )
     {
         if (deck.IsArchived)
         {
@@ -56,12 +59,19 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
             return newCard;
         }
 
-        return candidates.FirstLearning is { } learning && learning.DueAt <= today.Now + LearnAheadLimit
+        return
+            candidates.FirstLearning is { } learning
+            && learning.DueAt <= today.Now + LearnAheadLimit
             ? learning
             : null;
     }
 
-    public bool IsDue(FlashcardDeck deck, Flashcard card, FlashcardStudyCountsDto counts, StudyDay today) =>
+    public bool IsDue(
+        FlashcardDeck deck,
+        Flashcard card,
+        FlashcardStudyCountsDto counts,
+        StudyDay today
+    ) =>
         !deck.IsArchived
         && card.DeckId == deck.Id
         && card.State switch

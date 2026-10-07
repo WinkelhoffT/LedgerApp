@@ -60,8 +60,12 @@ public partial class SemesterFormDialog
         try
         {
             var saved = EditingSemester is null
-                ? await SemesterAccessor.CreateAsync(new CreateSemesterRequest(Name, StartDate, EndDate))
-                : await SemesterAccessor.UpdateAsync(new UpdateSemesterRequest(EditingSemester.Id, Name, StartDate, EndDate));
+                ? await SemesterAccessor.CreateAsync(
+                    new CreateSemesterRequest(Name, StartDate, EndDate)
+                )
+                : await SemesterAccessor.UpdateAsync(
+                    new UpdateSemesterRequest(EditingSemester.Id, Name, StartDate, EndDate)
+                );
 
             await OnSaved.InvokeAsync(saved);
             await Close();

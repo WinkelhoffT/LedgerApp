@@ -8,4 +8,5 @@ public sealed record UpdateStudySessionRequest(
     DateOnly Date,
     TimeOnly StartTime,
     int DurationMinutes,
-    string? Location);
+    string? Location
+);

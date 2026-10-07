@@ -24,7 +24,9 @@ public sealed class FlashcardOrchestrator(
     {
         flashcardValidator.ValidateGenerationOptions(request.CardCount, request.FocusHint);
 
-        var model = string.IsNullOrWhiteSpace(request.Model) ? aiModelCatalog.DefaultModelId : request.Model.Trim();
+        var model = string.IsNullOrWhiteSpace(request.Model)
+            ? aiModelCatalog.DefaultModelId
+            : request.Model.Trim();
         if (!aiModelCatalog.IsAvailable(model))
         {
             throw new FlashcardValidationException($"The model '{model}' is not available.");
@@ -41,11 +43,19 @@ public sealed class FlashcardOrchestrator(
 
         if (string.IsNullOrWhiteSpace(note.Content))
         {
-            throw new FlashcardValidationException("The note is empty - write some content before generating flashcards.");
+            throw new FlashcardValidationException(
+                "The note is empty - write some content before generating flashcards."
+            );
         }
 
         var generatedCards = await flashcardGenerator.GenerateAsync(
-            new FlashcardGenerationInput(model, note.Title, note.Content, request.CardCount, request.FocusHint),
+            new FlashcardGenerationInput(
+                model,
+                note.Title,
+                note.Content,
+                request.CardCount,
+                request.FocusHint
+            ),
             cancellationToken
         );
 

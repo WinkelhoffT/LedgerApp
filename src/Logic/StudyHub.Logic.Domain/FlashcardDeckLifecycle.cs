@@ -4,9 +4,16 @@ using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Logic.Domain;
 
-public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : IFlashcardDeckLifecycle
+public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider)
+    : IFlashcardDeckLifecycle
 {
-    public FlashcardDeck Create(string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay)
+    public FlashcardDeck Create(
+        string name,
+        Guid? courseId,
+        Guid? semesterId,
+        int newCardsPerDay,
+        int reviewsPerDay
+    )
     {
         ValidateOwner(courseId, semesterId);
         var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -20,10 +27,18 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
             ReviewsPerDay: ValidateLimit(reviewsPerDay, "Reviews per day"),
             IsArchived: false,
             CreatedAt: now,
-            UpdatedAt: now);
+            UpdatedAt: now
+        );
     }
 
-    public FlashcardDeck Update(FlashcardDeck deck, string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay)
+    public FlashcardDeck Update(
+        FlashcardDeck deck,
+        string name,
+        Guid? courseId,
+        Guid? semesterId,
+        int newCardsPerDay,
+        int reviewsPerDay
+    )
     {
         if (deck.IsArchived)
         {
@@ -46,12 +61,20 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
     public FlashcardDeck Archive(FlashcardDeck deck) =>
         deck.IsArchived
             ? deck
-            : deck with { IsArchived = true, UpdatedAt = timeProvider.GetUtcNow().UtcDateTime };
+            : deck with
+            {
+                IsArchived = true,
+                UpdatedAt = timeProvider.GetUtcNow().UtcDateTime,
+            };
 
     public FlashcardDeck Restore(FlashcardDeck deck) =>
         !deck.IsArchived
             ? deck
-            : deck with { IsArchived = false, UpdatedAt = timeProvider.GetUtcNow().UtcDateTime };
+            : deck with
+            {
+                IsArchived = false,
+                UpdatedAt = timeProvider.GetUtcNow().UtcDateTime,
+            };
 
     public string NormalizeName(string name)
     {
@@ -63,7 +86,9 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
 
         if (normalized.Length > FlashcardDeck.NameMaxLength)
         {
-            throw new FlashcardValidationException($"Deck name must not exceed {FlashcardDeck.NameMaxLength} characters.");
+            throw new FlashcardValidationException(
+                $"Deck name must not exceed {FlashcardDeck.NameMaxLength} characters."
+            );
         }
 
         return normalized;
@@ -73,7 +98,9 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
     {
         if (courseId is not null && semesterId is not null)
         {
-            throw new FlashcardValidationException("A deck can belong to a course or a semester, not both.");
+            throw new FlashcardValidationException(
+                "A deck can belong to a course or a semester, not both."
+            );
         }
     }
 
@@ -81,7 +108,9 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
     {
         if (value is < 0 or > FlashcardDeck.MaxCardsPerDay)
         {
-            throw new FlashcardValidationException($"{label} must be between 0 and {FlashcardDeck.MaxCardsPerDay}.");
+            throw new FlashcardValidationException(
+                $"{label} must be between 0 and {FlashcardDeck.MaxCardsPerDay}."
+            );
         }
 
         return value;

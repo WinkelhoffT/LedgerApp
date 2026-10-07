@@ -27,7 +27,13 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null);
+        var document = DocumentLifecycle.Create(
+            "Notes.pdf",
+            "application/pdf",
+            Content,
+            CourseId,
+            null
+        );
 
         await repository.AddAsync(document);
         await repository.SaveChangesAsync();
@@ -44,8 +50,12 @@ public class DocumentRepositoryTests
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
         var otherCourseId = Guid.NewGuid();
-        await repository.AddAsync(DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null));
-        await repository.AddAsync(DocumentLifecycle.Create("Other.pdf", "application/pdf", Content, otherCourseId, null));
+        await repository.AddAsync(
+            DocumentLifecycle.Create("Notes.pdf", "application/pdf", Content, CourseId, null)
+        );
+        await repository.AddAsync(
+            DocumentLifecycle.Create("Other.pdf", "application/pdf", Content, otherCourseId, null)
+        );
         await repository.SaveChangesAsync();
 
         var documents = await repository.GetByCourseIdAsync(CourseId);
@@ -58,7 +68,9 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        await repository.AddAsync(DocumentLifecycle.Create("Syllabus.pdf", "application/pdf", Content, null, SemesterId));
+        await repository.AddAsync(
+            DocumentLifecycle.Create("Syllabus.pdf", "application/pdf", Content, null, SemesterId)
+        );
         await repository.SaveChangesAsync();
 
         var documents = await repository.GetBySemesterIdAsync(SemesterId);
@@ -71,8 +83,12 @@ public class DocumentRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new DocumentRepository(dbContext);
-        await repository.AddAsync(DocumentLifecycle.Create("Zoology.pdf", "application/pdf", Content, CourseId, null));
-        await repository.AddAsync(DocumentLifecycle.Create("Algorithms.pdf", "application/pdf", Content, CourseId, null));
+        await repository.AddAsync(
+            DocumentLifecycle.Create("Zoology.pdf", "application/pdf", Content, CourseId, null)
+        );
+        await repository.AddAsync(
+            DocumentLifecycle.Create("Algorithms.pdf", "application/pdf", Content, CourseId, null)
+        );
         await repository.SaveChangesAsync();
 
         var all = await repository.GetAllAsync();

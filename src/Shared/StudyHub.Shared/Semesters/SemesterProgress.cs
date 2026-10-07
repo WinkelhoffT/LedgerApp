@@ -4,4 +4,5 @@ public sealed record SemesterProgress(
     int TotalDays,
     int ElapsedDays,
     int RemainingDays,
-    double PercentComplete);
+    double PercentComplete
+);

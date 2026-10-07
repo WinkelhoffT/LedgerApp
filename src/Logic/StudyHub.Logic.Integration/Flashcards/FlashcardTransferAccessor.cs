@@ -6,7 +6,10 @@ namespace StudyHub.Logic.Integration.Flashcards;
 
 public sealed class FlashcardTransferAccessor(HttpClient httpClient) : IFlashcardTransferAccessor
 {
-    public async Task<FlashcardImportResultDto> ImportAsync(ImportFlashcardsRequest request, CancellationToken cancellationToken = default)
+    public async Task<FlashcardImportResultDto> ImportAsync(
+        ImportFlashcardsRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         using var content = new MultipartFormDataContent();
 
@@ -20,18 +23,31 @@ public sealed class FlashcardTransferAccessor(HttpClient httpClient) : IFlashcar
             content.Add(new StringContent(targetDeckId.ToString()), "targetDeckId");
         }
 
-        using var response = await httpClient.PostAsync("api/flashcard-decks/import", content, cancellationToken);
+        using var response = await httpClient.PostAsync(
+            "api/flashcard-decks/import",
+            content,
+            cancellationToken
+        );
         await FlashcardProblemDetailsMapper.EnsureSuccessAsync(response, cancellationToken);
-        return (await response.Content.ReadFromJsonAsync<FlashcardImportResultDto>(cancellationToken))!;
+        return (
+            await response.Content.ReadFromJsonAsync<FlashcardImportResultDto>(cancellationToken)
+        )!;
     }
 
-    public async Task<FlashcardExportDto> ExportAsync(Guid deckId, CancellationToken cancellationToken = default)
+    public async Task<FlashcardExportDto> ExportAsync(
+        Guid deckId,
+        CancellationToken cancellationToken = default
+    )
     {
-        using var response = await httpClient.GetAsync($"api/flashcard-decks/{deckId}/export", cancellationToken);
+        using var response = await httpClient.GetAsync(
+            $"api/flashcard-decks/{deckId}/export",
+            cancellationToken
+        );
         await FlashcardProblemDetailsMapper.EnsureSuccessAsync(response, cancellationToken);
 
         var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+        var fileName =
+            response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName
             ?? "flashcards.csv";
         var contentType = response.Content.Headers.ContentType?.MediaType ?? "text/csv";

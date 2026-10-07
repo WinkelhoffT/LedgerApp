@@ -15,11 +15,20 @@ public sealed class EditableFlashcard
     public bool IsEditing { get; set; }
 
     public static EditableFlashcard FromDto(FlashcardDto card) =>
-        new() { Front = card.Front, Back = card.Back, TagsText = string.Join(", ", card.Tags) };
+        new()
+        {
+            Front = card.Front,
+            Back = card.Back,
+            TagsText = string.Join(", ", card.Tags),
+        };
 
     public FlashcardDto ToDto() =>
         new(
             Front,
             Back,
-            TagsText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            TagsText.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            )
+        );
 }

@@ -9,4 +9,5 @@ public sealed record FlashcardReview(
     FlashcardState StateBefore,
     int IntervalDaysBefore,
     int IntervalDaysAfter,
-    int EaseFactorAfter);
+    int EaseFactorAfter
+);

@@ -17,37 +17,84 @@ public class FlashcardStudyOrchestratorTests
     private readonly Mock<IFlashcardDeckRepository> _deckRepository = new();
     private readonly Mock<IFlashcardRepository> _flashcardRepository = new();
     private readonly FlashcardStudyOrchestrator _sut;
-    private readonly FlashcardDeck _deck = new(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, false, Now, Now);
+    private readonly FlashcardDeck _deck = new(
+        Guid.NewGuid(),
+        "Algorithmen",
+        null,
+        null,
+        20,
+        200,
+        false,
+        Now,
+        Now
+    );
 
     public FlashcardStudyOrchestratorTests()
     {
-        var studyDayProvider = new StudyDayProvider(new FlashcardStudyOptions(), new FixedTimeProvider(Now));
+        var studyDayProvider = new StudyDayProvider(
+            new FlashcardStudyOptions(),
+            new FixedTimeProvider(Now)
+        );
         _sut = new FlashcardStudyOrchestrator(
             _deckRepository.Object,
             _flashcardRepository.Object,
             new FlashcardReviewProcessor(studyDayProvider),
             new StudyQueueProvider(),
-            studyDayProvider);
+            studyDayProvider
+        );
 
         _deckRepository.Setup(r => r.GetByIdAsync(_deck.Id, default)).ReturnsAsync(_deck);
         SetupCounts(new FlashcardDeckCardCounts(_deck.Id, 3, 1, 0, 2));
     }
 
-    private void SetupCounts(FlashcardDeckCardCounts cardCounts, FlashcardDeckReviewCounts? reviewCounts = null)
+    private void SetupCounts(
+        FlashcardDeckCardCounts cardCounts,
+        FlashcardDeckReviewCounts? reviewCounts = null
+    )
     {
-        _flashcardRepository.Setup(r => r.GetCardCountsAsync(TomorrowStart, _deck.Id, default)).ReturnsAsync([cardCounts]);
-        _flashcardRepository.Setup(r => r.GetReviewCountsAsync(TodayStart, _deck.Id, default))
+        _flashcardRepository
+            .Setup(r => r.GetCardCountsAsync(TomorrowStart, _deck.Id, default))
+            .ReturnsAsync([cardCounts]);
+        _flashcardRepository
+            .Setup(r => r.GetReviewCountsAsync(TodayStart, _deck.Id, default))
             .ReturnsAsync(reviewCounts is null ? [] : [reviewCounts]);
     }
 
     private Flashcard Card(FlashcardState state, DateTime dueAt, int intervalDays = 0) =>
-        new(Guid.NewGuid(), _deck.Id, $"Q {state}", "A", "graphen", null, state, 0, dueAt, intervalDays, 2500, 0, 0, null, Now, Now);
+        new(
+            Guid.NewGuid(),
+            _deck.Id,
+            $"Q {state}",
+            "A",
+            "graphen",
+            null,
+            state,
+            0,
+            dueAt,
+            intervalDays,
+            2500,
+            0,
+            0,
+            null,
+            Now,
+            Now
+        );
 
-    private void SetupQueue(Flashcard? learning = null, Flashcard? review = null, Flashcard? newCard = null)
+    private void SetupQueue(
+        Flashcard? learning = null,
+        Flashcard? review = null,
+        Flashcard? newCard = null
+    )
     {
-        _flashcardRepository.Setup(r => r.GetFirstLearningCardAsync(_deck.Id, default)).ReturnsAsync(learning);
-        _flashcardRepository.Setup(r => r.GetFirstReviewCardAsync(_deck.Id, TomorrowStart, default)).ReturnsAsync(review);
-        _flashcardRepository.Setup(r => r.GetFirstNewCardAsync(_deck.Id, default)).ReturnsAsync(newCard);
+        _flashcardRepository
+            .Setup(r => r.GetFirstLearningCardAsync(_deck.Id, default))
+            .ReturnsAsync(learning);
+        _flashcardRepository
+            .Setup(r => r.GetFirstReviewCardAsync(_deck.Id, TomorrowStart, default))
+            .ReturnsAsync(review);
+        _flashcardRepository
+            .Setup(r => r.GetFirstNewCardAsync(_deck.Id, default))
+            .ReturnsAsync(newCard);
     }
 
     [Fact]
@@ -63,14 +110,23 @@ public class FlashcardStudyOrchestratorTests
         Assert.Equal(["graphen"], result.Tags);
         Assert.Equal(new FlashcardStudyCountsDto(1, 0, 2), result.Counts);
         Assert.Equal(
-            [TimeSpan.FromMinutes(10), TimeSpan.FromDays(12), TimeSpan.FromDays(25), TimeSpan.FromDays(33)],
-            result.Intervals.Select(i => i.Interval));
+            [
+                TimeSpan.FromMinutes(10),
+                TimeSpan.FromDays(12),
+                TimeSpan.FromDays(25),
+                TimeSpan.FromDays(33),
+            ],
+            result.Intervals.Select(i => i.Interval)
+        );
     }
 
     [Fact]
     public async Task GetNextAsync_WhenNewCardLimitIsUsedUp_ReturnsNull()
     {
-        SetupCounts(new FlashcardDeckCardCounts(_deck.Id, 30, 30, 0, 0), new FlashcardDeckReviewCounts(_deck.Id, 20, 0));
+        SetupCounts(
+            new FlashcardDeckCardCounts(_deck.Id, 30, 30, 0, 0),
+            new FlashcardDeckReviewCounts(_deck.Id, 20, 0)
+        );
         SetupQueue(newCard: Card(FlashcardState.New, Now));
 
         Assert.Null(await _sut.GetNextAsync(_deck.Id));
@@ -79,7 +135,9 @@ public class FlashcardStudyOrchestratorTests
     [Fact]
     public async Task GetNextAsync_ForArchivedDeck_Throws()
     {
-        _deckRepository.Setup(r => r.GetByIdAsync(_deck.Id, default)).ReturnsAsync(_deck with { IsArchived = true });
+        _deckRepository
+            .Setup(r => r.GetByIdAsync(_deck.Id, default))
+            .ReturnsAsync(_deck with { IsArchived = true });
 
         await Assert.ThrowsAsync<FlashcardDeckArchivedException>(() => _sut.GetNextAsync(_deck.Id));
     }
@@ -92,12 +150,34 @@ public class FlashcardStudyOrchestratorTests
         _flashcardRepository.Setup(r => r.GetByIdAsync(newCard.Id, default)).ReturnsAsync(newCard);
         SetupQueue(review: next);
 
-        var result = await _sut.AnswerAsync(new AnswerFlashcardRequest(newCard.Id, FlashcardRating.Good));
+        var result = await _sut.AnswerAsync(
+            new AnswerFlashcardRequest(newCard.Id, FlashcardRating.Good)
+        );
 
-        _flashcardRepository.Verify(r => r.Update(It.Is<Flashcard>(c =>
-            c.Id == newCard.Id && c.State == FlashcardState.Learning && c.Step == 1 && c.DueAt == Now.AddMinutes(10))), Times.Once);
-        _flashcardRepository.Verify(r => r.AddReviewAsync(It.Is<FlashcardReview>(review =>
-            review.FlashcardId == newCard.Id && review.Rating == FlashcardRating.Good && review.StateBefore == FlashcardState.New), default), Times.Once);
+        _flashcardRepository.Verify(
+            r =>
+                r.Update(
+                    It.Is<Flashcard>(c =>
+                        c.Id == newCard.Id
+                        && c.State == FlashcardState.Learning
+                        && c.Step == 1
+                        && c.DueAt == Now.AddMinutes(10)
+                    )
+                ),
+            Times.Once
+        );
+        _flashcardRepository.Verify(
+            r =>
+                r.AddReviewAsync(
+                    It.Is<FlashcardReview>(review =>
+                        review.FlashcardId == newCard.Id
+                        && review.Rating == FlashcardRating.Good
+                        && review.StateBefore == FlashcardState.New
+                    ),
+                    default
+                ),
+            Times.Once
+        );
         _flashcardRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
         Assert.Equal(next.Id, result!.CardId);
     }
@@ -108,21 +188,25 @@ public class FlashcardStudyOrchestratorTests
         var card = Card(FlashcardState.Review, TodayStart.AddDays(7), intervalDays: 10);
         _flashcardRepository.Setup(r => r.GetByIdAsync(card.Id, default)).ReturnsAsync(card);
 
-        await Assert.ThrowsAsync<FlashcardNotDueException>(() => _sut.AnswerAsync(new AnswerFlashcardRequest(card.Id, FlashcardRating.Good)));
+        await Assert.ThrowsAsync<FlashcardNotDueException>(() =>
+            _sut.AnswerAsync(new AnswerFlashcardRequest(card.Id, FlashcardRating.Good))
+        );
         _flashcardRepository.Verify(r => r.SaveChangesAsync(default), Times.Never);
     }
 
     [Fact]
     public async Task AnswerAsync_WithUnknownRating_Throws()
     {
-        await Assert.ThrowsAsync<FlashcardValidationException>(
-            () => _sut.AnswerAsync(new AnswerFlashcardRequest(Guid.NewGuid(), (FlashcardRating)7)));
+        await Assert.ThrowsAsync<FlashcardValidationException>(() =>
+            _sut.AnswerAsync(new AnswerFlashcardRequest(Guid.NewGuid(), (FlashcardRating)7))
+        );
     }
 
     [Fact]
     public async Task AnswerAsync_WithUnknownCard_Throws()
     {
-        await Assert.ThrowsAsync<FlashcardNotFoundException>(
-            () => _sut.AnswerAsync(new AnswerFlashcardRequest(Guid.NewGuid(), FlashcardRating.Good)));
+        await Assert.ThrowsAsync<FlashcardNotFoundException>(() =>
+            _sut.AnswerAsync(new AnswerFlashcardRequest(Guid.NewGuid(), FlashcardRating.Good))
+        );
     }
 }

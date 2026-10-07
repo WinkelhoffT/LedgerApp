@@ -6,7 +6,9 @@ namespace StudyHub.Logic.Business;
 internal static class FlashcardMapper
 {
     public static IReadOnlyList<string> SplitTags(string? tags) =>
-        string.IsNullOrWhiteSpace(tags) ? [] : tags.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string.IsNullOrWhiteSpace(tags)
+            ? []
+            : tags.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
     public static FlashcardDto ToContent(Flashcard card) =>
         new(card.Front, card.Back, SplitTags(card.Tags));
@@ -26,9 +28,14 @@ internal static class FlashcardMapper
             card.Lapses,
             card.SourceNoteId,
             card.CreatedAt,
-            card.UpdatedAt);
+            card.UpdatedAt
+        );
 
-    public static FlashcardDeckDto ToDeckDto(FlashcardDeck deck, int cardCount, FlashcardStudyCountsDto dueCounts) =>
+    public static FlashcardDeckDto ToDeckDto(
+        FlashcardDeck deck,
+        int cardCount,
+        FlashcardStudyCountsDto dueCounts
+    ) =>
         new(
             deck.Id,
             deck.Name,
@@ -40,5 +47,6 @@ internal static class FlashcardMapper
             cardCount,
             dueCounts,
             deck.CreatedAt,
-            deck.UpdatedAt);
+            deck.UpdatedAt
+        );
 }

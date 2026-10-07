@@ -9,13 +9,22 @@ namespace StudyHub.UI.Documents;
 /// </summary>
 public static class DocumentDownloadEndpoints
 {
-    public static IEndpointRouteBuilder MapDocumentDownloadEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapDocumentDownloadEndpoints(
+        this IEndpointRouteBuilder endpoints
+    )
     {
-        endpoints.MapGet("/documents/{id:guid}/download", async (Guid id, IDocumentAccessor documentAccessor, CancellationToken cancellationToken) =>
-        {
-            var content = await documentAccessor.DownloadAsync(id, cancellationToken);
-            return Results.File(content.Content, content.ContentType, content.FileName);
-        });
+        endpoints.MapGet(
+            "/documents/{id:guid}/download",
+            async (
+                Guid id,
+                IDocumentAccessor documentAccessor,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                var content = await documentAccessor.DownloadAsync(id, cancellationToken);
+                return Results.File(content.Content, content.ContentType, content.FileName);
+            }
+        );
 
         return endpoints;
     }

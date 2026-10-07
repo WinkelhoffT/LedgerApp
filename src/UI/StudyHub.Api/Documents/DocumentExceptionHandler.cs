@@ -10,18 +10,40 @@ namespace StudyHub.Api.Documents;
 // cover exceptions specific to the Documents feature.
 public sealed class DocumentExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         var problemDetails = exception switch
         {
             DocumentNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, DocumentErrorCodes.DocumentNotFound, "documentId", ex.DocumentId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                DocumentErrorCodes.DocumentNotFound,
+                "documentId",
+                ex.DocumentId
+            ),
             UnsupportedDocumentTypeException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, DocumentErrorCodes.UnsupportedDocumentType, "contentType", ex.ContentType),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                DocumentErrorCodes.UnsupportedDocumentType,
+                "contentType",
+                ex.ContentType
+            ),
             DocumentTooLargeException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, DocumentErrorCodes.DocumentTooLarge, "sizeBytes", ex.SizeBytes),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                DocumentErrorCodes.DocumentTooLarge,
+                "sizeBytes",
+                ex.SizeBytes
+            ),
             DocumentValidationException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, DocumentErrorCodes.DocumentValidationFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                DocumentErrorCodes.DocumentValidationFailed
+            ),
             _ => null,
         };
 
@@ -35,13 +57,15 @@ public sealed class DocumentExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static ProblemDetails Build(int status, string detail, string errorCode, string? extraKey = null, object? extraValue = null)
+    private static ProblemDetails Build(
+        int status,
+        string detail,
+        string errorCode,
+        string? extraKey = null,
+        object? extraValue = null
+    )
     {
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Detail = detail,
-        };
+        var problemDetails = new ProblemDetails { Status = status, Detail = detail };
 
         problemDetails.Extensions["errorCode"] = errorCode;
 

@@ -59,23 +59,36 @@ public partial class FlashcardCardDialog
     {
         IsSaving = true;
         ErrorMessage = null;
-        var card = new FlashcardDto(Front, Back, TagsText.Split(TagSeparators, StringSplitOptions.RemoveEmptyEntries));
+        var card = new FlashcardDto(
+            Front,
+            Back,
+            TagsText.Split(TagSeparators, StringSplitOptions.RemoveEmptyEntries)
+        );
 
         try
         {
             if (EditingCard is null)
             {
-                await DeckAccessor.AddCardsAsync(new AddFlashcardsRequest(DeckId, [card], SourceNoteId: null));
+                await DeckAccessor.AddCardsAsync(
+                    new AddFlashcardsRequest(DeckId, [card], SourceNoteId: null)
+                );
             }
             else
             {
-                await DeckAccessor.UpdateCardAsync(new UpdateFlashcardRequest(EditingCard.Id, card));
+                await DeckAccessor.UpdateCardAsync(
+                    new UpdateFlashcardRequest(EditingCard.Id, card)
+                );
             }
 
             await OnSaved.InvokeAsync();
             await Close();
         }
-        catch (Exception ex) when (ex is FlashcardValidationException or FlashcardDeckArchivedException or FlashcardNotFoundException)
+        catch (Exception ex)
+            when (ex
+                    is FlashcardValidationException
+                        or FlashcardDeckArchivedException
+                        or FlashcardNotFoundException
+            )
         {
             ErrorMessage = ex.Message;
         }

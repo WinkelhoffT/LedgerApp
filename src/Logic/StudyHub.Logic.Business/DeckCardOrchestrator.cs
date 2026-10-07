@@ -37,7 +37,9 @@ public sealed class DeckCardOrchestrator(
 
         if (request.SourceNoteId is { } noteId)
         {
-            _ = await noteRepository.GetByIdAsync(noteId, cancellationToken) ?? throw new NoteNotFoundException(noteId);
+            _ =
+                await noteRepository.GetByIdAsync(noteId, cancellationToken)
+                ?? throw new NoteNotFoundException(noteId);
         }
 
         var contents = flashcardValidator.ValidateCards(request.Cards);
@@ -74,11 +76,19 @@ public sealed class DeckCardOrchestrator(
         await flashcardRepository.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<FlashcardDeck> GetExistingDeckAsync(Guid id, CancellationToken cancellationToken) =>
-        await deckRepository.GetByIdAsync(id, cancellationToken) ?? throw new FlashcardDeckNotFoundException(id);
+    private async Task<FlashcardDeck> GetExistingDeckAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await deckRepository.GetByIdAsync(id, cancellationToken)
+        ?? throw new FlashcardDeckNotFoundException(id);
 
-    private async Task<Flashcard> GetExistingCardAsync(Guid id, CancellationToken cancellationToken) =>
-        await flashcardRepository.GetByIdAsync(id, cancellationToken) ?? throw new FlashcardNotFoundException(id);
+    private async Task<Flashcard> GetExistingCardAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await flashcardRepository.GetByIdAsync(id, cancellationToken)
+        ?? throw new FlashcardNotFoundException(id);
 
     private static void EnsureNotArchived(FlashcardDeck deck)
     {

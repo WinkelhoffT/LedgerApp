@@ -6,8 +6,15 @@ namespace StudyHub.Tests.Logic.Integration.Ai;
 
 public class ConfiguredAiModelCatalogTests
 {
-    private static ConfiguredAiModelCatalog Create(string defaultModel, params AnthropicModelOption[] models) =>
-        new(Options.Create(new AnthropicOptions { DefaultModel = defaultModel, Models = [.. models] }));
+    private static ConfiguredAiModelCatalog Create(
+        string defaultModel,
+        params AnthropicModelOption[] models
+    ) =>
+        new(
+            Options.Create(
+                new AnthropicOptions { DefaultModel = defaultModel, Models = [.. models] }
+            )
+        );
 
     [Fact]
     public void GetModels_ReturnsConfiguredModelsAndMarksDefault()
@@ -15,7 +22,8 @@ public class ConfiguredAiModelCatalogTests
         var sut = Create(
             "claude-sonnet-5-5",
             new AnthropicModelOption { Id = "claude-sonnet-5-5", DisplayName = "Sonnet" },
-            new AnthropicModelOption { Id = "claude-opus-5-5", DisplayName = "Opus" });
+            new AnthropicModelOption { Id = "claude-opus-5-5", DisplayName = "Opus" }
+        );
 
         var models = sut.GetModels();
 
@@ -37,7 +45,11 @@ public class ConfiguredAiModelCatalogTests
     [Fact]
     public void GetModels_DefaultMissingFromList_IsAddedFirst()
     {
-        var models = Create("claude-sonnet-5-5", new AnthropicModelOption { Id = "claude-opus-5-5" }).GetModels();
+        var models = Create(
+                "claude-sonnet-5-5",
+                new AnthropicModelOption { Id = "claude-opus-5-5" }
+            )
+            .GetModels();
 
         Assert.Equal(["claude-sonnet-5-5", "claude-opus-5-5"], models.Select(m => m.Id));
     }
@@ -46,10 +58,12 @@ public class ConfiguredAiModelCatalogTests
     public void GetModels_SkipsEmptyAndDuplicateEntries()
     {
         var models = Create(
-            "claude-sonnet-5-5",
-            new AnthropicModelOption { Id = "claude-sonnet-5-5" },
-            new AnthropicModelOption { Id = " " },
-            new AnthropicModelOption { Id = "claude-sonnet-5-5", DisplayName = "Duplicate" }).GetModels();
+                "claude-sonnet-5-5",
+                new AnthropicModelOption { Id = "claude-sonnet-5-5" },
+                new AnthropicModelOption { Id = " " },
+                new AnthropicModelOption { Id = "claude-sonnet-5-5", DisplayName = "Duplicate" }
+            )
+            .GetModels();
 
         Assert.Single(models);
     }

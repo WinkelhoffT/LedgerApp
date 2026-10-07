@@ -11,4 +11,5 @@ public sealed record FlashcardDeckDto(
     int CardCount,
     FlashcardStudyCountsDto DueCounts,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

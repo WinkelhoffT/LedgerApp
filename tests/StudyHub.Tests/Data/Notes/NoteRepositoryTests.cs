@@ -45,7 +45,9 @@ public class NoteRepositoryTests
         var repository = new NoteRepository(dbContext);
         var otherCourseId = Guid.NewGuid();
         await repository.AddAsync(NoteLifecycle.Create("Note A", "Content", null, CourseId, null));
-        await repository.AddAsync(NoteLifecycle.Create("Note B", "Content", null, otherCourseId, null));
+        await repository.AddAsync(
+            NoteLifecycle.Create("Note B", "Content", null, otherCourseId, null)
+        );
         await repository.SaveChangesAsync();
 
         var notes = await repository.GetByCourseIdAsync(CourseId);
@@ -58,7 +60,9 @@ public class NoteRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
-        await repository.AddAsync(NoteLifecycle.Create("Syllabus", "Content", null, null, SemesterId));
+        await repository.AddAsync(
+            NoteLifecycle.Create("Syllabus", "Content", null, null, SemesterId)
+        );
         await repository.SaveChangesAsync();
 
         var notes = await repository.GetBySemesterIdAsync(SemesterId);
@@ -100,7 +104,13 @@ public class NoteRepositoryTests
         await using var dbContext = CreateDbContext();
         var repository = new NoteRepository(dbContext);
         var note = NoteLifecycle.Create("Lecture 1", "Content", null, CourseId, null);
-        var document = DocumentLifecycle.Create("Notes.pdf", "application/pdf", [1, 2, 3], CourseId, null);
+        var document = DocumentLifecycle.Create(
+            "Notes.pdf",
+            "application/pdf",
+            [1, 2, 3],
+            CourseId,
+            null
+        );
         dbContext.Documents.Add(document);
         await repository.AddAsync(note);
         await repository.SaveChangesAsync();

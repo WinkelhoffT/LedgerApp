@@ -23,7 +23,8 @@ public sealed record Flashcard(
     int Lapses,
     DateTime? LastReviewedAt,
     DateTime CreatedAt,
-    DateTime UpdatedAt)
+    DateTime UpdatedAt
+)
 {
     public const int TagsMaxLength = 600;
 }

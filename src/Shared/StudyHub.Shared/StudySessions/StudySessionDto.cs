@@ -16,4 +16,5 @@ public sealed record StudySessionDto(
     string? OwnerName,
     string? Color,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

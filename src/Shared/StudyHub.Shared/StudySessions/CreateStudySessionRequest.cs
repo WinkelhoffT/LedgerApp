@@ -7,4 +7,5 @@ public sealed record CreateStudySessionRequest(
     DateOnly Date,
     TimeOnly StartTime,
     int DurationMinutes,
-    string? Location);
+    string? Location
+);

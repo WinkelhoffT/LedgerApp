@@ -17,10 +17,17 @@ public sealed class CourseLifecycle : ICourseLifecycle
             SemesterId: ValidateSemesterId(semesterId),
             IsArchived: false,
             CreatedAt: now,
-            UpdatedAt: now);
+            UpdatedAt: now
+        );
     }
 
-    public Course Update(Course course, string name, string? description, string color, Guid semesterId)
+    public Course Update(
+        Course course,
+        string name,
+        string? description,
+        string color,
+        Guid semesterId
+    )
     {
         if (course.IsArchived)
         {
@@ -38,14 +45,16 @@ public sealed class CourseLifecycle : ICourseLifecycle
     }
 
     public Course Archive(Course course) =>
-        course.IsArchived
-            ? course
-            : course with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
+        course.IsArchived ? course : course with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
 
     public Course Restore(Course course) =>
         !course.IsArchived
             ? course
-            : course with { IsArchived = false, UpdatedAt = DateTime.UtcNow };
+            : course with
+            {
+                IsArchived = false,
+                UpdatedAt = DateTime.UtcNow,
+            };
 
     private static string ValidateName(string name)
     {
@@ -57,7 +66,9 @@ public sealed class CourseLifecycle : ICourseLifecycle
 
         if (trimmedName.Length > CreateCourseRequest.NameMaxLength)
         {
-            throw new CourseValidationException($"Course name must not exceed {CreateCourseRequest.NameMaxLength} characters.");
+            throw new CourseValidationException(
+                $"Course name must not exceed {CreateCourseRequest.NameMaxLength} characters."
+            );
         }
 
         return trimmedName;
@@ -68,7 +79,9 @@ public sealed class CourseLifecycle : ICourseLifecycle
         var trimmedDescription = description?.Trim();
         if (trimmedDescription is { Length: > CreateCourseRequest.DescriptionMaxLength })
         {
-            throw new CourseValidationException($"Course description must not exceed {CreateCourseRequest.DescriptionMaxLength} characters.");
+            throw new CourseValidationException(
+                $"Course description must not exceed {CreateCourseRequest.DescriptionMaxLength} characters."
+            );
         }
 
         return string.IsNullOrEmpty(trimmedDescription) ? null : trimmedDescription;

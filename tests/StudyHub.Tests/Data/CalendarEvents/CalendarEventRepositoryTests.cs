@@ -16,9 +16,24 @@ public class CalendarEventRepositoryTests
     }
 
     private static CalendarEvent Event(string title, DateOnly date, TimeOnly? startTime = null) =>
-        new(Guid.NewGuid(), CalendarEventKind.Deadline, title, null, null, date, startTime, null, null, DateTime.UtcNow, DateTime.UtcNow);
+        new(
+            Guid.NewGuid(),
+            CalendarEventKind.Deadline,
+            title,
+            null,
+            null,
+            date,
+            startTime,
+            null,
+            null,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
 
-    private static async Task<CalendarEventRepository> CreateRepositoryAsync(ApplicationDbContext dbContext, params CalendarEvent[] events)
+    private static async Task<CalendarEventRepository> CreateRepositoryAsync(
+        ApplicationDbContext dbContext,
+        params CalendarEvent[] events
+    )
     {
         var repository = new CalendarEventRepository(dbContext);
         foreach (var calendarEvent in events)
@@ -40,11 +55,18 @@ public class CalendarEventRepositoryTests
             Event("Last day", new DateOnly(2026, 10, 11), new TimeOnly(23, 59)),
             Event("First day timed", new DateOnly(2026, 10, 5), new TimeOnly(10, 0)),
             Event("First day all-day", new DateOnly(2026, 10, 5)),
-            Event("After", new DateOnly(2026, 10, 12)));
+            Event("After", new DateOnly(2026, 10, 12))
+        );
 
-        var events = await repository.GetByDateRangeAsync(new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 11));
+        var events = await repository.GetByDateRangeAsync(
+            new DateOnly(2026, 10, 5),
+            new DateOnly(2026, 10, 11)
+        );
 
-        Assert.Equal(["First day all-day", "First day timed", "Last day"], events.Select(e => e.Title));
+        Assert.Equal(
+            ["First day all-day", "First day timed", "Last day"],
+            events.Select(e => e.Title)
+        );
     }
 
     [Fact]
@@ -57,7 +79,8 @@ public class CalendarEventRepositoryTests
             Event("Next week", new DateOnly(2026, 10, 15)),
             Event("Today late", new DateOnly(2026, 10, 8), new TimeOnly(23, 59)),
             Event("Today", new DateOnly(2026, 10, 8)),
-            Event("Next month", new DateOnly(2026, 11, 2)));
+            Event("Next month", new DateOnly(2026, 11, 2))
+        );
 
         var events = await repository.GetUpcomingAsync(new DateOnly(2026, 10, 8), 3);
 

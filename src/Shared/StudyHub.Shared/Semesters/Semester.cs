@@ -7,4 +7,5 @@ public sealed record Semester(
     DateOnly EndDate,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

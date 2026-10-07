@@ -9,14 +9,26 @@ namespace StudyHub.Api.StudySessions;
 // covers session-specific exceptions.
 public sealed class StudySessionExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         var problemDetails = exception switch
         {
             StudySessionValidationException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, StudySessionErrorCodes.StudySessionValidationFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                StudySessionErrorCodes.StudySessionValidationFailed
+            ),
             StudySessionNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, StudySessionErrorCodes.StudySessionNotFound, "studySessionId", ex.StudySessionId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                StudySessionErrorCodes.StudySessionNotFound,
+                "studySessionId",
+                ex.StudySessionId
+            ),
             _ => null,
         };
 
@@ -30,13 +42,15 @@ public sealed class StudySessionExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static ProblemDetails Build(int status, string detail, string errorCode, string? extraKey = null, object? extraValue = null)
+    private static ProblemDetails Build(
+        int status,
+        string detail,
+        string errorCode,
+        string? extraKey = null,
+        object? extraValue = null
+    )
     {
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Detail = detail,
-        };
+        var problemDetails = new ProblemDetails { Status = status, Detail = detail };
 
         problemDetails.Extensions["errorCode"] = errorCode;
 

@@ -8,4 +8,5 @@ public sealed record CreateCalendarEventRequest(
     DateOnly Date,
     TimeOnly? StartTime,
     int? DurationMinutes,
-    string? Location);
+    string? Location
+);

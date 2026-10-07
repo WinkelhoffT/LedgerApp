@@ -44,9 +44,7 @@ public partial class Documents
     private DocumentDto? SelectedDocument { get; set; }
 
     private IReadOnlyList<DocumentDto> VisibleDocuments =>
-        DocumentList is null
-            ? []
-            : DocumentList.Where(d => ShowArchived || !d.IsArchived).ToList();
+        DocumentList is null ? [] : DocumentList.Where(d => ShowArchived || !d.IsArchived).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,10 +64,12 @@ public partial class Documents
         DocumentList = SelectedScope switch
         {
             "all" => await DocumentAccessor.GetAllAsync(),
-            var scope when scope.StartsWith("course:", StringComparison.Ordinal)
-                => await DocumentAccessor.GetByCourseIdAsync(Guid.Parse(scope["course:".Length..])),
-            var scope when scope.StartsWith("semester:", StringComparison.Ordinal)
-                => await DocumentAccessor.GetBySemesterIdAsync(Guid.Parse(scope["semester:".Length..])),
+            var scope when scope.StartsWith("course:", StringComparison.Ordinal) =>
+                await DocumentAccessor.GetByCourseIdAsync(Guid.Parse(scope["course:".Length..])),
+            var scope when scope.StartsWith("semester:", StringComparison.Ordinal) =>
+                await DocumentAccessor.GetBySemesterIdAsync(
+                    Guid.Parse(scope["semester:".Length..])
+                ),
             _ => await DocumentAccessor.GetAllAsync(),
         };
     }
@@ -77,7 +77,10 @@ public partial class Documents
     private string GetParentName(DocumentDto document) =>
         document.CourseId is { } courseId
             ? CourseNamesById.GetValueOrDefault(courseId, "Unknown course")
-            : SemesterNamesById.GetValueOrDefault(document.SemesterId ?? Guid.Empty, "Unknown semester");
+            : SemesterNamesById.GetValueOrDefault(
+                document.SemesterId ?? Guid.Empty,
+                "Unknown semester"
+            );
 
     private void OpenUploadDialog() => IsUploadDialogOpen = true;
 

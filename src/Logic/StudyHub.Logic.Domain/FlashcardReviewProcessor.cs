@@ -8,7 +8,8 @@ namespace StudyHub.Logic.Domain;
 /// <c>docs/plans/flashcard-study-plan.md</c>, section 3.2). Intervals are rounded to whole days the
 /// way Anki's current scheduler does it, and no fuzz is applied, so every result is deterministic.
 /// </summary>
-public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider) : IFlashcardReviewProcessor
+public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
+    : IFlashcardReviewProcessor
 {
     public const int StartingEaseFactor = 2500;
     private const int MinimumEaseFactor = 1300;
@@ -22,7 +23,11 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
     private const int MinimumLapseIntervalDays = 1;
     private const int MaximumIntervalDays = 36_500;
 
-    private static readonly TimeSpan[] LearningSteps = [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10)];
+    private static readonly TimeSpan[] LearningSteps =
+    [
+        TimeSpan.FromMinutes(1),
+        TimeSpan.FromMinutes(10),
+    ];
     private static readonly TimeSpan[] RelearningSteps = [TimeSpan.FromMinutes(10)];
 
     public FlashcardReviewOutcome Answer(Flashcard card, FlashcardRating rating, StudyDay today)
@@ -50,24 +55,62 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
             StateBefore: card.State,
             IntervalDaysBefore: card.IntervalDays,
             IntervalDaysAfter: updated.IntervalDays,
-            EaseFactorAfter: updated.EaseFactor);
+            EaseFactorAfter: updated.EaseFactor
+        );
 
         return new FlashcardReviewOutcome(updated, review);
     }
 
-    public IReadOnlyList<FlashcardIntervalPreviewDto> PreviewIntervals(Flashcard card, StudyDay today) =>
+    public IReadOnlyList<FlashcardIntervalPreviewDto> PreviewIntervals(
+        Flashcard card,
+        StudyDay today
+    ) =>
         Enum.GetValues<FlashcardRating>()
-            .Select(rating => new FlashcardIntervalPreviewDto(rating, Schedule(card, rating, today).Interval))
+            .Select(rating => new FlashcardIntervalPreviewDto(
+                rating,
+                Schedule(card, rating, today).Interval
+            ))
             .ToList();
 
     private ScheduledAnswer Schedule(Flashcard card, FlashcardRating rating, StudyDay today) =>
         card.State switch
         {
-            FlashcardState.New => ScheduleSteps(card, FlashcardState.Learning, LearningSteps, 0, rating, today, GraduatingIntervalDays, EasyIntervalDays),
-            FlashcardState.Learning => ScheduleSteps(card, FlashcardState.Learning, LearningSteps, card.Step, rating, today, GraduatingIntervalDays, EasyIntervalDays),
-            FlashcardState.Relearning => ScheduleSteps(card, FlashcardState.Relearning, RelearningSteps, card.Step, rating, today, card.IntervalDays, card.IntervalDays),
+            FlashcardState.New => ScheduleSteps(
+                card,
+                FlashcardState.Learning,
+                LearningSteps,
+                0,
+                rating,
+                today,
+                GraduatingIntervalDays,
+                EasyIntervalDays
+            ),
+            FlashcardState.Learning => ScheduleSteps(
+                card,
+                FlashcardState.Learning,
+                LearningSteps,
+                card.Step,
+                rating,
+                today,
+                GraduatingIntervalDays,
+                EasyIntervalDays
+            ),
+            FlashcardState.Relearning => ScheduleSteps(
+                card,
+                FlashcardState.Relearning,
+                RelearningSteps,
+                card.Step,
+                rating,
+                today,
+                card.IntervalDays,
+                card.IntervalDays
+            ),
             FlashcardState.Review => ScheduleReview(card, rating, today),
-            _ => throw new ArgumentOutOfRangeException(nameof(card), card.State, "Unknown card state."),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(card),
+                card.State,
+                "Unknown card state."
+            ),
         };
 
     // Learning and relearning share one rule set; they differ in their steps and in the interval a
@@ -80,7 +123,8 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
         FlashcardRating rating,
         StudyDay today,
         int goodIntervalDays,
-        int easyIntervalDays)
+        int easyIntervalDays
+    )
     {
         var step = Math.Clamp(currentStep, 0, steps.Length - 1);
 
@@ -88,9 +132,27 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
         {
             FlashcardRating.Again => InSteps(card, state, 0, steps[0], today),
             FlashcardRating.Hard => InSteps(card, state, step, HardDelay(steps, step), today),
-            FlashcardRating.Good when step + 1 < steps.Length => InSteps(card, state, step + 1, steps[step + 1], today),
-            FlashcardRating.Good => ToReview(card, goodIntervalDays, card.EaseFactor, card.Lapses, today),
-            FlashcardRating.Easy => ToReview(card, easyIntervalDays, card.EaseFactor, card.Lapses, today),
+            FlashcardRating.Good when step + 1 < steps.Length => InSteps(
+                card,
+                state,
+                step + 1,
+                steps[step + 1],
+                today
+            ),
+            FlashcardRating.Good => ToReview(
+                card,
+                goodIntervalDays,
+                card.EaseFactor,
+                card.Lapses,
+                today
+            ),
+            FlashcardRating.Easy => ToReview(
+                card,
+                easyIntervalDays,
+                card.EaseFactor,
+                card.Lapses,
+                today
+            ),
             _ => throw new ArgumentOutOfRangeException(nameof(rating), rating, "Unknown rating."),
         };
     }
@@ -99,7 +161,10 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
     {
         var interval = Math.Max(1, card.IntervalDays);
         var ease = card.EaseFactor / 1000.0;
-        var daysLate = Math.Max(0, today.Date.DayNumber - studyDayProvider.GetDate(card.DueAt).DayNumber);
+        var daysLate = Math.Max(
+            0,
+            today.Date.DayNumber - studyDayProvider.GetDate(card.DueAt).DayNumber
+        );
 
         var hard = Constrain(interval * HardMultiplier, interval + 1);
         var good = Constrain((interval + daysLate / 2.0) * ease, hard + 1);
@@ -114,19 +179,44 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
                 Math.Max(MinimumEaseFactor, card.EaseFactor - AgainEasePenalty),
                 card.Lapses + 1,
                 today.Now + RelearningSteps[0],
-                RelearningSteps[0]),
-            FlashcardRating.Hard => ToReview(card, hard, Math.Max(MinimumEaseFactor, card.EaseFactor - HardEasePenalty), card.Lapses, today),
+                RelearningSteps[0]
+            ),
+            FlashcardRating.Hard => ToReview(
+                card,
+                hard,
+                Math.Max(MinimumEaseFactor, card.EaseFactor - HardEasePenalty),
+                card.Lapses,
+                today
+            ),
             FlashcardRating.Good => ToReview(card, good, card.EaseFactor, card.Lapses, today),
-            FlashcardRating.Easy => ToReview(card, easy, card.EaseFactor + EasyEaseBonus, card.Lapses, today),
+            FlashcardRating.Easy => ToReview(
+                card,
+                easy,
+                card.EaseFactor + EasyEaseBonus,
+                card.Lapses,
+                today
+            ),
             _ => throw new ArgumentOutOfRangeException(nameof(rating), rating, "Unknown rating."),
         };
     }
 
-    private static ScheduledAnswer InSteps(Flashcard card, FlashcardState state, int step, TimeSpan delay, StudyDay today) =>
+    private static ScheduledAnswer InSteps(
+        Flashcard card,
+        FlashcardState state,
+        int step,
+        TimeSpan delay,
+        StudyDay today
+    ) =>
         new(state, step, card.IntervalDays, card.EaseFactor, card.Lapses, today.Now + delay, delay);
 
     // A review card is due from the start of its due day, not at the time of day it was answered.
-    private ScheduledAnswer ToReview(Flashcard card, int intervalDays, int easeFactor, int lapses, StudyDay today)
+    private ScheduledAnswer ToReview(
+        Flashcard card,
+        int intervalDays,
+        int easeFactor,
+        int lapses,
+        StudyDay today
+    )
     {
         var days = Math.Clamp(intervalDays, 1, MaximumIntervalDays);
         return new ScheduledAnswer(
@@ -136,7 +226,8 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
             easeFactor,
             lapses,
             studyDayProvider.GetStart(today.Date.AddDays(days)),
-            TimeSpan.FromDays(days));
+            TimeSpan.FromDays(days)
+        );
     }
 
     // Hard on the first step waits halfway between the first two steps (1.5x the step if there is
@@ -147,5 +238,8 @@ public sealed class FlashcardReviewProcessor(IStudyDayProvider studyDayProvider)
         : steps[0] * 1.5;
 
     private static int Constrain(double days, int minimum) =>
-        Math.Min(MaximumIntervalDays, Math.Max(minimum, (int)Math.Round(days, MidpointRounding.AwayFromZero)));
+        Math.Min(
+            MaximumIntervalDays,
+            Math.Max(minimum, (int)Math.Round(days, MidpointRounding.AwayFromZero))
+        );
 }

@@ -22,10 +22,18 @@ public sealed class NoteLifecycle : INoteLifecycle
             SemesterId: semesterId,
             IsArchived: false,
             CreatedAt: now,
-            UpdatedAt: now);
+            UpdatedAt: now
+        );
     }
 
-    public Note Update(Note note, string title, string content, string? tags, Guid? courseId, Guid? semesterId)
+    public Note Update(
+        Note note,
+        string title,
+        string content,
+        string? tags,
+        Guid? courseId,
+        Guid? semesterId
+    )
     {
         if (note.IsArchived)
         {
@@ -49,14 +57,10 @@ public sealed class NoteLifecycle : INoteLifecycle
     }
 
     public Note Archive(Note note) =>
-        note.IsArchived
-            ? note
-            : note with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
+        note.IsArchived ? note : note with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
 
     public Note Restore(Note note) =>
-        !note.IsArchived
-            ? note
-            : note with { IsArchived = false, UpdatedAt = DateTime.UtcNow };
+        !note.IsArchived ? note : note with { IsArchived = false, UpdatedAt = DateTime.UtcNow };
 
     private static string ValidateTitle(string title)
     {
@@ -68,7 +72,9 @@ public sealed class NoteLifecycle : INoteLifecycle
 
         if (trimmedTitle.Length > Note.TitleMaxLength)
         {
-            throw new NoteValidationException($"Note title must not exceed {Note.TitleMaxLength} characters.");
+            throw new NoteValidationException(
+                $"Note title must not exceed {Note.TitleMaxLength} characters."
+            );
         }
 
         return trimmedTitle;
@@ -78,7 +84,9 @@ public sealed class NoteLifecycle : INoteLifecycle
     {
         if (content is null || content.Length > Note.ContentMaxLength)
         {
-            throw new NoteValidationException($"Note content must not exceed {Note.ContentMaxLength} characters.");
+            throw new NoteValidationException(
+                $"Note content must not exceed {Note.ContentMaxLength} characters."
+            );
         }
 
         return content;
@@ -89,7 +97,9 @@ public sealed class NoteLifecycle : INoteLifecycle
         var trimmedTags = tags?.Trim();
         if (trimmedTags is { Length: > Note.TagsMaxLength })
         {
-            throw new NoteValidationException($"Note tags must not exceed {Note.TagsMaxLength} characters.");
+            throw new NoteValidationException(
+                $"Note tags must not exceed {Note.TagsMaxLength} characters."
+            );
         }
 
         return string.IsNullOrEmpty(trimmedTags) ? null : trimmedTags;
@@ -99,7 +109,9 @@ public sealed class NoteLifecycle : INoteLifecycle
     {
         if (courseId is null == semesterId is null)
         {
-            throw new NoteValidationException("A note must be assigned to exactly one of a course or a semester.");
+            throw new NoteValidationException(
+                "A note must be assigned to exactly one of a course or a semester."
+            );
         }
     }
 }

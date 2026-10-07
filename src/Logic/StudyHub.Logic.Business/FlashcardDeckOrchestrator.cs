@@ -31,17 +31,34 @@ public sealed class FlashcardDeckOrchestrator(
         }
 
         var today = studyDayProvider.GetCurrent();
-        var cardCounts = (await flashcardRepository.GetCardCountsAsync(today.NextStart, cancellationToken: cancellationToken))
-            .ToDictionary(c => c.DeckId);
-        var reviewCounts = (await flashcardRepository.GetReviewCountsAsync(today.Start, cancellationToken: cancellationToken))
-            .ToDictionary(c => c.DeckId);
+        var cardCounts = (
+            await flashcardRepository.GetCardCountsAsync(
+                today.NextStart,
+                cancellationToken: cancellationToken
+            )
+        ).ToDictionary(c => c.DeckId);
+        var reviewCounts = (
+            await flashcardRepository.GetReviewCountsAsync(
+                today.Start,
+                cancellationToken: cancellationToken
+            )
+        ).ToDictionary(c => c.DeckId);
 
         return decks
-            .Select(deck => ToDto(deck, cardCounts.GetValueOrDefault(deck.Id), reviewCounts.GetValueOrDefault(deck.Id)))
+            .Select(deck =>
+                ToDto(
+                    deck,
+                    cardCounts.GetValueOrDefault(deck.Id),
+                    reviewCounts.GetValueOrDefault(deck.Id)
+                )
+            )
             .ToList();
     }
 
-    public async Task<FlashcardDeckDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<FlashcardDeckDto> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var deck = await GetExistingDeckAsync(id, cancellationToken);
         return await ToDtoAsync(deck, cancellationToken);
@@ -57,11 +74,20 @@ public sealed class FlashcardDeckOrchestrator(
             request.CourseId,
             request.SemesterId,
             request.NewCardsPerDay,
-            request.ReviewsPerDay);
+            request.ReviewsPerDay
+        );
 
         await EnsureNameIsUniqueAsync(deck.Name, excludingId: null, cancellationToken);
-        await EnsureCourseIsAssignableAsync(deck.CourseId, currentCourseId: null, cancellationToken);
-        await EnsureSemesterIsAssignableAsync(deck.SemesterId, currentSemesterId: null, cancellationToken);
+        await EnsureCourseIsAssignableAsync(
+            deck.CourseId,
+            currentCourseId: null,
+            cancellationToken
+        );
+        await EnsureSemesterIsAssignableAsync(
+            deck.SemesterId,
+            currentSemesterId: null,
+            cancellationToken
+        );
 
         await deckRepository.AddAsync(deck, cancellationToken);
         await deckRepository.SaveChangesAsync(cancellationToken);
@@ -81,11 +107,16 @@ public sealed class FlashcardDeckOrchestrator(
             request.CourseId,
             request.SemesterId,
             request.NewCardsPerDay,
-            request.ReviewsPerDay);
+            request.ReviewsPerDay
+        );
 
         await EnsureNameIsUniqueAsync(updated.Name, deck.Id, cancellationToken);
         await EnsureCourseIsAssignableAsync(updated.CourseId, deck.CourseId, cancellationToken);
-        await EnsureSemesterIsAssignableAsync(updated.SemesterId, deck.SemesterId, cancellationToken);
+        await EnsureSemesterIsAssignableAsync(
+            updated.SemesterId,
+            deck.SemesterId,
+            cancellationToken
+        );
 
         deckRepository.Update(updated);
         await deckRepository.SaveChangesAsync(cancellationToken);
@@ -93,7 +124,10 @@ public sealed class FlashcardDeckOrchestrator(
         return await ToDtoAsync(updated, cancellationToken);
     }
 
-    public async Task<FlashcardDeckDto> ArchiveAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<FlashcardDeckDto> ArchiveAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var deck = deckLifecycle.Archive(await GetExistingDeckAsync(id, cancellationToken));
 
@@ -103,7 +137,10 @@ public sealed class FlashcardDeckOrchestrator(
         return await ToDtoAsync(deck, cancellationToken);
     }
 
-    public async Task<FlashcardDeckDto> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<FlashcardDeckDto> RestoreAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var deck = deckLifecycle.Restore(await GetExistingDeckAsync(id, cancellationToken));
 
@@ -113,10 +150,18 @@ public sealed class FlashcardDeckOrchestrator(
         return await ToDtoAsync(deck, cancellationToken);
     }
 
-    private async Task<FlashcardDeck> GetExistingDeckAsync(Guid id, CancellationToken cancellationToken) =>
-        await deckRepository.GetByIdAsync(id, cancellationToken) ?? throw new FlashcardDeckNotFoundException(id);
+    private async Task<FlashcardDeck> GetExistingDeckAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await deckRepository.GetByIdAsync(id, cancellationToken)
+        ?? throw new FlashcardDeckNotFoundException(id);
 
-    private async Task EnsureNameIsUniqueAsync(string name, Guid? excludingId, CancellationToken cancellationToken)
+    private async Task EnsureNameIsUniqueAsync(
+        string name,
+        Guid? excludingId,
+        CancellationToken cancellationToken
+    )
     {
         if (await deckRepository.ExistsByNameAsync(name, excludingId, cancellationToken))
         {
@@ -125,14 +170,20 @@ public sealed class FlashcardDeckOrchestrator(
     }
 
     // An archived course cannot be newly linked; a deck already linked to it may keep the link.
-    private async Task EnsureCourseIsAssignableAsync(Guid? courseId, Guid? currentCourseId, CancellationToken cancellationToken)
+    private async Task EnsureCourseIsAssignableAsync(
+        Guid? courseId,
+        Guid? currentCourseId,
+        CancellationToken cancellationToken
+    )
     {
         if (courseId is not { } id)
         {
             return;
         }
 
-        var course = await courseRepository.GetByIdAsync(id, cancellationToken) ?? throw new CourseNotFoundException(id);
+        var course =
+            await courseRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new CourseNotFoundException(id);
         if (course.IsArchived && id != currentCourseId)
         {
             throw new CourseArchivedException(id);
@@ -140,25 +191,42 @@ public sealed class FlashcardDeckOrchestrator(
     }
 
     // An archived semester cannot be newly linked; a deck already linked to it may keep the link.
-    private async Task EnsureSemesterIsAssignableAsync(Guid? semesterId, Guid? currentSemesterId, CancellationToken cancellationToken)
+    private async Task EnsureSemesterIsAssignableAsync(
+        Guid? semesterId,
+        Guid? currentSemesterId,
+        CancellationToken cancellationToken
+    )
     {
         if (semesterId is not { } id)
         {
             return;
         }
 
-        var semester = await semesterRepository.GetByIdAsync(id, cancellationToken) ?? throw new SemesterNotFoundException(id);
+        var semester =
+            await semesterRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new SemesterNotFoundException(id);
         if (semester.IsArchived && id != currentSemesterId)
         {
             throw new SemesterArchivedException(id);
         }
     }
 
-    private async Task<FlashcardDeckDto> ToDtoAsync(FlashcardDeck deck, CancellationToken cancellationToken)
+    private async Task<FlashcardDeckDto> ToDtoAsync(
+        FlashcardDeck deck,
+        CancellationToken cancellationToken
+    )
     {
         var today = studyDayProvider.GetCurrent();
-        var cardCounts = await flashcardRepository.GetCardCountsAsync(today.NextStart, deck.Id, cancellationToken);
-        var reviewCounts = await flashcardRepository.GetReviewCountsAsync(today.Start, deck.Id, cancellationToken);
+        var cardCounts = await flashcardRepository.GetCardCountsAsync(
+            today.NextStart,
+            deck.Id,
+            cancellationToken
+        );
+        var reviewCounts = await flashcardRepository.GetReviewCountsAsync(
+            today.Start,
+            deck.Id,
+            cancellationToken
+        );
 
         return ToDto(deck, cardCounts.FirstOrDefault(), reviewCounts.FirstOrDefault());
     }
@@ -171,5 +239,6 @@ public sealed class FlashcardDeckOrchestrator(
         FlashcardMapper.ToDeckDto(
             deck,
             cardCounts?.Total ?? 0,
-            studyQueueProvider.GetCounts(deck, cardCounts, reviewCounts));
+            studyQueueProvider.GetCounts(deck, cardCounts, reviewCounts)
+        );
 }

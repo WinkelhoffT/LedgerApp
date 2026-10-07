@@ -9,8 +9,19 @@ namespace StudyHub.Tests.Api.StudySessions;
 
 public class StudySessionEndpointsTests
 {
-    private static CreateStudySessionRequest CreateRequest(Guid? courseId = null, int durationMinutes = 90) =>
-        new("Graph review", courseId, null, new DateOnly(2026, 10, 8), new TimeOnly(9, 0), durationMinutes, "Library");
+    private static CreateStudySessionRequest CreateRequest(
+        Guid? courseId = null,
+        int durationMinutes = 90
+    ) =>
+        new(
+            "Graph review",
+            courseId,
+            null,
+            new DateOnly(2026, 10, 8),
+            new TimeOnly(9, 0),
+            durationMinutes,
+            "Library"
+        );
 
     private static async Task<StudySessionDto> CreateSessionAsync(HttpClient client)
     {
@@ -22,7 +33,9 @@ public class StudySessionEndpointsTests
     private static async Task<string?> GetErrorCodeAsync(HttpResponseMessage response)
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        return problemDetails!.Extensions.TryGetValue("errorCode", out var value) && value is JsonElement element
+        return
+            problemDetails!.Extensions.TryGetValue("errorCode", out var value)
+            && value is JsonElement element
             ? element.GetString()
             : null;
     }
@@ -46,10 +59,16 @@ public class StudySessionEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/study-sessions", CreateRequest(durationMinutes: 4));
+        var response = await client.PostAsJsonAsync(
+            "api/study-sessions",
+            CreateRequest(durationMinutes: 4)
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(StudySessionErrorCodes.StudySessionValidationFailed, await GetErrorCodeAsync(response));
+        Assert.Equal(
+            StudySessionErrorCodes.StudySessionValidationFailed,
+            await GetErrorCodeAsync(response)
+        );
     }
 
     [Fact]
@@ -58,7 +77,10 @@ public class StudySessionEndpointsTests
         using var factory = InMemoryApiFactory.Create();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/study-sessions", CreateRequest(Guid.NewGuid()));
+        var response = await client.PostAsJsonAsync(
+            "api/study-sessions",
+            CreateRequest(Guid.NewGuid())
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(CourseErrorCodes.CourseNotFound, await GetErrorCodeAsync(response));
@@ -73,7 +95,17 @@ public class StudySessionEndpointsTests
 
         var response = await client.PutAsJsonAsync(
             $"api/study-sessions/{session.Id}",
-            new UpdateStudySessionRequest(Guid.NewGuid(), "Exam planning", null, null, session.Date, new TimeOnly(14, 0), 45, null));
+            new UpdateStudySessionRequest(
+                Guid.NewGuid(),
+                "Exam planning",
+                null,
+                null,
+                session.Date,
+                new TimeOnly(14, 0),
+                45,
+                null
+            )
+        );
 
         response.EnsureSuccessStatusCode();
         var updated = (await response.Content.ReadFromJsonAsync<StudySessionDto>())!;
@@ -91,10 +123,23 @@ public class StudySessionEndpointsTests
 
         var response = await client.PutAsJsonAsync(
             $"api/study-sessions/{id}",
-            new UpdateStudySessionRequest(id, "Exam planning", null, null, new DateOnly(2026, 10, 8), new TimeOnly(14, 0), 45, null));
+            new UpdateStudySessionRequest(
+                id,
+                "Exam planning",
+                null,
+                null,
+                new DateOnly(2026, 10, 8),
+                new TimeOnly(14, 0),
+                45,
+                null
+            )
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal(StudySessionErrorCodes.StudySessionNotFound, await GetErrorCodeAsync(response));
+        Assert.Equal(
+            StudySessionErrorCodes.StudySessionNotFound,
+            await GetErrorCodeAsync(response)
+        );
     }
 
     [Fact]

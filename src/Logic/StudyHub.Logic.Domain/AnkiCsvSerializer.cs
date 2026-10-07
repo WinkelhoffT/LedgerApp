@@ -11,7 +11,9 @@ public sealed partial class AnkiCsvSerializer : IAnkiCsvSerializer
     private const string FallbackFileName = "flashcards";
     private const int FileNameMaxLength = 100;
 
-    private static readonly UTF8Encoding Utf8WithoutBom = new(encoderShouldEmitUTF8Identifier: false);
+    private static readonly UTF8Encoding Utf8WithoutBom = new(
+        encoderShouldEmitUTF8Identifier: false
+    );
 
     public string CreateFileName(string name)
     {
@@ -41,9 +43,12 @@ public sealed partial class AnkiCsvSerializer : IAnkiCsvSerializer
         foreach (var card in cards)
         {
             builder
-                .Append(QuoteField(card.Front)).Append(';')
-                .Append(QuoteField(card.Back)).Append(';')
-                .Append(QuoteField(FormatTags(card.Tags))).Append('\n');
+                .Append(QuoteField(card.Front))
+                .Append(';')
+                .Append(QuoteField(card.Back))
+                .Append(';')
+                .Append(QuoteField(FormatTags(card.Tags)))
+                .Append('\n');
         }
 
         return Utf8WithoutBom.GetBytes(builder.ToString());
@@ -57,9 +62,13 @@ public sealed partial class AnkiCsvSerializer : IAnkiCsvSerializer
 
     // Anki separates tags with spaces, so spaces inside a single tag become underscores.
     private static string FormatTags(IReadOnlyList<string> tags) =>
-        string.Join(' ', tags.Select(tag => Whitespace().Replace(tag.Trim(), "_")).Where(tag => tag.Length > 0));
+        string.Join(
+            ' ',
+            tags.Select(tag => Whitespace().Replace(tag.Trim(), "_")).Where(tag => tag.Length > 0)
+        );
 
-    private static string CollapseWhitespace(string value) => Whitespace().Replace(value, " ").Trim();
+    private static string CollapseWhitespace(string value) =>
+        Whitespace().Replace(value, " ").Trim();
 
     private static string Truncate(string value, int maxLength) =>
         value.Length <= maxLength ? value : value[..maxLength].TrimEnd();

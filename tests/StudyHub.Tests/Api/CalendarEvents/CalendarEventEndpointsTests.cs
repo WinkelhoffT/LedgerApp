@@ -19,13 +19,34 @@ public class CalendarEventEndpointsTests
     private static readonly DateOnly Today = new(2026, 10, 8);
 
     private static WebApplicationFactory<Program> CreateFactory() =>
-        InMemoryApiFactory.Create().WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services => services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))));
+        InMemoryApiFactory
+            .Create()
+            .WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))
+                )
+            );
 
-    private static CreateCalendarEventRequest ExamRequest(DateOnly date, int? durationMinutes = 120, Guid? semesterId = null) =>
-        new(CalendarEventKind.Exam, "Algorithms exam", null, semesterId, date, new TimeOnly(10, 0), durationMinutes, "Audimax");
+    private static CreateCalendarEventRequest ExamRequest(
+        DateOnly date,
+        int? durationMinutes = 120,
+        Guid? semesterId = null
+    ) =>
+        new(
+            CalendarEventKind.Exam,
+            "Algorithms exam",
+            null,
+            semesterId,
+            date,
+            new TimeOnly(10, 0),
+            durationMinutes,
+            "Audimax"
+        );
 
-    private static async Task<CalendarEventDto> CreateAsync(HttpClient client, CreateCalendarEventRequest request)
+    private static async Task<CalendarEventDto> CreateAsync(
+        HttpClient client,
+        CreateCalendarEventRequest request
+    )
     {
         var response = await client.PostAsJsonAsync("api/calendar-events", request);
         response.EnsureSuccessStatusCode();
@@ -35,7 +56,9 @@ public class CalendarEventEndpointsTests
     private static async Task<string?> GetErrorCodeAsync(HttpResponseMessage response)
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        return problemDetails!.Extensions.TryGetValue("errorCode", out var value) && value is JsonElement element
+        return
+            problemDetails!.Extensions.TryGetValue("errorCode", out var value)
+            && value is JsonElement element
             ? element.GetString()
             : null;
     }
@@ -47,7 +70,9 @@ public class CalendarEventEndpointsTests
         using var client = factory.CreateClient();
 
         var exam = await CreateAsync(client, ExamRequest(Today));
-        var week = await client.GetFromJsonAsync<CalendarWeekDto>("api/calendar/week?date=2026-10-08");
+        var week = await client.GetFromJsonAsync<CalendarWeekDto>(
+            "api/calendar/week?date=2026-10-08"
+        );
 
         Assert.Equal(new TimeOnly(12, 0), exam.EndTime);
         var entry = Assert.Single(week!.Days.Single(d => d.Date == Today).Events);
@@ -60,10 +85,16 @@ public class CalendarEventEndpointsTests
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/calendar-events", ExamRequest(Today, durationMinutes: null));
+        var response = await client.PostAsJsonAsync(
+            "api/calendar-events",
+            ExamRequest(Today, durationMinutes: null)
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(CalendarEventErrorCodes.CalendarEventValidationFailed, await GetErrorCodeAsync(response));
+        Assert.Equal(
+            CalendarEventErrorCodes.CalendarEventValidationFailed,
+            await GetErrorCodeAsync(response)
+        );
     }
 
     [Fact]
@@ -72,7 +103,10 @@ public class CalendarEventEndpointsTests
         using var factory = CreateFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/calendar-events", ExamRequest(Today, semesterId: Guid.NewGuid()));
+        var response = await client.PostAsJsonAsync(
+            "api/calendar-events",
+            ExamRequest(Today, semesterId: Guid.NewGuid())
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(SemesterErrorCodes.SemesterNotFound, await GetErrorCodeAsync(response));
@@ -87,7 +121,18 @@ public class CalendarEventEndpointsTests
 
         var update = await client.PutAsJsonAsync(
             $"api/calendar-events/{exam.Id}",
-            new UpdateCalendarEventRequest(Guid.NewGuid(), CalendarEventKind.Deadline, "Sheet 3", null, null, Today, new TimeOnly(23, 59), null, null));
+            new UpdateCalendarEventRequest(
+                Guid.NewGuid(),
+                CalendarEventKind.Deadline,
+                "Sheet 3",
+                null,
+                null,
+                Today,
+                new TimeOnly(23, 59),
+                null,
+                null
+            )
+        );
         var first = await client.DeleteAsync($"api/calendar-events/{exam.Id}");
         var second = await client.DeleteAsync($"api/calendar-events/{exam.Id}");
 
@@ -96,7 +141,10 @@ public class CalendarEventEndpointsTests
         Assert.Equal((exam.Id, CalendarEventKind.Deadline), (updated.Id, updated.Kind));
         Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, second.StatusCode);
-        Assert.Equal(CalendarEventErrorCodes.CalendarEventNotFound, await GetErrorCodeAsync(second));
+        Assert.Equal(
+            CalendarEventErrorCodes.CalendarEventNotFound,
+            await GetErrorCodeAsync(second)
+        );
     }
 
     [Fact]
@@ -106,10 +154,27 @@ public class CalendarEventEndpointsTests
         using var client = factory.CreateClient();
         await CreateAsync(client, ExamRequest(Today.AddDays(-1)));
         await CreateAsync(client, ExamRequest(Today.AddDays(12)));
-        await CreateAsync(client, new CreateCalendarEventRequest(CalendarEventKind.Deadline, "Sheet 3", null, null, Today, null, null, null));
+        await CreateAsync(
+            client,
+            new CreateCalendarEventRequest(
+                CalendarEventKind.Deadline,
+                "Sheet 3",
+                null,
+                null,
+                Today,
+                null,
+                null,
+                null
+            )
+        );
 
-        var upcoming = await client.GetFromJsonAsync<List<UpcomingCalendarEventDto>>("api/dashboard/upcoming-events");
+        var upcoming = await client.GetFromJsonAsync<List<UpcomingCalendarEventDto>>(
+            "api/dashboard/upcoming-events"
+        );
 
-        Assert.Equal([("Sheet 3", 0), ("Algorithms exam", 12)], upcoming!.Select(u => (u.Event.Title, u.DaysUntil)));
+        Assert.Equal(
+            [("Sheet 3", 0), ("Algorithms exam", 12)],
+            upcoming!.Select(u => (u.Event.Title, u.DaysUntil))
+        );
     }
 }

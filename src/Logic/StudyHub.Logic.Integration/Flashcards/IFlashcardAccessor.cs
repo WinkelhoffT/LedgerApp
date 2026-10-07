@@ -10,5 +10,8 @@ public interface IFlashcardAccessor
 {
     Task<IReadOnlyList<AiModelDto>> GetModelsAsync(CancellationToken cancellationToken = default);
 
-    Task<FlashcardSetDto> GenerateAsync(GenerateFlashcardsRequest request, CancellationToken cancellationToken = default);
+    Task<FlashcardSetDto> GenerateAsync(
+        GenerateFlashcardsRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

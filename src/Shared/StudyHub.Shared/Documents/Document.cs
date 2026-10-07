@@ -10,4 +10,5 @@ public sealed record Document(
     Guid? SemesterId,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

@@ -12,7 +12,9 @@ public class FlashcardValidatorTests
     [InlineData(51)]
     public void ValidateGenerationOptions_WithCardCountOutOfRange_Throws(int cardCount)
     {
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateGenerationOptions(cardCount, null));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.ValidateGenerationOptions(cardCount, null)
+        );
     }
 
     [Theory]
@@ -28,7 +30,9 @@ public class FlashcardValidatorTests
     {
         var focusHint = new string('x', GenerateFlashcardsRequest.FocusHintMaxLength + 1);
 
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateGenerationOptions(10, focusHint));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.ValidateGenerationOptions(10, focusHint)
+        );
     }
 
     [Fact]
@@ -51,7 +55,10 @@ public class FlashcardValidatorTests
     [Fact]
     public void FilterGeneratedCards_TrimsTextAndCleansTags()
     {
-        var result = _sut.FilterGeneratedCards([new FlashcardDto("  Q  ", " A ", [" graphs ", "", "Graphs", "dijkstra"])], 10);
+        var result = _sut.FilterGeneratedCards(
+            [new FlashcardDto("  Q  ", " A ", [" graphs ", "", "Graphs", "dijkstra"])],
+            10
+        );
 
         var card = Assert.Single(result);
         Assert.Equal("Q", card.Front);
@@ -68,7 +75,10 @@ public class FlashcardValidatorTests
     [Fact]
     public void ValidateCards_WithTooManyCards_Throws()
     {
-        var cards = Enumerable.Range(0, AddFlashcardsRequest.MaxCardCount + 1).Select(i => new FlashcardDto($"Q{i}", "A", [])).ToList();
+        var cards = Enumerable
+            .Range(0, AddFlashcardsRequest.MaxCardCount + 1)
+            .Select(i => new FlashcardDto($"Q{i}", "A", []))
+            .ToList();
 
         Assert.Throws<FlashcardValidationException>(() => _sut.ValidateCards(cards));
     }
@@ -76,8 +86,9 @@ public class FlashcardValidatorTests
     [Fact]
     public void ValidateCards_WithEmptyBack_ThrowsWithCardNumber()
     {
-        var ex = Assert.Throws<FlashcardValidationException>(
-            () => _sut.ValidateCards([new FlashcardDto("Q1", "A1", []), new FlashcardDto("Q2", "  ", [])]));
+        var ex = Assert.Throws<FlashcardValidationException>(() =>
+            _sut.ValidateCards([new FlashcardDto("Q1", "A1", []), new FlashcardDto("Q2", "  ", [])])
+        );
 
         Assert.StartsWith("Card 2:", ex.Message);
     }
@@ -87,7 +98,9 @@ public class FlashcardValidatorTests
     {
         var tag = new string('t', FlashcardDto.TagMaxLength + 1);
 
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateCards([new FlashcardDto("Q", "A", [tag])]));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.ValidateCards([new FlashcardDto("Q", "A", [tag])])
+        );
     }
 
     [Fact]
@@ -101,7 +114,11 @@ public class FlashcardValidatorTests
     [Fact]
     public void TryNormalize_WithValidCard_ReturnsTrimmedCard()
     {
-        var isValid = _sut.TryNormalize(new FlashcardDto(" Q ", " A ", [" x ", "X"]), out var card, out var error);
+        var isValid = _sut.TryNormalize(
+            new FlashcardDto(" Q ", " A ", [" x ", "X"]),
+            out var card,
+            out var error
+        );
 
         Assert.True(isValid);
         Assert.Null(error);
@@ -113,7 +130,10 @@ public class FlashcardValidatorTests
     [Fact]
     public void TryNormalize_WithTooManyTags_ReturnsError()
     {
-        var tags = Enumerable.Range(0, FlashcardDto.MaxTagsPerCard + 1).Select(i => $"t{i}").ToList();
+        var tags = Enumerable
+            .Range(0, FlashcardDto.MaxTagsPerCard + 1)
+            .Select(i => $"t{i}")
+            .ToList();
 
         var isValid = _sut.TryNormalize(new FlashcardDto("Q", "A", tags), out _, out var error);
 

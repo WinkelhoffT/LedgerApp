@@ -41,7 +41,10 @@ internal static class FlashcardPrompt
     public static string BuildUserMessage(FlashcardGenerationInput input)
     {
         var builder = new StringBuilder();
-        builder.Append("Create at most ").Append(input.CardCount).Append(" flashcards from the following note.\n");
+        builder
+            .Append("Create at most ")
+            .Append(input.CardCount)
+            .Append(" flashcards from the following note.\n");
 
         if (!string.IsNullOrWhiteSpace(input.FocusHint))
         {

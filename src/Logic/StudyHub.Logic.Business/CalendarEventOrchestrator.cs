@@ -28,10 +28,19 @@ public sealed class CalendarEventOrchestrator(
             request.Date,
             request.StartTime,
             request.DurationMinutes,
-            request.Location);
+            request.Location
+        );
 
-        var course = await GetAssignableCourseAsync(calendarEvent.CourseId, currentCourseId: null, cancellationToken);
-        var semester = await GetAssignableSemesterAsync(calendarEvent.SemesterId, currentSemesterId: null, cancellationToken);
+        var course = await GetAssignableCourseAsync(
+            calendarEvent.CourseId,
+            currentCourseId: null,
+            cancellationToken
+        );
+        var semester = await GetAssignableSemesterAsync(
+            calendarEvent.SemesterId,
+            currentSemesterId: null,
+            cancellationToken
+        );
 
         await eventRepository.AddAsync(calendarEvent, cancellationToken);
         await eventRepository.SaveChangesAsync(cancellationToken);
@@ -54,10 +63,19 @@ public sealed class CalendarEventOrchestrator(
             request.Date,
             request.StartTime,
             request.DurationMinutes,
-            request.Location);
+            request.Location
+        );
 
-        var course = await GetAssignableCourseAsync(updated.CourseId, calendarEvent.CourseId, cancellationToken);
-        var semester = await GetAssignableSemesterAsync(updated.SemesterId, calendarEvent.SemesterId, cancellationToken);
+        var course = await GetAssignableCourseAsync(
+            updated.CourseId,
+            calendarEvent.CourseId,
+            cancellationToken
+        );
+        var semester = await GetAssignableSemesterAsync(
+            updated.SemesterId,
+            calendarEvent.SemesterId,
+            cancellationToken
+        );
 
         eventRepository.Update(updated);
         await eventRepository.SaveChangesAsync(cancellationToken);
@@ -73,41 +91,63 @@ public sealed class CalendarEventOrchestrator(
         await eventRepository.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var today = periodProvider.GetToday();
-        var events = await eventRepository.GetUpcomingAsync(today, UpcomingCalendarEventDto.MaxCount, cancellationToken);
+        var events = await eventRepository.GetUpcomingAsync(
+            today,
+            UpcomingCalendarEventDto.MaxCount,
+            cancellationToken
+        );
         if (events.Count == 0)
         {
             return [];
         }
 
         // Archived courses and semesters are included, so their events keep their name and color.
-        var courses = (await courseRepository.GetAllAsync(cancellationToken)).ToDictionary(c => c.Id);
-        var semesters = (await semesterRepository.GetAllAsync(cancellationToken)).ToDictionary(s => s.Id);
+        var courses = (await courseRepository.GetAllAsync(cancellationToken)).ToDictionary(c =>
+            c.Id
+        );
+        var semesters = (await semesterRepository.GetAllAsync(cancellationToken)).ToDictionary(s =>
+            s.Id
+        );
 
         return events
             .Select(e => new UpcomingCalendarEventDto(
                 CalendarEventMapper.ToDto(
                     e,
                     e.CourseId is { } courseId ? courses.GetValueOrDefault(courseId) : null,
-                    e.SemesterId is { } semesterId ? semesters.GetValueOrDefault(semesterId) : null),
-                e.Date.DayNumber - today.DayNumber))
+                    e.SemesterId is { } semesterId ? semesters.GetValueOrDefault(semesterId) : null
+                ),
+                e.Date.DayNumber - today.DayNumber
+            ))
             .ToList();
     }
 
-    private async Task<CalendarEvent> GetExistingEventAsync(Guid id, CancellationToken cancellationToken) =>
-        await eventRepository.GetByIdAsync(id, cancellationToken) ?? throw new CalendarEventNotFoundException(id);
+    private async Task<CalendarEvent> GetExistingEventAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await eventRepository.GetByIdAsync(id, cancellationToken)
+        ?? throw new CalendarEventNotFoundException(id);
 
     // An archived course cannot be newly linked; an event already linked to it may keep the link.
-    private async Task<Course?> GetAssignableCourseAsync(Guid? courseId, Guid? currentCourseId, CancellationToken cancellationToken)
+    private async Task<Course?> GetAssignableCourseAsync(
+        Guid? courseId,
+        Guid? currentCourseId,
+        CancellationToken cancellationToken
+    )
     {
         if (courseId is not { } id)
         {
             return null;
         }
 
-        var course = await courseRepository.GetByIdAsync(id, cancellationToken) ?? throw new CourseNotFoundException(id);
+        var course =
+            await courseRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new CourseNotFoundException(id);
         if (course.IsArchived && id != currentCourseId)
         {
             throw new CourseArchivedException(id);
@@ -117,14 +157,20 @@ public sealed class CalendarEventOrchestrator(
     }
 
     // An archived semester cannot be newly linked; an event already linked to it may keep the link.
-    private async Task<Semester?> GetAssignableSemesterAsync(Guid? semesterId, Guid? currentSemesterId, CancellationToken cancellationToken)
+    private async Task<Semester?> GetAssignableSemesterAsync(
+        Guid? semesterId,
+        Guid? currentSemesterId,
+        CancellationToken cancellationToken
+    )
     {
         if (semesterId is not { } id)
         {
             return null;
         }
 
-        var semester = await semesterRepository.GetByIdAsync(id, cancellationToken) ?? throw new SemesterNotFoundException(id);
+        var semester =
+            await semesterRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new SemesterNotFoundException(id);
         if (semester.IsArchived && id != currentSemesterId)
         {
             throw new SemesterArchivedException(id);

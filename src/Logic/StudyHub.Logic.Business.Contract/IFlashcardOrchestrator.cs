@@ -7,5 +7,8 @@ public interface IFlashcardOrchestrator
 {
     IReadOnlyList<AiModelDto> GetAvailableModels();
 
-    Task<FlashcardSetDto> GenerateAsync(GenerateFlashcardsRequest request, CancellationToken cancellationToken = default);
+    Task<FlashcardSetDto> GenerateAsync(
+        GenerateFlashcardsRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

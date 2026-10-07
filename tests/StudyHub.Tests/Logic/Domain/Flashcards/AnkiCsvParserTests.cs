@@ -23,7 +23,10 @@ public class AnkiCsvParserTests
         var first = result.Rows[0];
         Assert.Equal(7, first.LineNumber);
         Assert.Equal("Was berechnet der <b>Dijkstra</b>-Algorithmus?", first.Front);
-        Assert.Equal("Kürzeste Wege von einem Startknoten<br>bei nicht-negativen Kantengewichten.", first.Back);
+        Assert.Equal(
+            "Kürzeste Wege von einem Startknoten<br>bei nicht-negativen Kantengewichten.",
+            first.Back
+        );
         Assert.Equal(["graphen", "kürzeste_wege"], first.Tags);
         Assert.Equal("Informatik::Algorithmen", first.DeckName);
         Assert.Equal("Basic", first.NoteType);
@@ -49,9 +52,15 @@ public class AnkiCsvParserTests
     {
         var result = _sut.Parse(ReadTestFile("anki-notes-without-html.txt"));
 
-        Assert.Equal("Ein Baum, in dem jeder Elternknoten &lt;= seine Kinder ist.", result.Rows[0].Back);
+        Assert.Equal(
+            "Ein Baum, in dem jeder Elternknoten &lt;= seine Kinder ist.",
+            result.Rows[0].Back
+        );
         Assert.Equal(["datenstrukturen", "heap"], result.Rows[0].Tags);
-        Assert.Equal("Setzt Commits auf eine neue Basis:<br>keine Merge-Commits.", result.Rows[1].Back);
+        Assert.Equal(
+            "Setzt Commits auf eine neue Basis:<br>keine Merge-Commits.",
+            result.Rows[1].Back
+        );
         Assert.Null(result.Rows[0].DeckName);
     }
 
@@ -93,7 +102,11 @@ public class AnkiCsvParserTests
     [InlineData("a:b,c d", "a", "b,c d")]
     [InlineData("a,b c", "a", "b c")]
     [InlineData("a b", "a", "b")]
-    public void Parse_WithoutSeparatorHeader_DetectsDelimiterInAnkisOrder(string line, string front, string back)
+    public void Parse_WithoutSeparatorHeader_DetectsDelimiterInAnkisOrder(
+        string line,
+        string front,
+        string back
+    )
     {
         var result = Parse(line + "\n");
 
@@ -121,7 +134,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_ReadsDoubledQuotesAndDelimitersInsideQuotes()
     {
-        var result = Parse("#separator:Semicolon\n\"Was ist \"\"O(n)\"\"?\";\"lineare; Laufzeit\"\n");
+        var result = Parse(
+            "#separator:Semicolon\n\"Was ist \"\"O(n)\"\"?\";\"lineare; Laufzeit\"\n"
+        );
 
         Assert.Equal("Was ist \"O(n)\"?", result.Rows[0].Front);
         Assert.Equal("lineare; Laufzeit", result.Rows[0].Back);
@@ -150,7 +165,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithMetaColumnsAndNoLabels_UsesFirstTwoOtherColumnsAsFields()
     {
-        var result = Parse("#separator:Pipe\n#deck column:1\n#tags column:3\nDeck A|Frage|t1|Antwort|ignoriert\n");
+        var result = Parse(
+            "#separator:Pipe\n#deck column:1\n#tags column:3\nDeck A|Frage|t1|Antwort|ignoriert\n"
+        );
 
         Assert.Equal("Frage", result.Rows[0].Front);
         Assert.Equal("Antwort", result.Rows[0].Back);
@@ -161,7 +178,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithGlobalDeckNoteTypeAndTags_AppliesThemToEveryRow()
     {
-        var result = Parse("#separator:Semicolon\n#deck:Netze\n#notetype:Basic\n#tags:klausur ws25\nq;a\n");
+        var result = Parse(
+            "#separator:Semicolon\n#deck:Netze\n#notetype:Basic\n#tags:klausur ws25\nq;a\n"
+        );
 
         Assert.Equal("Netze", result.Rows[0].DeckName);
         Assert.Equal("Basic", result.Rows[0].NoteType);
@@ -171,7 +190,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithDeckColumnValue_WinsOverGlobalDeck()
     {
-        var result = Parse("#separator:Semicolon\n#deck:Netze\n#deck column:3\nq1;a1;Algorithmen\nq2;a2;\n");
+        var result = Parse(
+            "#separator:Semicolon\n#deck:Netze\n#deck column:3\nq1;a1;Algorithmen\nq2;a2;\n"
+        );
 
         Assert.Equal(["Algorithmen", "Netze"], result.Rows.Select(r => r.DeckName));
     }
@@ -187,7 +208,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_MatchesHeaderKeysIgnoringCaseAndSpaces()
     {
-        var result = Parse("# SEPARATOR :Semicolon\n#HTML: FALSE \n#If Matches: Keep Both\nq;<b>a</b>\n");
+        var result = Parse(
+            "# SEPARATOR :Semicolon\n#HTML: FALSE \n#If Matches: Keep Both\nq;<b>a</b>\n"
+        );
 
         Assert.Equal("&lt;b&gt;a&lt;/b&gt;", result.Rows[0].Back);
         Assert.Equal(ImportDuplicateMode.KeepBoth, result.DuplicateMode);
@@ -266,7 +289,10 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithUtf16_Throws()
     {
-        var utf16 = Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes("q;a\n")).ToArray();
+        var utf16 = Encoding
+            .Unicode.GetPreamble()
+            .Concat(Encoding.Unicode.GetBytes("q;a\n"))
+            .ToArray();
 
         Assert.Throws<FlashcardImportException>(() => _sut.Parse(utf16));
     }
@@ -274,7 +300,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithTooManyRows_Throws()
     {
-        var text = string.Concat(Enumerable.Range(0, ImportFlashcardsRequest.MaxRows + 1).Select(i => $"q{i};a\n"));
+        var text = string.Concat(
+            Enumerable.Range(0, ImportFlashcardsRequest.MaxRows + 1).Select(i => $"q{i};a\n")
+        );
 
         var ex = Assert.Throws<FlashcardImportException>(() => Parse(text));
 
@@ -284,7 +312,9 @@ public class AnkiCsvParserTests
     [Fact]
     public void Parse_WithExactlyTheRowLimit_Succeeds()
     {
-        var text = string.Concat(Enumerable.Range(0, ImportFlashcardsRequest.MaxRows).Select(i => $"q{i};a\n"));
+        var text = string.Concat(
+            Enumerable.Range(0, ImportFlashcardsRequest.MaxRows).Select(i => $"q{i};a\n")
+        );
 
         Assert.Equal(ImportFlashcardsRequest.MaxRows, Parse(text).Rows.Count);
     }
@@ -294,7 +324,11 @@ public class AnkiCsvParserTests
     {
         var cards = new[]
         {
-            new FlashcardDto("Was ist \"stabil\"?", "Gleiche Schlüssel; gleiche <b>Reihenfolge</b>", ["sortieren", "Kürzeste_Wege"]),
+            new FlashcardDto(
+                "Was ist \"stabil\"?",
+                "Gleiche Schlüssel; gleiche <b>Reihenfolge</b>",
+                ["sortieren", "Kürzeste_Wege"]
+            ),
             new FlashcardDto("Laufzeit?", "<code>O(n log n)</code>", []),
         };
 
@@ -303,10 +337,13 @@ public class AnkiCsvParserTests
         Assert.Equal(cards.Select(c => c.Front), result.Rows.Select(r => r.Front));
         Assert.Equal(cards.Select(c => c.Back), result.Rows.Select(r => r.Back));
         Assert.Equal(cards.Select(c => c.Tags), result.Rows.Select(r => r.Tags));
-        Assert.All(result.Rows, row =>
-        {
-            Assert.Equal("StudyHub::Algorithmen", row.DeckName);
-            Assert.Equal("Basic", row.NoteType);
-        });
+        Assert.All(
+            result.Rows,
+            row =>
+            {
+                Assert.Equal("StudyHub::Algorithmen", row.DeckName);
+                Assert.Equal("Basic", row.NoteType);
+            }
+        );
     }
 }

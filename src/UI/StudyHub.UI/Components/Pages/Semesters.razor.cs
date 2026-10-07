@@ -22,9 +22,7 @@ public partial class Semesters
     private SemesterDto? EditingSemester { get; set; }
 
     private IReadOnlyList<SemesterDto> VisibleSemesters =>
-        SemesterList is null
-            ? []
-            : SemesterList.Where(s => ShowArchived || !s.IsArchived).ToList();
+        SemesterList is null ? [] : SemesterList.Where(s => ShowArchived || !s.IsArchived).ToList();
 
     protected override async Task OnInitializedAsync()
     {

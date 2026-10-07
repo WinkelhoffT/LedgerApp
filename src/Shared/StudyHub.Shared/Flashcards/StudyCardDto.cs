@@ -10,4 +10,5 @@ public sealed record StudyCardDto(
     IReadOnlyList<string> Tags,
     FlashcardState State,
     FlashcardStudyCountsDto Counts,
-    IReadOnlyList<FlashcardIntervalPreviewDto> Intervals);
+    IReadOnlyList<FlashcardIntervalPreviewDto> Intervals
+);

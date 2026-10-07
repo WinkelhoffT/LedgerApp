@@ -9,16 +9,19 @@ public sealed record SemesterProgressDto(
     int? TotalDays,
     int? ElapsedDays,
     int? RemainingDays,
-    double? PercentComplete)
+    double? PercentComplete
+)
 {
-    public static SemesterProgressDto Empty { get; } = new(
-        HasActiveSemester: false,
-        SemesterId: null,
-        SemesterName: null,
-        StartDate: null,
-        EndDate: null,
-        TotalDays: null,
-        ElapsedDays: null,
-        RemainingDays: null,
-        PercentComplete: null);
+    public static SemesterProgressDto Empty { get; } =
+        new(
+            HasActiveSemester: false,
+            SemesterId: null,
+            SemesterName: null,
+            StartDate: null,
+            EndDate: null,
+            TotalDays: null,
+            ElapsedDays: null,
+            RemainingDays: null,
+            PercentComplete: null
+        );
 }

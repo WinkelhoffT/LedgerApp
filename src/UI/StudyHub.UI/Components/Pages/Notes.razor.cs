@@ -16,18 +16,30 @@ namespace StudyHub.UI.Components.Pages;
 
 public partial class Notes
 {
-    private enum AssignmentTarget { Course, Semester }
+    private enum AssignmentTarget
+    {
+        Course,
+        Semester,
+    }
 
     private static readonly Regex WikiLinkPattern = new(@"\[\[(.+?)\]\]", RegexOptions.Compiled);
-    private static readonly Regex HeadingPattern = new(@"<h([1-3]) id=""([^""]+)"">(.*?)</h\1>", RegexOptions.Compiled);
+    private static readonly Regex HeadingPattern = new(
+        @"<h([1-3]) id=""([^""]+)"">(.*?)</h\1>",
+        RegexOptions.Compiled
+    );
     private static readonly Regex TagStripPattern = new("<.*?>", RegexOptions.Compiled);
-    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().DisableHtml().UseAutoIdentifiers().Build();
+    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .DisableHtml()
+        .UseAutoIdentifiers()
+        .Build();
 
     private static readonly Dictionary<string, string> Templates = new()
     {
         ["blank"] = "",
-        ["lecture"] = "# Lecture Notes\n\n## Topic\n\n## Key Points\n\n- \n\n## Open Questions\n\n- \n",
-        ["exam"] = "# Exam Prep\n\n## Concepts to Review\n\n- \n\n## Practice Questions\n\n1. \n\n## Summary\n\n",
+        ["lecture"] =
+            "# Lecture Notes\n\n## Topic\n\n## Key Points\n\n- \n\n## Open Questions\n\n- \n",
+        ["exam"] =
+            "# Exam Prep\n\n## Concepts to Review\n\n- \n\n## Practice Questions\n\n1. \n\n## Summary\n\n",
     };
 
     private static readonly IReadOnlyList<SlashCommand> SlashCommands =
@@ -43,14 +55,29 @@ public partial class Notes
         new("Code: C#", "C# snippet with syntax highlighting", "```csharp\n", "\n```"),
         new("Code: Java", "Java snippet with syntax highlighting", "```java\n", "\n```"),
         new("Code: Python", "Python snippet with syntax highlighting", "```python\n", "\n```"),
-        new("Code: JavaScript", "JavaScript snippet with syntax highlighting", "```javascript\n", "\n```"),
-        new("Code: TypeScript", "TypeScript snippet with syntax highlighting", "```typescript\n", "\n```"),
+        new(
+            "Code: JavaScript",
+            "JavaScript snippet with syntax highlighting",
+            "```javascript\n",
+            "\n```"
+        ),
+        new(
+            "Code: TypeScript",
+            "TypeScript snippet with syntax highlighting",
+            "```typescript\n",
+            "\n```"
+        ),
         new("Code: SQL", "SQL snippet with syntax highlighting", "```sql\n", "\n```"),
         new("Code: Bash", "Shell snippet with syntax highlighting", "```bash\n", "\n```"),
         new("Code: JSON", "JSON snippet with syntax highlighting", "```json\n", "\n```"),
         new("Code: HTML", "HTML snippet with syntax highlighting", "```html\n", "\n```"),
         new("Code: CSS", "CSS snippet with syntax highlighting", "```css\n", "\n```"),
-        new("Table", "Simple 2-column table", "| Header | Header |\n| --- | --- |\n| Cell | Cell |\n", ""),
+        new(
+            "Table",
+            "Simple 2-column table",
+            "| Header | Header |\n| --- | --- |\n| Cell | Cell |\n",
+            ""
+        ),
         new("Divider", "Horizontal rule", "\n---\n", ""),
         new("Link", "Insert a link", "[", "](url)"),
     ];
@@ -137,7 +164,9 @@ public partial class Notes
     private int? PendingCursorPosition { get; set; }
 
     private IReadOnlyList<SlashCommand> FilteredSlashCommands =>
-        SlashCommands.Where(c => c.Label.Contains(SlashQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+        SlashCommands
+            .Where(c => c.Label.Contains(SlashQuery, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
     private NoteDto? SelectedNote => NoteList?.FirstOrDefault(n => n.Id == SelectedNoteId);
 
@@ -172,10 +201,12 @@ public partial class Notes
             query = SelectedScope switch
             {
                 "all" => query,
-                var s when s.StartsWith("course:", StringComparison.Ordinal)
-                    => query.Where(n => n.CourseId == Guid.Parse(s["course:".Length..])),
-                var s when s.StartsWith("semester:", StringComparison.Ordinal)
-                    => query.Where(n => n.SemesterId == Guid.Parse(s["semester:".Length..])),
+                var s when s.StartsWith("course:", StringComparison.Ordinal) => query.Where(n =>
+                    n.CourseId == Guid.Parse(s["course:".Length..])
+                ),
+                var s when s.StartsWith("semester:", StringComparison.Ordinal) => query.Where(n =>
+                    n.SemesterId == Guid.Parse(s["semester:".Length..])
+                ),
                 _ => query,
             };
 
@@ -188,9 +219,10 @@ public partial class Notes
             {
                 var term = SearchText.Trim();
                 query = query.Where(n =>
-                    n.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    n.Content.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    n.Tags.Any(t => t.Contains(term, StringComparison.OrdinalIgnoreCase)));
+                    n.Title.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || n.Content.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || n.Tags.Any(t => t.Contains(term, StringComparison.OrdinalIgnoreCase))
+                );
             }
 
             return query.OrderByDescending(n => n.UpdatedAt).ToList();
@@ -201,13 +233,16 @@ public partial class Notes
     {
         get
         {
-            var withLinks = WikiLinkPattern.Replace(WorkingContent, match =>
-            {
-                var title = match.Groups[1].Value.Trim();
-                return TitleToNoteId.TryGetValue(title, out var id)
-                    ? $"[{title}](/notes?note={id})"
-                    : match.Value;
-            });
+            var withLinks = WikiLinkPattern.Replace(
+                WorkingContent,
+                match =>
+                {
+                    var title = match.Groups[1].Value.Trim();
+                    return TitleToNoteId.TryGetValue(title, out var id)
+                        ? $"[{title}](/notes?note={id})"
+                        : match.Value;
+                }
+            );
 
             return Markdown.ToHtml(withLinks, Pipeline);
         }
@@ -260,7 +295,11 @@ public partial class Notes
             if (PendingCursorPosition is { } position)
             {
                 PendingCursorPosition = null;
-                await JS.InvokeVoidAsync("studyHubNotesEditor.setCursor", ContentTextAreaRef, position);
+                await JS.InvokeVoidAsync(
+                    "studyHubNotesEditor.setCursor",
+                    ContentTextAreaRef,
+                    position
+                );
             }
         }
 
@@ -273,7 +312,10 @@ public partial class Notes
     private async Task OnContentInputAsync(ChangeEventArgs e)
     {
         WorkingContent = e.Value?.ToString() ?? string.Empty;
-        var cursor = await JS.InvokeAsync<int>("studyHubNotesEditor.getSelectionStart", ContentTextAreaRef);
+        var cursor = await JS.InvokeAsync<int>(
+            "studyHubNotesEditor.getSelectionStart",
+            ContentTextAreaRef
+        );
         await UpdateSlashMenuAsync(cursor);
     }
 
@@ -288,9 +330,15 @@ public partial class Notes
 
         return e.Key switch
         {
-            "ArrowDown" when commands.Count > 0 => SetSlashSelection((SlashSelectedIndex + 1) % commands.Count),
-            "ArrowUp" when commands.Count > 0 => SetSlashSelection((SlashSelectedIndex - 1 + commands.Count) % commands.Count),
-            "Enter" or "Tab" when commands.Count > 0 => ApplySlashCommandAsync(commands[SlashSelectedIndex]),
+            "ArrowDown" when commands.Count > 0 => SetSlashSelection(
+                (SlashSelectedIndex + 1) % commands.Count
+            ),
+            "ArrowUp" when commands.Count > 0 => SetSlashSelection(
+                (SlashSelectedIndex - 1 + commands.Count) % commands.Count
+            ),
+            "Enter" or "Tab" when commands.Count > 0 => ApplySlashCommandAsync(
+                commands[SlashSelectedIndex]
+            ),
             "Escape" => CloseSlashMenu(),
             _ => Task.CompletedTask,
         };
@@ -354,7 +402,10 @@ public partial class Notes
 
         SlashMenuOpen = true;
 
-        var coordinates = await JS.InvokeAsync<CaretCoordinates>("studyHubNotesEditor.getCaretCoordinates", ContentTextAreaRef);
+        var coordinates = await JS.InvokeAsync<CaretCoordinates>(
+            "studyHubNotesEditor.getCaretCoordinates",
+            ContentTextAreaRef
+        );
         SlashMenuTop = coordinates.Top + coordinates.LineHeight;
         SlashMenuLeft = coordinates.Left;
     }
@@ -362,7 +413,10 @@ public partial class Notes
     private Task ApplySlashCommandAsync(SlashCommand command)
     {
         var before = WorkingContent[..SlashTriggerPosition];
-        var queryEnd = Math.Min(SlashTriggerPosition + 1 + SlashQuery.Length, WorkingContent.Length);
+        var queryEnd = Math.Min(
+            SlashTriggerPosition + 1 + SlashQuery.Length,
+            WorkingContent.Length
+        );
         var after = WorkingContent[queryEnd..];
 
         WorkingContent = before + command.Before + command.After + after;
@@ -464,12 +518,36 @@ public partial class Notes
 
         try
         {
-            var courseId = WorkingAssignmentKind == AssignmentTarget.Course && WorkingCourseId != Guid.Empty ? WorkingCourseId : (Guid?)null;
-            var semesterId = WorkingAssignmentKind == AssignmentTarget.Semester && WorkingSemesterId != Guid.Empty ? WorkingSemesterId : (Guid?)null;
+            var courseId =
+                WorkingAssignmentKind == AssignmentTarget.Course && WorkingCourseId != Guid.Empty
+                    ? WorkingCourseId
+                    : (Guid?)null;
+            var semesterId =
+                WorkingAssignmentKind == AssignmentTarget.Semester
+                && WorkingSemesterId != Guid.Empty
+                    ? WorkingSemesterId
+                    : (Guid?)null;
 
             var saved = IsCreating
-                ? await NoteAccessor.CreateAsync(new CreateNoteRequest(WorkingTitle, WorkingContent, WorkingTags, courseId, semesterId))
-                : await NoteAccessor.UpdateAsync(new UpdateNoteRequest(SelectedNoteId!.Value, WorkingTitle, WorkingContent, WorkingTags, courseId, semesterId));
+                ? await NoteAccessor.CreateAsync(
+                    new CreateNoteRequest(
+                        WorkingTitle,
+                        WorkingContent,
+                        WorkingTags,
+                        courseId,
+                        semesterId
+                    )
+                )
+                : await NoteAccessor.UpdateAsync(
+                    new UpdateNoteRequest(
+                        SelectedNoteId!.Value,
+                        WorkingTitle,
+                        WorkingContent,
+                        WorkingTags,
+                        courseId,
+                        semesterId
+                    )
+                );
 
             await LoadNotesAsync();
             IsCreating = false;

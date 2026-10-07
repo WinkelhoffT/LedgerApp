@@ -28,19 +28,51 @@ public class DeckCardOrchestratorTests
             _noteRepository.Object,
             validator,
             new FlashcardLifecycle(validator, timeProvider),
-            new StudyDayProvider(new FlashcardStudyOptions(), timeProvider));
+            new StudyDayProvider(new FlashcardStudyOptions(), timeProvider)
+        );
     }
 
     private FlashcardDeck SetupDeck(bool isArchived = false)
     {
-        var deck = new FlashcardDeck(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, isArchived, Now, Now);
+        var deck = new FlashcardDeck(
+            Guid.NewGuid(),
+            "Algorithmen",
+            null,
+            null,
+            20,
+            200,
+            isArchived,
+            Now,
+            Now
+        );
         _deckRepository.Setup(r => r.GetByIdAsync(deck.Id, default)).ReturnsAsync(deck);
         return deck;
     }
 
-    private Flashcard SetupCard(FlashcardDeck deck, FlashcardState state = FlashcardState.Review, DateTime? dueAt = null)
+    private Flashcard SetupCard(
+        FlashcardDeck deck,
+        FlashcardState state = FlashcardState.Review,
+        DateTime? dueAt = null
+    )
     {
-        var card = new Flashcard(Guid.NewGuid(), deck.Id, "Q", "A", "graphen kürzeste_wege", null, state, 0, dueAt ?? Now, 4, 2500, 2, 0, Now, Now, Now);
+        var card = new Flashcard(
+            Guid.NewGuid(),
+            deck.Id,
+            "Q",
+            "A",
+            "graphen kürzeste_wege",
+            null,
+            state,
+            0,
+            dueAt ?? Now,
+            4,
+            2500,
+            2,
+            0,
+            Now,
+            Now,
+            Now
+        );
         _flashcardRepository.Setup(r => r.GetByIdAsync(card.Id, default)).ReturnsAsync(card);
         return card;
     }
@@ -51,7 +83,9 @@ public class DeckCardOrchestratorTests
         var deck = SetupDeck();
         var review = SetupCard(deck, dueAt: new DateTime(2026, 10, 12, 2, 0, 0, DateTimeKind.Utc));
         var newCard = SetupCard(deck, FlashcardState.New);
-        _flashcardRepository.Setup(r => r.GetByDeckIdAsync(deck.Id, "graph", default)).ReturnsAsync([review, newCard]);
+        _flashcardRepository
+            .Setup(r => r.GetByDeckIdAsync(deck.Id, "graph", default))
+            .ReturnsAsync([review, newCard]);
 
         var result = await _sut.GetCardsAsync(deck.Id, "graph");
 
@@ -63,7 +97,9 @@ public class DeckCardOrchestratorTests
     [Fact]
     public async Task GetCardsAsync_WithUnknownDeck_Throws()
     {
-        await Assert.ThrowsAsync<FlashcardDeckNotFoundException>(() => _sut.GetCardsAsync(Guid.NewGuid(), null));
+        await Assert.ThrowsAsync<FlashcardDeckNotFoundException>(() =>
+            _sut.GetCardsAsync(Guid.NewGuid(), null)
+        );
     }
 
     [Fact]
@@ -71,24 +107,36 @@ public class DeckCardOrchestratorTests
     {
         var deck = SetupDeck();
         var noteId = Guid.NewGuid();
-        _noteRepository.Setup(r => r.GetByIdAsync(noteId, default))
-            .ReturnsAsync(new Note(noteId, "Dijkstra", "x", null, Guid.NewGuid(), null, false, Now, Now));
+        _noteRepository
+            .Setup(r => r.GetByIdAsync(noteId, default))
+            .ReturnsAsync(
+                new Note(noteId, "Dijkstra", "x", null, Guid.NewGuid(), null, false, Now, Now)
+            );
         IReadOnlyCollection<Flashcard>? saved = null;
-        _flashcardRepository.Setup(r => r.AddRangeAsync(It.IsAny<IReadOnlyCollection<Flashcard>>(), default))
-            .Callback<IReadOnlyCollection<Flashcard>, CancellationToken>((cards, _) => saved = cards);
+        _flashcardRepository
+            .Setup(r => r.AddRangeAsync(It.IsAny<IReadOnlyCollection<Flashcard>>(), default))
+            .Callback<IReadOnlyCollection<Flashcard>, CancellationToken>(
+                (cards, _) => saved = cards
+            );
 
-        var result = await _sut.AddCardsAsync(new AddFlashcardsRequest(
-            deck.Id,
-            [new FlashcardDto("Q1", "A1", ["kürzeste wege"]), new FlashcardDto("Q2", "A2", [])],
-            noteId));
+        var result = await _sut.AddCardsAsync(
+            new AddFlashcardsRequest(
+                deck.Id,
+                [new FlashcardDto("Q1", "A1", ["kürzeste wege"]), new FlashcardDto("Q2", "A2", [])],
+                noteId
+            )
+        );
 
         Assert.Equal(["Q1", "Q2"], result.Select(c => c.Front));
         Assert.Equal(["kürzeste_wege"], result[0].Tags);
-        Assert.All(saved!, card =>
-        {
-            Assert.Equal(noteId, card.SourceNoteId);
-            Assert.Equal(FlashcardState.New, card.State);
-        });
+        Assert.All(
+            saved!,
+            card =>
+            {
+                Assert.Equal(noteId, card.SourceNoteId);
+                Assert.Equal(FlashcardState.New, card.State);
+            }
+        );
         _flashcardRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
 
@@ -97,8 +145,11 @@ public class DeckCardOrchestratorTests
     {
         var deck = SetupDeck();
 
-        await Assert.ThrowsAsync<NoteNotFoundException>(
-            () => _sut.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], Guid.NewGuid())));
+        await Assert.ThrowsAsync<NoteNotFoundException>(() =>
+            _sut.AddCardsAsync(
+                new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], Guid.NewGuid())
+            )
+        );
     }
 
     [Fact]
@@ -106,8 +157,11 @@ public class DeckCardOrchestratorTests
     {
         var deck = SetupDeck(isArchived: true);
 
-        await Assert.ThrowsAsync<FlashcardDeckArchivedException>(
-            () => _sut.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], null)));
+        await Assert.ThrowsAsync<FlashcardDeckArchivedException>(() =>
+            _sut.AddCardsAsync(
+                new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", [])], null)
+            )
+        );
     }
 
     [Fact]
@@ -115,7 +169,9 @@ public class DeckCardOrchestratorTests
     {
         var deck = SetupDeck();
 
-        await Assert.ThrowsAsync<FlashcardValidationException>(() => _sut.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [], null)));
+        await Assert.ThrowsAsync<FlashcardValidationException>(() =>
+            _sut.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [], null))
+        );
     }
 
     [Fact]
@@ -123,18 +179,31 @@ public class DeckCardOrchestratorTests
     {
         var card = SetupCard(SetupDeck());
 
-        var result = await _sut.UpdateCardAsync(new UpdateFlashcardRequest(card.Id, new FlashcardDto("Neu", "Antwort", [])));
+        var result = await _sut.UpdateCardAsync(
+            new UpdateFlashcardRequest(card.Id, new FlashcardDto("Neu", "Antwort", []))
+        );
 
         Assert.Equal("Neu", result.Front);
         Assert.Equal(card.IntervalDays, result.IntervalDays);
-        _flashcardRepository.Verify(r => r.Update(It.Is<Flashcard>(c => c.Id == card.Id && c.Front == "Neu" && c.Reps == card.Reps)), Times.Once);
+        _flashcardRepository.Verify(
+            r =>
+                r.Update(
+                    It.Is<Flashcard>(c =>
+                        c.Id == card.Id && c.Front == "Neu" && c.Reps == card.Reps
+                    )
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task UpdateCardAsync_WithUnknownCard_Throws()
     {
-        await Assert.ThrowsAsync<FlashcardNotFoundException>(
-            () => _sut.UpdateCardAsync(new UpdateFlashcardRequest(Guid.NewGuid(), new FlashcardDto("Q", "A", []))));
+        await Assert.ThrowsAsync<FlashcardNotFoundException>(() =>
+            _sut.UpdateCardAsync(
+                new UpdateFlashcardRequest(Guid.NewGuid(), new FlashcardDto("Q", "A", []))
+            )
+        );
     }
 
     [Fact]
@@ -153,6 +222,8 @@ public class DeckCardOrchestratorTests
     {
         var card = SetupCard(SetupDeck(isArchived: true));
 
-        await Assert.ThrowsAsync<FlashcardDeckArchivedException>(() => _sut.DeleteCardAsync(card.Id));
+        await Assert.ThrowsAsync<FlashcardDeckArchivedException>(() =>
+            _sut.DeleteCardAsync(card.Id)
+        );
     }
 }

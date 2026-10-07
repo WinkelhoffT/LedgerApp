@@ -8,5 +8,6 @@ public partial class Analytics
     [Inject]
     private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
-    protected override void OnInitialized() => PageHeader.SetHeader("Analytics", "Your productivity at a glance");
+    protected override void OnInitialized() =>
+        PageHeader.SetHeader("Analytics", "Your productivity at a glance");
 }

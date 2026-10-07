@@ -9,4 +9,5 @@ public sealed record DocumentDto(
     Guid? SemesterId,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

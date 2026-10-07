@@ -15,32 +15,35 @@ namespace StudyHub.Logic.Integration.Ai;
 /// </summary>
 public sealed class ClaudeFlashcardGenerator(
     IOptions<AnthropicOptions> options,
-    ILogger<ClaudeFlashcardGenerator> logger) : IFlashcardGenerator, IDisposable
+    ILogger<ClaudeFlashcardGenerator> logger
+) : IFlashcardGenerator, IDisposable
 {
     private const string ServerSideFallbackBeta = "server-side-fallback-2026-07-01";
 
     private static readonly Dictionary<string, JsonElement> CardsSchema = new()
     {
         ["type"] = JsonSerializer.SerializeToElement("object"),
-        ["properties"] = JsonSerializer.SerializeToElement(new
-        {
-            cards = new
+        ["properties"] = JsonSerializer.SerializeToElement(
+            new
             {
-                type = "array",
-                items = new
+                cards = new
                 {
-                    type = "object",
-                    properties = new
+                    type = "array",
+                    items = new
                     {
-                        front = new { type = "string" },
-                        back = new { type = "string" },
-                        tags = new { type = "array", items = new { type = "string" } },
+                        type = "object",
+                        properties = new
+                        {
+                            front = new { type = "string" },
+                            back = new { type = "string" },
+                            tags = new { type = "array", items = new { type = "string" } },
+                        },
+                        required = new[] { "front", "back", "tags" },
+                        additionalProperties = false,
                     },
-                    required = new[] { "front", "back", "tags" },
-                    additionalProperties = false,
                 },
-            },
-        }),
+            }
+        ),
         ["required"] = JsonSerializer.SerializeToElement(new[] { "cards" }),
         ["additionalProperties"] = JsonSerializer.SerializeToElement(false),
     };
@@ -49,7 +52,8 @@ public sealed class ClaudeFlashcardGenerator(
 
     public async Task<IReadOnlyList<FlashcardDto>> GenerateAsync(
         FlashcardGenerationInput input,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var settings = options.Value;
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -69,7 +73,10 @@ public sealed class ClaudeFlashcardGenerator(
                 Effort = settings.Effort,
                 Format = new BetaJsonOutputFormat { Schema = CardsSchema },
             },
-            Messages = [new() { Role = Role.User, Content = FlashcardPrompt.BuildUserMessage(input) }],
+            Messages =
+            [
+                new() { Role = Role.User, Content = FlashcardPrompt.BuildUserMessage(input) },
+            ],
         };
 
         BetaMessage response;
@@ -79,30 +86,60 @@ public sealed class ClaudeFlashcardGenerator(
         }
         catch (AnthropicRateLimitException ex)
         {
-            throw Failed(FlashcardGenerationFailureReason.RateLimited, "The Anthropic API rate limit was reached. Try again in a minute.", ex);
+            throw Failed(
+                FlashcardGenerationFailureReason.RateLimited,
+                "The Anthropic API rate limit was reached. Try again in a minute.",
+                ex
+            );
         }
         catch (Anthropic5xxException ex)
         {
-            throw Failed(FlashcardGenerationFailureReason.ServiceUnavailable, "The Anthropic API is currently unavailable. Try again later.", ex);
+            throw Failed(
+                FlashcardGenerationFailureReason.ServiceUnavailable,
+                "The Anthropic API is currently unavailable. Try again later.",
+                ex
+            );
         }
         catch (AnthropicUnauthorizedException ex)
         {
-            throw Failed(FlashcardGenerationFailureReason.Unauthorized, "The configured Anthropic API key was rejected.", ex);
+            throw Failed(
+                FlashcardGenerationFailureReason.Unauthorized,
+                "The configured Anthropic API key was rejected.",
+                ex
+            );
         }
         catch (AnthropicApiException ex)
         {
-            throw Failed(FlashcardGenerationFailureReason.Unknown, "The Anthropic API rejected the flashcard request.", ex);
+            throw Failed(
+                FlashcardGenerationFailureReason.Unknown,
+                "The Anthropic API rejected the flashcard request.",
+                ex
+            );
         }
         catch (AnthropicIOException ex)
         {
-            throw Failed(FlashcardGenerationFailureReason.ServiceUnavailable, "The Anthropic API could not be reached.", ex);
+            throw Failed(
+                FlashcardGenerationFailureReason.ServiceUnavailable,
+                "The Anthropic API could not be reached.",
+                ex
+            );
         }
 
         logger.LogInformation(
             "Generated flashcards with {Model} (prompt {PromptVersion}): stop reason {StopReason}, {InputTokens} input / {OutputTokens} output tokens",
-            response.Model, FlashcardPrompt.Version, response.StopReason, response.Usage.InputTokens, response.Usage.OutputTokens);
+            response.Model,
+            FlashcardPrompt.Version,
+            response.StopReason,
+            response.Usage.InputTokens,
+            response.Usage.OutputTokens
+        );
 
-        var text = string.Concat(response.Content.Select(block => block.Value).OfType<BetaTextBlock>().Select(block => block.Text));
+        var text = string.Concat(
+            response
+                .Content.Select(block => block.Value)
+                .OfType<BetaTextBlock>()
+                .Select(block => block.Text)
+        );
         return FlashcardResponseParser.Parse(response.StopReason?.Raw(), text);
     }
 
@@ -114,7 +151,11 @@ public sealed class ClaudeFlashcardGenerator(
         }
     }
 
-    private FlashcardGenerationFailedException Failed(FlashcardGenerationFailureReason reason, string message, Exception inner)
+    private FlashcardGenerationFailedException Failed(
+        FlashcardGenerationFailureReason reason,
+        string message,
+        Exception inner
+    )
     {
         logger.LogWarning(inner, "Flashcard generation failed ({Reason})", reason);
         return new FlashcardGenerationFailedException(reason, message, inner);

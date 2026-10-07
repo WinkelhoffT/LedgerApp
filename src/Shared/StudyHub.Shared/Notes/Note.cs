@@ -9,7 +9,8 @@ public sealed record Note(
     Guid? SemesterId,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt)
+    DateTime UpdatedAt
+)
 {
     public const int TitleMaxLength = 200;
     public const int ContentMaxLength = 50_000;

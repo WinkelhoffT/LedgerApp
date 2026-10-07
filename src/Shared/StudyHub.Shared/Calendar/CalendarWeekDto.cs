@@ -12,4 +12,5 @@ public sealed record CalendarWeekDto(
     DateOnly Today,
     int StartHour,
     int EndHour,
-    IReadOnlyList<CalendarDayDto> Days);
+    IReadOnlyList<CalendarDayDto> Days
+);

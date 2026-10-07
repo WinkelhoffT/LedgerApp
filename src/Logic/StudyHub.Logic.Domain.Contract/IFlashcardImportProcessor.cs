@@ -10,7 +10,11 @@ namespace StudyHub.Logic.Domain.Contract;
 public interface IFlashcardImportProcessor
 {
     /// <summary>The existing decks the rows go to; their cards are needed to find duplicates.</summary>
-    IReadOnlyList<Guid> GetTargetDeckIds(AnkiCsvParseResult file, FlashcardImportTarget target, IReadOnlyList<FlashcardDeck> decks);
+    IReadOnlyList<Guid> GetTargetDeckIds(
+        AnkiCsvParseResult file,
+        FlashcardImportTarget target,
+        IReadOnlyList<FlashcardDeck> decks
+    );
 
     /// <param name="decks">All existing decks.</param>
     /// <param name="existingCards">The cards of the decks from <see cref="GetTargetDeckIds"/>.</param>
@@ -19,5 +23,6 @@ public interface IFlashcardImportProcessor
         AnkiCsvParseResult file,
         FlashcardImportTarget target,
         IReadOnlyList<FlashcardDeck> decks,
-        IReadOnlyList<Flashcard> existingCards);
+        IReadOnlyList<Flashcard> existingCards
+    );
 }

@@ -29,22 +29,42 @@ public class NoteOrchestratorTests
 
     public NoteOrchestratorTests()
     {
-        _sut = new NoteOrchestrator(_noteRepository.Object, _documentRepository.Object, _courseRepository.Object, _semesterRepository.Object, NoteLifecycle);
+        _sut = new NoteOrchestrator(
+            _noteRepository.Object,
+            _documentRepository.Object,
+            _courseRepository.Object,
+            _semesterRepository.Object,
+            NoteLifecycle
+        );
 
-        _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
+        _courseRepository
+            .Setup(r => r.GetByIdAsync(CourseId, default))
             .ReturnsAsync(CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.NewGuid()));
 
-        _semesterRepository.Setup(r => r.GetByIdAsync(SemesterId, default))
-            .ReturnsAsync(SemesterLifecycle.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(SemesterId, default))
+            .ReturnsAsync(
+                SemesterLifecycle.Create(
+                    "Winter 2025/26",
+                    new DateOnly(2025, 10, 1),
+                    new DateOnly(2026, 3, 31)
+                )
+            );
 
-        _documentRepository.Setup(r => r.GetByIdAsync(DocumentId, default))
-            .ReturnsAsync(DocumentLifecycle.Create("Notes.pdf", "application/pdf", [1, 2, 3], CourseId, null));
+        _documentRepository
+            .Setup(r => r.GetByIdAsync(DocumentId, default))
+            .ReturnsAsync(
+                DocumentLifecycle.Create("Notes.pdf", "application/pdf", [1, 2, 3], CourseId, null)
+            );
 
-        _noteRepository.Setup(r => r.GetAttachedDocumentIdsAsync(It.IsAny<Guid>(), default))
+        _noteRepository
+            .Setup(r => r.GetAttachedDocumentIdsAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync((IReadOnlyList<Guid>)[]);
-        _noteRepository.Setup(r => r.GetLinkedNoteIdsAsync(It.IsAny<Guid>(), default))
+        _noteRepository
+            .Setup(r => r.GetLinkedNoteIdsAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync((IReadOnlyList<Guid>)[]);
-        _noteRepository.Setup(r => r.GetIdsByTitlesAsync(It.IsAny<IReadOnlyCollection<string>>(), default))
+        _noteRepository
+            .Setup(r => r.GetIdsByTitlesAsync(It.IsAny<IReadOnlyCollection<string>>(), default))
             .ReturnsAsync(new Dictionary<string, Guid>());
     }
 
@@ -77,7 +97,9 @@ public class NoteOrchestratorTests
     [Fact]
     public async Task CreateAsync_WithDuplicateTitle_ThrowsDuplicateNoteTitleException()
     {
-        _noteRepository.Setup(r => r.ExistsByTitleAsync("Lecture 1", null, default)).ReturnsAsync(true);
+        _noteRepository
+            .Setup(r => r.ExistsByTitleAsync("Lecture 1", null, default))
+            .ReturnsAsync(true);
         var request = new CreateNoteRequest("Lecture 1", "Content", null, CourseId, null);
 
         await Assert.ThrowsAsync<DuplicateNoteTitleException>(() => _sut.CreateAsync(request));
@@ -89,7 +111,9 @@ public class NoteOrchestratorTests
     public async Task CreateAsync_WhenCourseNotFound_ThrowsCourseNotFoundException()
     {
         var unknownCourseId = Guid.NewGuid();
-        _courseRepository.Setup(r => r.GetByIdAsync(unknownCourseId, default)).ReturnsAsync((Course?)null);
+        _courseRepository
+            .Setup(r => r.GetByIdAsync(unknownCourseId, default))
+            .ReturnsAsync((Course?)null);
         var request = new CreateNoteRequest("Title", "Content", null, unknownCourseId, null);
 
         await Assert.ThrowsAsync<CourseNotFoundException>(() => _sut.CreateAsync(request));
@@ -102,7 +126,9 @@ public class NoteOrchestratorTests
     {
         var archivedCourse = CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.NewGuid());
         archivedCourse = CourseLifecycle.Archive(archivedCourse);
-        _courseRepository.Setup(r => r.GetByIdAsync(archivedCourse.Id, default)).ReturnsAsync(archivedCourse);
+        _courseRepository
+            .Setup(r => r.GetByIdAsync(archivedCourse.Id, default))
+            .ReturnsAsync(archivedCourse);
         var request = new CreateNoteRequest("Title", "Content", null, archivedCourse.Id, null);
 
         await Assert.ThrowsAsync<CourseArchivedException>(() => _sut.CreateAsync(request));
@@ -113,9 +139,15 @@ public class NoteOrchestratorTests
     [Fact]
     public async Task CreateAsync_WhenSemesterArchived_ThrowsSemesterArchivedException()
     {
-        var archivedSemester = SemesterLifecycle.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30));
+        var archivedSemester = SemesterLifecycle.Create(
+            "Summer 2026",
+            new DateOnly(2026, 4, 1),
+            new DateOnly(2026, 9, 30)
+        );
         archivedSemester = SemesterLifecycle.Archive(archivedSemester);
-        _semesterRepository.Setup(r => r.GetByIdAsync(archivedSemester.Id, default)).ReturnsAsync(archivedSemester);
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(archivedSemester.Id, default))
+            .ReturnsAsync(archivedSemester);
         var request = new CreateNoteRequest("Title", "Content", null, null, archivedSemester.Id);
 
         await Assert.ThrowsAsync<SemesterArchivedException>(() => _sut.CreateAsync(request));
@@ -127,17 +159,33 @@ public class NoteOrchestratorTests
     public async Task CreateAsync_WithWikiLinkToExistingNote_ResolvesLinks()
     {
         var targetId = Guid.NewGuid();
-        _noteRepository.Setup(r => r.GetIdsByTitlesAsync(
-                It.Is<IReadOnlyCollection<string>>(titles => titles.Contains("Graph Theory")), default))
+        _noteRepository
+            .Setup(r =>
+                r.GetIdsByTitlesAsync(
+                    It.Is<IReadOnlyCollection<string>>(titles => titles.Contains("Graph Theory")),
+                    default
+                )
+            )
             .ReturnsAsync(new Dictionary<string, Guid> { ["Graph Theory"] = targetId });
-        var request = new CreateNoteRequest("Title", "See [[Graph Theory]] for background.", null, CourseId, null);
+        var request = new CreateNoteRequest(
+            "Title",
+            "See [[Graph Theory]] for background.",
+            null,
+            CourseId,
+            null
+        );
 
         await _sut.CreateAsync(request);
 
-        _noteRepository.Verify(r => r.ReplaceLinksAsync(
-            It.IsAny<Guid>(),
-            It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(targetId)),
-            default), Times.Once);
+        _noteRepository.Verify(
+            r =>
+                r.ReplaceLinksAsync(
+                    It.IsAny<Guid>(),
+                    It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(targetId)),
+                    default
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -147,7 +195,14 @@ public class NoteOrchestratorTests
         note = NoteLifecycle.Archive(note);
         _noteRepository.Setup(r => r.GetByIdAsync(note.Id, default)).ReturnsAsync(note);
 
-        var request = new UpdateNoteRequest(note.Id, "New title", "New content", null, CourseId, null);
+        var request = new UpdateNoteRequest(
+            note.Id,
+            "New title",
+            "New content",
+            null,
+            CourseId,
+            null
+        );
 
         await Assert.ThrowsAsync<NoteArchivedException>(() => _sut.UpdateAsync(request));
     }
@@ -205,11 +260,18 @@ public class NoteOrchestratorTests
         var note = NoteLifecycle.Create("Title", "Content", null, CourseId, null);
         _noteRepository.Setup(r => r.GetByIdAsync(note.Id, default)).ReturnsAsync(note);
         var unknownDocumentId = Guid.NewGuid();
-        _documentRepository.Setup(r => r.GetByIdAsync(unknownDocumentId, default)).ReturnsAsync((Document?)null);
+        _documentRepository
+            .Setup(r => r.GetByIdAsync(unknownDocumentId, default))
+            .ReturnsAsync((Document?)null);
 
-        await Assert.ThrowsAsync<DocumentNotFoundException>(() => _sut.AttachDocumentAsync(note.Id, unknownDocumentId));
+        await Assert.ThrowsAsync<DocumentNotFoundException>(() =>
+            _sut.AttachDocumentAsync(note.Id, unknownDocumentId)
+        );
 
-        _noteRepository.Verify(r => r.AddAttachmentAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), default), Times.Never);
+        _noteRepository.Verify(
+            r => r.AddAttachmentAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), default),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -220,7 +282,10 @@ public class NoteOrchestratorTests
 
         await _sut.DetachDocumentAsync(note.Id, DocumentId);
 
-        _noteRepository.Verify(r => r.RemoveAttachmentAsync(note.Id, DocumentId, default), Times.Once);
+        _noteRepository.Verify(
+            r => r.RemoveAttachmentAsync(note.Id, DocumentId, default),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -232,10 +297,18 @@ public class NoteOrchestratorTests
         var sourceA = NoteLifecycle.Create("Zeta", "See [[Target]]", null, CourseId, null);
         var sourceB = NoteLifecycle.Create("Alpha", "See [[Target]]", null, CourseId, null);
 
-        _noteRepository.Setup(r => r.GetBacklinkNoteIdsAsync(note.Id, default))
+        _noteRepository
+            .Setup(r => r.GetBacklinkNoteIdsAsync(note.Id, default))
             .ReturnsAsync((IReadOnlyList<Guid>)[sourceA.Id, sourceB.Id]);
-        _noteRepository.Setup(r => r.GetByIdsAsync(
-                It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(sourceA.Id) && ids.Contains(sourceB.Id)), default))
+        _noteRepository
+            .Setup(r =>
+                r.GetByIdsAsync(
+                    It.Is<IReadOnlyCollection<Guid>>(ids =>
+                        ids.Contains(sourceA.Id) && ids.Contains(sourceB.Id)
+                    ),
+                    default
+                )
+            )
             .ReturnsAsync((IReadOnlyList<Note>)[sourceA, sourceB]);
 
         var backlinks = await _sut.GetBacklinksAsync(note.Id);

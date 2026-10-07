@@ -13,7 +13,13 @@ public class NoteLifecycleTests
     [Fact]
     public void Create_WithCourseId_SetsProperties()
     {
-        var note = NoteLifecycle.Create("Lecture 1", "# Intro", "graphs, algorithms", CourseId, semesterId: null);
+        var note = NoteLifecycle.Create(
+            "Lecture 1",
+            "# Intro",
+            "graphs, algorithms",
+            CourseId,
+            semesterId: null
+        );
 
         Assert.NotEqual(Guid.Empty, note.Id);
         Assert.Equal("Lecture 1", note.Title);
@@ -27,7 +33,13 @@ public class NoteLifecycleTests
     [Fact]
     public void Create_WithSemesterId_SetsProperties()
     {
-        var note = NoteLifecycle.Create("Syllabus overview", "Content", null, courseId: null, SemesterId);
+        var note = NoteLifecycle.Create(
+            "Syllabus overview",
+            "Content",
+            null,
+            courseId: null,
+            SemesterId
+        );
 
         Assert.Equal(SemesterId, note.SemesterId);
         Assert.Null(note.CourseId);
@@ -40,7 +52,9 @@ public class NoteLifecycleTests
     [InlineData(null)]
     public void Create_WithoutTitle_ThrowsValidationException(string? title)
     {
-        Assert.Throws<NoteValidationException>(() => NoteLifecycle.Create(title!, "Content", null, CourseId, null));
+        Assert.Throws<NoteValidationException>(() =>
+            NoteLifecycle.Create(title!, "Content", null, CourseId, null)
+        );
     }
 
     [Fact]
@@ -48,7 +62,9 @@ public class NoteLifecycleTests
     {
         var title = new string('a', Note.TitleMaxLength + 1);
 
-        Assert.Throws<NoteValidationException>(() => NoteLifecycle.Create(title, "Content", null, CourseId, null));
+        Assert.Throws<NoteValidationException>(() =>
+            NoteLifecycle.Create(title, "Content", null, CourseId, null)
+        );
     }
 
     [Fact]
@@ -56,19 +72,25 @@ public class NoteLifecycleTests
     {
         var content = new string('a', Note.ContentMaxLength + 1);
 
-        Assert.Throws<NoteValidationException>(() => NoteLifecycle.Create("Title", content, null, CourseId, null));
+        Assert.Throws<NoteValidationException>(() =>
+            NoteLifecycle.Create("Title", content, null, CourseId, null)
+        );
     }
 
     [Fact]
     public void Create_WithBothCourseAndSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<NoteValidationException>(() => NoteLifecycle.Create("Title", "Content", null, CourseId, SemesterId));
+        Assert.Throws<NoteValidationException>(() =>
+            NoteLifecycle.Create("Title", "Content", null, CourseId, SemesterId)
+        );
     }
 
     [Fact]
     public void Create_WithNeitherCourseNorSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<NoteValidationException>(() => NoteLifecycle.Create("Title", "Content", null, courseId: null, semesterId: null));
+        Assert.Throws<NoteValidationException>(() =>
+            NoteLifecycle.Create("Title", "Content", null, courseId: null, semesterId: null)
+        );
     }
 
     [Fact]
@@ -76,7 +98,14 @@ public class NoteLifecycleTests
     {
         var note = NoteLifecycle.Create("Title", "Content", null, CourseId, null);
 
-        note = NoteLifecycle.Update(note, "New title", "New content", "tag1, tag2", null, SemesterId);
+        note = NoteLifecycle.Update(
+            note,
+            "New title",
+            "New content",
+            "tag1, tag2",
+            null,
+            SemesterId
+        );
 
         Assert.Equal("New title", note.Title);
         Assert.Equal("New content", note.Content);
@@ -91,7 +120,9 @@ public class NoteLifecycleTests
         var note = NoteLifecycle.Create("Title", "Content", null, CourseId, null);
         note = NoteLifecycle.Archive(note);
 
-        Assert.Throws<NoteArchivedException>(() => NoteLifecycle.Update(note, "New title", "New content", null, CourseId, null));
+        Assert.Throws<NoteArchivedException>(() =>
+            NoteLifecycle.Update(note, "New title", "New content", null, CourseId, null)
+        );
     }
 
     [Fact]
