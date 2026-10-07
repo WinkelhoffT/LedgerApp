@@ -37,6 +37,16 @@ else
                 </select>
             </div>
 
+            <div class="form-group flashcard-model-field">
+                <label for="flashcard-model">Model</label>
+                <select id="flashcard-model" class="form-control" @bind="SelectedModel" disabled="@(IsBusy || Models.Count == 0)">
+                    @foreach (var model in Models)
+                    {
+                        <option value="@model.Id">@model.DisplayName</option>
+                    }
+                </select>
+            </div>
+
             <div class="form-group flashcard-count-field">
                 <label for="flashcard-count">Cards</label>
                 <input id="flashcard-count" class="form-control" type="number"
@@ -79,7 +89,7 @@ else
             <div>
                 <div class="section-title flashcard-deck">@CurrentSet.DeckName</div>
                 <div class="flashcard-hint">
-                    @Cards.Count card(s). Cards are not saved — export them before leaving or reloading this page.
+                    Generated with @GetModelName(CurrentSet.Model). @Cards.Count card(s). Cards are not saved — export them before leaving or reloading this page.
                 </div>
             </div>
             <button class="btn btn-primary" type="button" disabled="@(IsBusy || Cards.Count == 0)" @onclick="ExportAsync">

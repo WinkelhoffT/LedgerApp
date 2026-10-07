@@ -3,6 +3,7 @@ using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Flashcards;
 using StudyHub.Logic.Integration.Notes;
 using StudyHub.Logic.Integration.Semesters;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
 using StudyHub.UI.Flashcards;
@@ -38,6 +39,10 @@ public partial class Flashcards
 
     private Guid SelectedNoteId { get; set; }
 
+    private IReadOnlyList<AiModelDto> Models { get; set; } = [];
+
+    private string? SelectedModel { get; set; }
+
     private int CardCount { get; set; } = GenerateFlashcardsRequest.DefaultCardCount;
 
     private string? FocusHint { get; set; }
@@ -62,6 +67,9 @@ public partial class Flashcards
         var courses = await CourseAccessor.GetAllAsync();
         var semesters = await SemesterAccessor.GetAllAsync();
 
+        Models = await FlashcardAccessor.GetModelsAsync();
+        SelectedModel = Models.FirstOrDefault(m => m.IsDefault)?.Id ?? Models.FirstOrDefault()?.Id;
+
         var courseGroups = courses
             .OrderBy(c => c.Name)
             .Select(c => new NoteGroup(c.Name, notes.Where(n => n.CourseId == c.Id).OrderBy(n => n.Title).ToList()));
@@ -85,7 +93,11 @@ public partial class Flashcards
         try
         {
             CurrentSet = await FlashcardAccessor.GenerateAsync(
-                new GenerateFlashcardsRequest(SelectedNoteId, CardCount, string.IsNullOrWhiteSpace(FocusHint) ? null : FocusHint));
+                new GenerateFlashcardsRequest(
+                    SelectedNoteId,
+                    CardCount,
+                    string.IsNullOrWhiteSpace(FocusHint) ? null : FocusHint,
+                    SelectedModel));
             Cards = CurrentSet.Cards.Select(EditableFlashcard.FromDto).ToList();
         }
         catch (Exception ex) when (ex is FlashcardValidationException or FlashcardGenerationFailedException
@@ -143,6 +155,9 @@ public partial class Flashcards
     }
 
     private void RemoveCard(EditableFlashcard card) => Cards.Remove(card);
+
+    private string GetModelName(string modelId) =>
+        Models.FirstOrDefault(m => m.Id == modelId)?.DisplayName ?? modelId;
 
     private sealed record NoteGroup(string Label, IReadOnlyList<NoteDto> Notes);
 }
