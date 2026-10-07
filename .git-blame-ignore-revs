@@ -1,0 +1,5 @@
+# Commits listed here are skipped by `git blame` (GitHub applies this file automatically;
+# locally: git config blame.ignoreRevsFile .git-blame-ignore-revs).
+
+# Apply CSharpier formatting to the codebase
+7786d20371a8390e9d68a8bbcc01d4cbddca9ecc
