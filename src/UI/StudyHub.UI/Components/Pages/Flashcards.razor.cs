@@ -1,12 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Flashcards;
-using StudyHub.Logic.Integration.Notes;
-using StudyHub.Logic.Integration.Semesters;
-using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
-using StudyHub.Shared.Notes;
-using StudyHub.UI.Flashcards;
 using StudyHub.UI.Services;
 
 namespace StudyHub.UI.Components.Pages;
@@ -14,133 +9,70 @@ namespace StudyHub.UI.Components.Pages;
 public partial class Flashcards
 {
     [Inject]
-    private IFlashcardAccessor FlashcardAccessor { get; set; } = default!;
+    private IFlashcardDeckAccessor DeckAccessor { get; set; } = default!;
 
     [Inject]
-    private INoteAccessor NoteAccessor { get; set; } = default!;
+    private IFlashcardTransferAccessor TransferAccessor { get; set; } = default!;
 
     [Inject]
     private ICourseAccessor CourseAccessor { get; set; } = default!;
 
     [Inject]
-    private ISemesterAccessor SemesterAccessor { get; set; } = default!;
+    private IFileDownloadAccessor FileDownloadAccessor { get; set; } = default!;
 
     [Inject]
-    private IFileDownloadAccessor FileDownloadAccessor { get; set; } = default!;
+    private NavigationManager NavigationManager { get; set; } = default!;
 
     [Inject]
     private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
-    /// <summary>Preselects a note, e.g. when coming from the Notes page.</summary>
-    [SupplyParameterFromQuery]
-    public Guid? NoteId { get; set; }
+    private IReadOnlyList<FlashcardDeckDto>? Decks { get; set; }
 
-    private IReadOnlyList<NoteGroup>? NoteGroups { get; set; }
+    private IReadOnlyList<FlashcardDeckDto> ActiveDecks => Decks?.Where(d => !d.IsArchived).ToList() ?? [];
 
-    private Guid SelectedNoteId { get; set; }
+    private Dictionary<Guid, string> CourseNamesById { get; set; } = [];
 
-    private IReadOnlyList<AiModelDto> Models { get; set; } = [];
+    private bool ShowArchived { get; set; }
 
-    private string? SelectedModel { get; set; }
+    private bool IsDeckDialogOpen { get; set; }
 
-    private int CardCount { get; set; } = GenerateFlashcardsRequest.DefaultCardCount;
+    private bool IsImportOpen { get; set; }
 
-    private string? FocusHint { get; set; }
-
-    private FlashcardSetDto? CurrentSet { get; set; }
-
-    private List<EditableFlashcard> Cards { get; set; } = [];
-
-    private bool IsGenerating { get; set; }
-
-    private bool IsExporting { get; set; }
-
-    private bool IsBusy => IsGenerating || IsExporting;
+    private Guid? ExportingDeckId { get; set; }
 
     private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        PageHeader.SetHeader("Flashcards", "Turn your notes into Anki cards");
+        PageHeader.SetHeader("Flashcards", "Spaced repetition");
 
-        var notes = (await NoteAccessor.GetAllAsync()).Where(n => !n.IsArchived).ToList();
         var courses = await CourseAccessor.GetAllAsync();
-        var semesters = await SemesterAccessor.GetAllAsync();
-
-        Models = await FlashcardAccessor.GetModelsAsync();
-        SelectedModel = Models.FirstOrDefault(m => m.IsDefault)?.Id ?? Models.FirstOrDefault()?.Id;
-
-        var courseGroups = courses
-            .OrderBy(c => c.Name)
-            .Select(c => new NoteGroup(c.Name, notes.Where(n => n.CourseId == c.Id).OrderBy(n => n.Title).ToList()));
-        var semesterGroups = semesters
-            .OrderBy(s => s.Name)
-            .Select(s => new NoteGroup(s.Name, notes.Where(n => n.SemesterId == s.Id).OrderBy(n => n.Title).ToList()));
-
-        NoteGroups = courseGroups.Concat(semesterGroups).Where(g => g.Notes.Count > 0).ToList();
-
-        if (NoteId is { } noteId && notes.Any(n => n.Id == noteId))
-        {
-            SelectedNoteId = noteId;
-        }
+        CourseNamesById = courses.ToDictionary(c => c.Id, c => c.Name);
+        await LoadDecksAsync();
     }
 
-    private async Task GenerateAsync()
+    private async Task LoadDecksAsync()
+    {
+        Decks = await DeckAccessor.GetAllAsync(ShowArchived);
+    }
+
+    private string GetCourseName(Guid? courseId) =>
+        courseId is { } id ? CourseNamesById.GetValueOrDefault(id, "Unknown course") : "—";
+
+    private void HandleDeckCreated(FlashcardDeckDto deck) =>
+        NavigationManager.NavigateTo($"flashcards/decks/{deck.Id}");
+
+    private async Task ExportAsync(FlashcardDeckDto deck)
     {
         ErrorMessage = null;
-        IsGenerating = true;
+        ExportingDeckId = deck.Id;
 
         try
         {
-            CurrentSet = await FlashcardAccessor.GenerateAsync(
-                new GenerateFlashcardsRequest(
-                    SelectedNoteId,
-                    CardCount,
-                    string.IsNullOrWhiteSpace(FocusHint) ? null : FocusHint,
-                    SelectedModel));
-            Cards = CurrentSet.Cards.Select(EditableFlashcard.FromDto).ToList();
-        }
-        catch (Exception ex) when (ex is FlashcardValidationException or FlashcardGenerationFailedException
-                                       or AiNotConfiguredException or NoteNotFoundException or NoteArchivedException)
-        {
-            ErrorMessage = ex.Message;
-        }
-        catch (HttpRequestException)
-        {
-            ErrorMessage = "StudyHub.Api could not be reached. Try again in a moment.";
-        }
-        catch (TaskCanceledException)
-        {
-            ErrorMessage = "Generating the flashcards took too long. Try fewer cards.";
-        }
-        finally
-        {
-            IsGenerating = false;
-        }
-    }
-
-    private async Task ExportAsync()
-    {
-        if (CurrentSet is null)
-        {
-            return;
-        }
-
-        ErrorMessage = null;
-        IsExporting = true;
-
-        try
-        {
-            foreach (var card in Cards)
-            {
-                card.IsEditing = false;
-            }
-
-            var export = await FlashcardAccessor.ExportAsync(
-                new ExportFlashcardsRequest(CurrentSet.DeckName, CurrentSet.FileName, Cards.Select(c => c.ToDto()).ToList()));
+            var export = await TransferAccessor.ExportAsync(deck.Id);
             await FileDownloadAccessor.DownloadAsync(export.FileName, export.ContentType, export.Content);
         }
-        catch (FlashcardValidationException ex)
+        catch (FlashcardDeckNotFoundException ex)
         {
             ErrorMessage = ex.Message;
         }
@@ -150,14 +82,7 @@ public partial class Flashcards
         }
         finally
         {
-            IsExporting = false;
+            ExportingDeckId = null;
         }
     }
-
-    private void RemoveCard(EditableFlashcard card) => Cards.Remove(card);
-
-    private string GetModelName(string modelId) =>
-        Models.FirstOrDefault(m => m.Id == modelId)?.DisplayName ?? modelId;
-
-    private sealed record NoteGroup(string Label, IReadOnlyList<NoteDto> Notes);
 }

@@ -239,7 +239,7 @@ else
                         else
                         {
                             <button class="btn btn-primary btn-sm" type="button" @onclick="StartEditing">Edit</button>
-                            <a class="btn btn-outline btn-sm" href="flashcards?noteId=@note.Id">Generate flashcards</a>
+                            <a class="btn btn-outline btn-sm" href="flashcards/generate?noteId=@note.Id">Generate flashcards</a>
                             <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsSaving" @onclick="ArchiveSelectedAsync">Archive</button>
                         }
                     </div>

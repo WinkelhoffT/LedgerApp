@@ -1,0 +1,79 @@
+@page "/flashcards/study/{DeckId:guid}"
+@using StudyHub.Shared.Flashcards
+@using StudyHub.UI.Flashcards
+
+<PageTitle>Study @(DeckName ?? "Deck")</PageTitle>
+
+<div class="study-page" tabindex="0" @ref="StudyArea" @onkeydown="HandleKeyDownAsync">
+    <div class="study-head">
+        <a class="btn btn-outline btn-sm" href="@($"flashcards/decks/{DeckId}")">← @(DeckName ?? "Deck")</a>
+        @if (Card is not null)
+        {
+            <FlashcardStudyCounts Counts="Card.Counts" />
+        }
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error page-error">@ErrorMessage</div>
+    }
+
+    @if (IsLoading)
+    {
+        <p class="placeholder-hint">Loading the next card…</p>
+    }
+    else if (Card is null)
+    {
+        @if (!HasError)
+        {
+            <div class="card empty-state study-finished">
+                <div class="empty-state-title">Congratulations! You have finished this deck for now.</div>
+                <div class="empty-state-text">Come back later for learning cards that are still due today, or tomorrow for the next reviews.</div>
+                <div class="empty-state-actions">
+                    <a class="btn btn-primary" href="flashcards">Back to decks</a>
+                    <a class="btn btn-secondary" href="@($"flashcards/decks/{DeckId}")">Open deck</a>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card study-card">
+            <div class="study-side study-front">@FlashcardHtmlFormatter.ToPreview(Card.Front)</div>
+
+            @if (IsAnswerShown)
+            {
+                <hr class="study-divider" />
+                <div class="study-side study-back">@FlashcardHtmlFormatter.ToPreview(Card.Back)</div>
+                @if (Card.Tags.Count > 0)
+                {
+                    <div class="study-tags">
+                        @foreach (var tag in Card.Tags)
+                        {
+                            <span class="note-tag-f">#@tag</span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="study-actions">
+            @if (!IsAnswerShown)
+            {
+                <button class="btn btn-primary study-show" type="button" @onclick="ShowAnswer">Show answer <kbd>Space</kbd></button>
+            }
+            else
+            {
+                @foreach (var interval in Card.Intervals)
+                {
+                    <button class="btn study-rating rating-@interval.Rating.ToString().ToLowerInvariant()" type="button" disabled="@IsAnswering"
+                            @onclick="() => AnswerAsync(interval.Rating)">
+                        <span class="study-rating-interval">@StudyIntervalFormatter.Format(interval.Interval)</span>
+                        <span>@interval.Rating</span>
+                        <kbd>@((int)interval.Rating)</kbd>
+                    </button>
+                }
+            }
+        </div>
+    }
+</div>

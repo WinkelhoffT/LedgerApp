@@ -493,3 +493,94 @@ select:focus-visible,
 .flashcard-index { width: 40px; color: var(--text-3); }
 .flashcard-tags-col { width: 180px; }
 .flashcard-actions-col { width: 150px; white-space: nowrap; text-align: right; }
+
+/* ---------- Flashcard decks & study ---------- */
+.toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.page-error { margin-bottom: 16px; }
+.empty-state-actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.modal-panel-wide { max-width: 640px; }
+
+.study-counts { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.count-new { color: #2563eb; }
+.count-learning { color: var(--danger); }
+.count-review { color: var(--success); }
+[data-theme="dark"] .count-new { color: #60a5fa; }
+
+.deck-table tr.is-archived td { opacity: .65; }
+.deck-name { font-weight: 700; color: var(--text); }
+.deck-name:hover { color: var(--accent); }
+.deck-table .badge-archived { margin-left: 8px; }
+.deck-course-col { width: 200px; color: var(--text-2); }
+.deck-number-col { width: 80px; }
+.deck-due-col { width: 140px; }
+.deck-actions-col { width: 240px; white-space: nowrap; text-align: right; }
+.deck-actions-col .btn + .btn { margin-left: 4px; }
+.deck-state-col { width: 110px; white-space: nowrap; }
+
+.deck-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.deck-header.is-archived { opacity: .8; }
+.deck-header-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.deck-title-row { display: flex; align-items: center; gap: 10px; }
+.deck-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: var(--accent); word-break: break-word; }
+.deck-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--text-3); }
+.deck-due { display: flex; align-items: center; gap: 10px; }
+.deck-due-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.deck-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.deck-cards-toolbar { margin-bottom: 14px; }
+.deck-search { display: flex; gap: 8px; flex: 1 1 320px; max-width: 480px; }
+.card-state { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--text-2); }
+.card-state.state-new { color: #2563eb; }
+.card-state.state-learning, .card-state.state-relearning { color: var(--danger); }
+.card-state.state-review { color: var(--success); }
+
+.flashcard-saved { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.flashcard-saved-actions, .flashcard-save-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flashcard-save-deck { width: 220px; }
+.flashcard-save-name { width: 220px; }
+
+.import-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13px; color: var(--text-2); }
+.import-summary b { display: block; font-family: var(--font-display); font-size: 20px; color: var(--text); }
+.import-summary .import-failed b { color: var(--danger); }
+.import-deck-list, .import-failure-list { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.import-deck-list a { color: var(--accent); text-decoration: underline; }
+.import-failure-list { max-height: 220px; overflow-y: auto; }
+.import-failure-list .mono { color: var(--text-3); margin-right: 6px; }
+
+.study-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.study-page:focus, .study-page:focus-visible { outline: none; }
+.study-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.study-card { padding: 32px; min-height: 220px; font-size: 17px; line-height: 1.6; text-align: center; }
+.study-side code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.study-side pre { text-align: left; background: var(--surface-2); padding: 12px; border-radius: var(--radius-sm); overflow-x: auto; }
+.study-side ul, .study-side ol { text-align: left; margin: 8px 0 8px 24px; }
+.study-divider { margin: 24px 0; border: none; border-top: 1px solid var(--border); }
+.study-tags { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 20px; }
+.study-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.study-actions kbd { font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,.12); color: inherit; }
+.study-rating { flex-direction: column; gap: 2px; min-width: 110px; border-radius: var(--radius-sm); color: #fff; }
+.study-rating-interval { font-family: var(--font-mono); font-size: 12px; opacity: .9; }
+.rating-again { background: var(--danger); }
+.rating-hard { background: #64748b; }
+.rating-good { background: var(--success); }
+.rating-easy { background: #2563eb; }
+.study-rating:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.study-finished .empty-state-title { color: var(--accent); }
+
+.flashcards-due-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.flashcards-due-empty { font-size: 13px; color: var(--text-3); }
+.flashcards-due-totals { display: flex; gap: 32px; margin-bottom: 14px; }
+.due-total { display: flex; flex-direction: column; }
+.due-total-val { font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+.due-total-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+.flashcards-due-list { list-style: none; display: flex; flex-direction: column; }
+.flashcards-due-row { display: flex; align-items: center; gap: 16px; padding: 9px 0; border-top: 1px solid var(--border); }
+.flashcards-due-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flashcards-due-name:hover { color: var(--accent); }
+
+@media (max-width: 640px) {
+  .deck-course-col, .deck-number-col { display: none; }
+  .deck-actions-col { width: auto; white-space: normal; }
+  .deck-actions-col .btn { margin: 2px 0 2px 4px; }
+  .import-summary { grid-template-columns: repeat(2, 1fr); }
+  .study-card { padding: 20px; }
+}
