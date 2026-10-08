@@ -72,7 +72,8 @@ public sealed class CalendarOrchestrator(
                 date,
                 laneProcessor.Assign(sessionsByDate[date])
                     .Select(lane => new CalendarSessionDto(ToDto(lane.Session, courses, semesters), lane.Lane, lane.LaneCount))
-                    .ToList()))
+                    .ToList(),
+                []))
             .ToList();
     }
 
