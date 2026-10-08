@@ -1,0 +1,6 @@
+#separator:tab
+#html:false
+#tags column:3
+Was ist ein Min-Heap?	Ein Baum, in dem jeder Elternknoten <= seine Kinder ist.	datenstrukturen heap
+Was macht "git rebase"?	"Setzt Commits auf eine neue Basis:
+keine Merge-Commits."	git
