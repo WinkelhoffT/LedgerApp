@@ -47,8 +47,12 @@ implemented versus planned.
 - Docker/Docker Compose deployment with separate UI and Api containers; the SQLite database is
   persisted outside the Api container via a bind mount.
 - AI flashcard generation from a Markdown note (Claude via the Anthropic API), with review/editing
-  in the app and export as an Anki-importable CSV file (see
+  in the app before saving the cards to a deck (see
   [Configure AI features](#configure-ai-features-flashcards)).
+- Flashcard decks studied with spaced repetition (Anki's SM-2 scheduler with Anki's default
+  options, daily limits, Again/Hard/Good/Easy with keyboard shortcuts), import of Anki's text
+  export ("Notes in Plain Text", CSV/TXT/TSV), deck export in the same format, and a "Flashcards
+  due today" card on the Dashboard (see [Flashcard study day](#flashcard-study-day)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -244,13 +248,21 @@ dotnet user-secrets set "Anthropic:ApiKey" "<your key>" \
   --project src/UI/StudyHub.Api/StudyHub.Api.csproj
 ```
 
-Without a key the app still starts; the Flashcards page then shows an "AI not configured" message.
+Without a key the app still starts; the generator page (`/flashcards/generate`) then shows an
+"AI not configured" message. Decks, study sessions and the Anki import work without a key.
 
-The model is chosen per generation on the Flashcards page. The choices come from
+The model is chosen per generation on the generator page. The choices come from
 `Anthropic:Models` (a list of `Id` + `DisplayName`), preselected with `Anthropic:DefaultModel`
 (`claude-sonnet-5-5`); the Api rejects any model that isn't in that list. Further settings:
 `Anthropic:Effort` (`medium`) and `Anthropic:MaxTokens`. Each generation is a paid API call (Opus
 costs about twice as much as Sonnet); note content is sent to Anthropic.
+
+### Flashcard study day
+
+Like Anki's "next day starts at 4", a study day for flashcards starts at a fixed hour in a fixed
+time zone. Both are set in the `Flashcards` section of `src/UI/StudyHub.Api/appsettings.json`
+(`TimeZone`: `Europe/Berlin`, `DayStartHour`: `4`) and are validated at Api startup — an unknown
+IANA time zone id or an hour outside 0–23 stops the Api with an error.
 
 ### Run the application (locally, without Docker)
 
@@ -375,7 +387,7 @@ Planned development phases, roughly in order:
 7. **Study Sessions** — plan and track study time.
 8. **Calendar** — visualize sessions, deadlines, and course schedules.
 9. **AI Features** — summaries, explanations, and review questions generated from study material.
-10. **Flashcards** — generate flashcards from notes/documents, with Anki export.
+10. **Flashcards** — decks with spaced repetition, AI generation from notes, Anki import/export.
 11. **Analytics** — learning analytics and progress dashboards.
 
 This roadmap describes intent and ordering, not committed dates.

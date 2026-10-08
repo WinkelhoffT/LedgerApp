@@ -1,6 +1,7 @@
 # Feature Plan: Own Flashcard System (Decks, Spaced Repetition, Anki CSV Import)
 
-Status: Proposed. Waiting for confirmation and for the answers in section 10 before implementation.
+Status: Implemented on `feature-IntegrateAnkiApi` (see section 12 for the answers to section 10
+and the deviations from this plan).
 Classification (per `CLAUDE.md`): **Large**. It adds a new persistent domain with three tables,
 a scheduling algorithm, a file import and four new pages.
 
@@ -389,3 +390,60 @@ Reported per `CLAUDE.md`, not resolved by guessing:
 - Statistics page based on `FlashcardReviews` (milestone "Learning Analytics").
 - Study several decks at once, and sub-decks from `::` names.
 - Import preview before saving.
+
+## 12. Implementation Notes
+
+### Answers to the open questions (section 10)
+
+1. **Scheduler:** SM-2 with Anki's defaults as recommended; FSRS stays a follow-up.
+2. **Generator export:** removed as recommended. The generator saves to a deck, and decks are
+   exported from the deck overview and the deck page.
+3. **Branch:** the work stayed on `feature-IntegrateAnkiApi`, the branch this task was assigned to.
+
+### Deviations from the plan
+
+- **Four orchestrators instead of three.** Deck CRUD with counts plus card CRUD would have needed
+  nine dependencies (COD-006 allows seven), so card listing/adding/editing/deleting and "save to
+  deck" live in `DeckCardOrchestrator`; `FlashcardDeckOrchestrator` keeps deck CRUD and counts.
+  `FlashcardDeckController` calls both, plus `FlashcardTransferOrchestrator` for import/export.
+- **Queue order follows Anki more closely than section 3.3 states:** learning cards that are due
+  *now* come first, then reviews, then new cards; a learning card that is only due within the
+  20-minute learn-ahead limit is shown early only when nothing else is left. With the order as
+  written, a card answered *Again* (due in 1 minute) would come back immediately even when other
+  cards are waiting.
+- **Answer guard:** answering a card that is not in today's queue (e.g. a review due next week, or a
+  repeated submit after a new card already graduated) returns `409` with
+  `flashcard_not_due` (`FlashcardNotDueException`, not in the plan's exception list). Learning
+  cards within the learn-ahead limit stay answerable, so a slow answer is never rejected because
+  another card became due meanwhile.
+- **Clock:** `StudyDayProvider` reads `TimeProvider` and returns a `StudyDay` (now, date, start,
+  next start); the review processor and queue provider take that value instead of reading the
+  clock, so one request uses one instant. Lifecycles read `TimeProvider` for timestamps.
+- **New-card order:** a new card's `DueAt` is its queue position (creation time plus one tick per
+  card of a batch), so cards keep the order they were added in without an extra column.
+- **Intervals** are rounded half away from zero to whole days, as in Anki's current scheduler.
+- **Import details:** `#columns` is split after the delimiter is known (so `#columns` before
+  `#separator` also works); a column labelled `Tags` is used as the tags column when no
+  `#tags column` is set; a file without data rows, or whose rows all fail, is rejected with the
+  first failure's line and reason; rows naming an archived deck fail; the dialog's "new deck named
+  after the file" reuses an existing deck of that name.
+- **Startup validation:** `Flashcards:TimeZone` and `Flashcards:DayStartHour` are validated with
+  `ValidateOnStart` in StudyHub.Api; the Domain receives the plain `FlashcardStudyOptions` object,
+  so it needs no Options package.
+- **`FlashcardHtmlFormatter`** renders the allowed tags with their attributes dropped (an imported
+  `<span style="…">` becomes `<span>`); other tags stay visible as text, as before.
+- **Study page:** `Enter` also reveals the answer; a small script keeps `Space` from scrolling the
+  page while the study area has focus.
+- **Accessor tests:** `tests/StudyHub.Tests/Logic/Integration/Flashcards` runs the accessors against
+  the real Api (`WebApplicationFactory`) to cover both sides of the wire contract.
+
+### Validation notes
+
+- The test files under `tests/StudyHub.Tests/TestData/Flashcards/` are hand-written in the layout
+  of Anki's "Notes in Plain Text" export, not exported from Anki desktop. The manual checks in
+  section 9 (importing a real Anki export, importing StudyHub's export into Anki, studying over
+  several days) are still open.
+- The pre-existing Api tests for courses, semesters, notes and the semester-progress dashboard fail
+  with EF Core 10 ("Services for database providers … have been registered") on this branch's base;
+  their fix is on `feature-ImplementCiCdPipeline`. The new flashcard Api tests use the working
+  factory setup (`tests/StudyHub.Tests/Api/InMemoryApiFactory.cs`).
