@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeckCardOrchestrator, DeckCardOrchestrator>();
         services.AddScoped<IFlashcardStudyOrchestrator, FlashcardStudyOrchestrator>();
         services.AddScoped<IFlashcardTransferOrchestrator, FlashcardTransferOrchestrator>();
+        services.AddScoped<IStudySessionOrchestrator, StudySessionOrchestrator>();
+        services.AddScoped<ICalendarOrchestrator, CalendarOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
@@ -34,9 +36,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFlashcardLifecycle, FlashcardLifecycle>();
         services.AddScoped<IFlashcardReviewProcessor, FlashcardReviewProcessor>();
         services.AddScoped<IStudyQueueProvider, StudyQueueProvider>();
+        services.AddScoped<IStudySessionLifecycle, StudySessionLifecycle>();
+        services.AddScoped<IStudySessionLaneProcessor, StudySessionLaneProcessor>();
 
         // Needs a FlashcardStudyOptions instance, which the host binds from configuration.
         services.AddSingleton<IStudyDayProvider, StudyDayProvider>();
+
+        // Needs a CalendarOptions instance, which the host binds from configuration.
+        services.AddSingleton<ICalendarPeriodProvider, CalendarPeriodProvider>();
         services.TryAddSingleton(TimeProvider.System);
 
         return services;
