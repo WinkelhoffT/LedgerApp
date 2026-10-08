@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Api;
+using StudyHub.Api.CalendarEvents;
 using StudyHub.Api.Courses;
 using StudyHub.Api.Documents;
 using StudyHub.Api.Flashcards;
@@ -28,6 +29,7 @@ builder.Services.AddExceptionHandler<DocumentExceptionHandler>();
 builder.Services.AddExceptionHandler<NoteExceptionHandler>();
 builder.Services.AddExceptionHandler<FlashcardExceptionHandler>();
 builder.Services.AddExceptionHandler<StudySessionExceptionHandler>();
+builder.Services.AddExceptionHandler<CalendarEventExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks();
