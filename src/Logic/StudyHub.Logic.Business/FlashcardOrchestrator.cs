@@ -79,7 +79,7 @@ public sealed class FlashcardOrchestrator(
         CancellationToken cancellationToken = default
     )
     {
-        var cards = flashcardValidator.ValidateForExport(request.Cards);
+        var cards = flashcardValidator.ValidateCards(request.Cards);
         var deckName = ankiCsvSerializer.NormalizeDeckName(request.DeckName);
         var fileName = ankiCsvSerializer.CreateFileName(request.FileName);
 

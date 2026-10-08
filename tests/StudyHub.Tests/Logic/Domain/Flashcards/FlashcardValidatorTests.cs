@@ -60,41 +60,64 @@ public class FlashcardValidatorTests
     }
 
     [Fact]
-    public void ValidateForExport_WithNoCards_Throws()
+    public void ValidateCards_WithNoCards_Throws()
     {
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateForExport([]));
+        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateCards([]));
     }
 
     [Fact]
-    public void ValidateForExport_WithTooManyCards_Throws()
+    public void ValidateCards_WithTooManyCards_Throws()
     {
-        var cards = Enumerable.Range(0, GenerateFlashcardsRequest.MaxCardCount + 1).Select(i => new FlashcardDto($"Q{i}", "A", [])).ToList();
+        var cards = Enumerable.Range(0, AddFlashcardsRequest.MaxCardCount + 1).Select(i => new FlashcardDto($"Q{i}", "A", [])).ToList();
 
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateForExport(cards));
+        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateCards(cards));
     }
 
     [Fact]
-    public void ValidateForExport_WithEmptyBack_ThrowsWithCardNumber()
+    public void ValidateCards_WithEmptyBack_ThrowsWithCardNumber()
     {
         var ex = Assert.Throws<FlashcardValidationException>(
-            () => _sut.ValidateForExport([new FlashcardDto("Q1", "A1", []), new FlashcardDto("Q2", "  ", [])]));
+            () => _sut.ValidateCards([new FlashcardDto("Q1", "A1", []), new FlashcardDto("Q2", "  ", [])]));
 
         Assert.StartsWith("Card 2:", ex.Message);
     }
 
     [Fact]
-    public void ValidateForExport_WithTooLongTag_Throws()
+    public void ValidateCards_WithTooLongTag_Throws()
     {
         var tag = new string('t', FlashcardDto.TagMaxLength + 1);
 
-        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateForExport([new FlashcardDto("Q", "A", [tag])]));
+        Assert.Throws<FlashcardValidationException>(() => _sut.ValidateCards([new FlashcardDto("Q", "A", [tag])]));
     }
 
     [Fact]
-    public void ValidateForExport_WithValidCards_ReturnsNormalizedCards()
+    public void ValidateCards_WithValidCards_ReturnsNormalizedCards()
     {
-        var result = _sut.ValidateForExport([new FlashcardDto(" Q ", "A", ["x"])]);
+        var result = _sut.ValidateCards([new FlashcardDto(" Q ", "A", ["x"])]);
 
         Assert.Equal("Q", Assert.Single(result).Front);
+    }
+
+    [Fact]
+    public void TryNormalize_WithValidCard_ReturnsTrimmedCard()
+    {
+        var isValid = _sut.TryNormalize(new FlashcardDto(" Q ", " A ", [" x ", "X"]), out var card, out var error);
+
+        Assert.True(isValid);
+        Assert.Null(error);
+        Assert.Equal("Q", card.Front);
+        Assert.Equal("A", card.Back);
+        Assert.Equal(["x"], card.Tags);
+    }
+
+    [Fact]
+    public void TryNormalize_WithTooManyTags_ReturnsError()
+    {
+        var tags = Enumerable.Range(0, FlashcardDto.MaxTagsPerCard + 1).Select(i => $"t{i}").ToList();
+
+        var isValid = _sut.TryNormalize(new FlashcardDto("Q", "A", tags), out _, out var error);
+
+        Assert.False(isValid);
+        Assert.Contains("tags", error);
     }
 }
