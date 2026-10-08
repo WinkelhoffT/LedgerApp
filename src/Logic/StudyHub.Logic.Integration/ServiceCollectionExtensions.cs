@@ -20,6 +20,9 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IDocumentAccessor, DocumentAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<IDashboardAccessor, DashboardAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<INoteAccessor, NoteAccessor>(client => client.BaseAddress = apiBaseAddress);
+        services.AddHttpClient<IFlashcardDeckAccessor, FlashcardDeckAccessor>(client => client.BaseAddress = apiBaseAddress);
+        services.AddHttpClient<IFlashcardStudyAccessor, FlashcardStudyAccessor>(client => client.BaseAddress = apiBaseAddress);
+        services.AddHttpClient<IFlashcardTransferAccessor, FlashcardTransferAccessor>(client => client.BaseAddress = apiBaseAddress);
 
         // Generation waits for Claude (typically 15-60 s, up to the SDK timeout plus one retry).
         services.AddHttpClient<IFlashcardAccessor, FlashcardAccessor>(client =>
