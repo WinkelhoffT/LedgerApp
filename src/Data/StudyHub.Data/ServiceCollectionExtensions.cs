@@ -12,6 +12,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<INoteRepository, NoteRepository>();
+        services.AddScoped<IFlashcardDeckRepository, FlashcardDeckRepository>();
+        services.AddScoped<IFlashcardRepository, FlashcardRepository>();
 
         return services;
     }

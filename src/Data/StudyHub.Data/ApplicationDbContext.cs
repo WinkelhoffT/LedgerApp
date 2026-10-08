@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
+using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
 
@@ -19,6 +20,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<NoteDocument> NoteDocuments => Set<NoteDocument>();
 
     public DbSet<NoteLink> NoteLinks => Set<NoteLink>();
+
+    public DbSet<FlashcardDeck> FlashcardDecks => Set<FlashcardDeck>();
+
+    public DbSet<Flashcard> Flashcards => Set<Flashcard>();
+
+    public DbSet<FlashcardReview> FlashcardReviews => Set<FlashcardReview>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -238,6 +245,112 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(l => l.TargetNoteId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<FlashcardDeck>(builder =>
+        {
+            builder.ToTable("FlashcardDecks");
+
+            builder.HasKey(d => d.Id);
+
+            builder.Property(d => d.Name)
+                .HasMaxLength(FlashcardDeck.NameMaxLength)
+                .IsRequired();
+
+            builder.Property(d => d.NewCardsPerDay)
+                .IsRequired();
+
+            builder.Property(d => d.ReviewsPerDay)
+                .IsRequired();
+
+            builder.Property(d => d.IsArchived)
+                .IsRequired();
+
+            builder.Property(d => d.CreatedAt)
+                .IsRequired();
+
+            builder.Property(d => d.UpdatedAt)
+                .IsRequired();
+
+            builder.HasIndex(d => d.Name)
+                .IsUnique();
+
+            builder.HasIndex(d => d.CourseId);
+
+            // Restrict, not Cascade: courses are only ever archived, never hard-deleted.
+            builder.HasOne<Course>()
+                .WithMany()
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Flashcard>(builder =>
+        {
+            builder.ToTable("Flashcards");
+
+            builder.HasKey(c => c.Id);
+
+            builder.Property(c => c.Front)
+                .HasMaxLength(FlashcardDto.FrontMaxLength)
+                .IsRequired();
+
+            builder.Property(c => c.Back)
+                .HasMaxLength(FlashcardDto.BackMaxLength)
+                .IsRequired();
+
+            builder.Property(c => c.Tags)
+                .HasMaxLength(Flashcard.TagsMaxLength);
+
+            builder.Property(c => c.State)
+                .IsRequired();
+
+            builder.Property(c => c.DueAt)
+                .IsRequired();
+
+            builder.Property(c => c.CreatedAt)
+                .IsRequired();
+
+            builder.Property(c => c.UpdatedAt)
+                .IsRequired();
+
+            // Serves the study queue: the next learning/review/new card of a deck, ordered by due time.
+            builder.HasIndex(c => new { c.DeckId, c.State, c.DueAt });
+
+            // Restrict: decks are only ever archived, so deleting one must never take its cards with it.
+            builder.HasOne<FlashcardDeck>()
+                .WithMany()
+                .HasForeignKey(c => c.DeckId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Note>()
+                .WithMany()
+                .HasForeignKey(c => c.SourceNoteId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<FlashcardReview>(builder =>
+        {
+            builder.ToTable("FlashcardReviews");
+
+            builder.HasKey(r => r.Id);
+
+            builder.Property(r => r.ReviewedAt)
+                .IsRequired();
+
+            builder.Property(r => r.Rating)
+                .IsRequired();
+
+            builder.Property(r => r.StateBefore)
+                .IsRequired();
+
+            builder.HasIndex(r => r.ReviewedAt);
+
+            // Cascade on purpose: unlike the soft-deleted aggregates, a single card is deleted for
+            // real (as in Anki), and its review log goes with it.
+            builder.HasOne<Flashcard>()
+                .WithMany()
+                .HasForeignKey(r => r.FlashcardId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
