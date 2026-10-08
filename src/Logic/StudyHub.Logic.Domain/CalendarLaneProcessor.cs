@@ -1,25 +1,24 @@
 using StudyHub.Logic.Domain.Contract;
-using StudyHub.Shared.StudySessions;
 
 namespace StudyHub.Logic.Domain;
 
-public sealed class StudySessionLaneProcessor : IStudySessionLaneProcessor
+public sealed class CalendarLaneProcessor : ICalendarLaneProcessor
 {
-    public IReadOnlyList<StudySessionLane> Assign(IEnumerable<StudySession> sessions)
+    public IReadOnlyList<CalendarLane> Assign(IEnumerable<CalendarTimeSlot> slots)
     {
-        var ordered = sessions
+        var ordered = slots
             .OrderBy(s => s.StartTime)
             .ThenByDescending(s => s.DurationMinutes)
             .ToList();
 
-        var result = new List<StudySessionLane>(ordered.Count);
-        var group = new List<(StudySession Session, int Lane)>();
+        var result = new List<CalendarLane>(ordered.Count);
+        var group = new List<(Guid Id, int Lane)>();
         var laneEnds = new List<int>();
         var groupEnd = 0;
 
-        foreach (var session in ordered)
+        foreach (var slot in ordered)
         {
-            var start = StartMinute(session);
+            var start = StartMinute(slot);
             if (group.Count > 0 && start >= groupEnd)
             {
                 CloseGroup();
@@ -32,10 +31,10 @@ public sealed class StudySessionLaneProcessor : IStudySessionLaneProcessor
                 laneEnds.Add(0);
             }
 
-            var end = start + session.DurationMinutes;
+            var end = start + slot.DurationMinutes;
             laneEnds[lane] = end;
             groupEnd = Math.Max(groupEnd, end);
-            group.Add((session, lane));
+            group.Add((slot.Id, lane));
         }
 
         CloseGroup();
@@ -43,13 +42,13 @@ public sealed class StudySessionLaneProcessor : IStudySessionLaneProcessor
 
         void CloseGroup()
         {
-            result.AddRange(group.Select(g => new StudySessionLane(g.Session, g.Lane, laneEnds.Count)));
+            result.AddRange(group.Select(g => new CalendarLane(g.Id, g.Lane, laneEnds.Count)));
             group.Clear();
             laneEnds.Clear();
             groupEnd = 0;
         }
     }
 
-    private static int StartMinute(StudySession session) =>
-        (int)session.StartTime.ToTimeSpan().TotalMinutes;
+    private static int StartMinute(CalendarTimeSlot slot) =>
+        (int)slot.StartTime.ToTimeSpan().TotalMinutes;
 }

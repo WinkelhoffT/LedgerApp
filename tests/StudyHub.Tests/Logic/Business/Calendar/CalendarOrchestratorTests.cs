@@ -28,7 +28,7 @@ public class CalendarOrchestratorTests
             _courseRepository.Object,
             _semesterRepository.Object,
             new CalendarPeriodProvider(new CalendarOptions { TimeZone = "Europe/Berlin" }, new FixedTimeProvider(Now)),
-            new StudySessionLaneProcessor());
+            new CalendarLaneProcessor());
 
         _sessionRepository.Setup(r => r.GetByDateRangeAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), default)).ReturnsAsync([]);
     }

@@ -1,5 +1,3 @@
-using StudyHub.Shared.StudySessions;
-
 namespace StudyHub.Logic.Domain.Contract;
 
 /// <summary>
@@ -23,7 +21,7 @@ public interface ICalendarPeriodProvider
 
     /// <summary>
     /// 07:00 to 22:00, widened to the full hour before the earliest start and after the latest end
-    /// of <paramref name="sessions"/>.
+    /// of <paramref name="slots"/>.
     /// </summary>
-    CalendarHourRange GetWeekHours(IEnumerable<StudySession> sessions);
+    CalendarHourRange GetWeekHours(IEnumerable<CalendarTimeSlot> slots);
 }

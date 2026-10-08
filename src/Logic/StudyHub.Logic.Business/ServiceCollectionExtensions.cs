@@ -37,7 +37,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFlashcardReviewProcessor, FlashcardReviewProcessor>();
         services.AddScoped<IStudyQueueProvider, StudyQueueProvider>();
         services.AddScoped<IStudySessionLifecycle, StudySessionLifecycle>();
-        services.AddScoped<IStudySessionLaneProcessor, StudySessionLaneProcessor>();
+        services.AddScoped<ICalendarLaneProcessor, CalendarLaneProcessor>();
+        services.AddScoped<ICalendarEventLifecycle, CalendarEventLifecycle>();
 
         // Needs a FlashcardStudyOptions instance, which the host binds from configuration.
         services.AddSingleton<IStudyDayProvider, StudyDayProvider>();

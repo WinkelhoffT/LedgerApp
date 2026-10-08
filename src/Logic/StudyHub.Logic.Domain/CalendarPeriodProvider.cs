@@ -1,7 +1,6 @@
 using System.Globalization;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Configuration;
-using StudyHub.Shared.StudySessions;
 
 namespace StudyHub.Logic.Domain;
 
@@ -40,15 +39,15 @@ public sealed class CalendarPeriodProvider : ICalendarPeriodProvider
     public int GetIsoWeek(DateOnly date) =>
         ISOWeek.GetWeekOfYear(date.ToDateTime(TimeOnly.MinValue));
 
-    public CalendarHourRange GetWeekHours(IEnumerable<StudySession> sessions)
+    public CalendarHourRange GetWeekHours(IEnumerable<CalendarTimeSlot> slots)
     {
         var startHour = DefaultStartHour;
         var endHour = DefaultEndHour;
 
-        foreach (var session in sessions)
+        foreach (var slot in slots)
         {
-            var startMinute = (int)session.StartTime.ToTimeSpan().TotalMinutes;
-            var endMinute = startMinute + session.DurationMinutes;
+            var startMinute = (int)slot.StartTime.ToTimeSpan().TotalMinutes;
+            var endMinute = startMinute + slot.DurationMinutes;
 
             startHour = Math.Min(startHour, startMinute / 60);
             endHour = Math.Max(endHour, (endMinute + 59) / 60);

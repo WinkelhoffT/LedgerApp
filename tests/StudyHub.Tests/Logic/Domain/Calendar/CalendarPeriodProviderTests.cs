@@ -1,7 +1,6 @@
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Configuration;
-using StudyHub.Shared.StudySessions;
 using StudyHub.Tests.Fakes;
 
 namespace StudyHub.Tests.Logic.Domain.Calendar;
@@ -13,8 +12,8 @@ public class CalendarPeriodProviderTests
 
     private static readonly CalendarPeriodProvider Sut = CreateSut(new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc));
 
-    private static StudySession Session(int hour, int minute, int durationMinutes) =>
-        new(Guid.NewGuid(), "Session", null, null, new DateOnly(2026, 10, 8), new TimeOnly(hour, minute), durationMinutes, null, DateTime.UtcNow, DateTime.UtcNow);
+    private static CalendarTimeSlot Slot(int hour, int minute, int durationMinutes) =>
+        new(Guid.NewGuid(), new TimeOnly(hour, minute), durationMinutes);
 
     [Fact]
     public void GetMonth_StartingOnMondayWith28Days_ShowsExactlyFourWeeks()
@@ -80,26 +79,26 @@ public class CalendarPeriodProviderTests
     }
 
     [Fact]
-    public void GetWeekHours_WithoutSessions_Is7To22()
+    public void GetWeekHours_WithoutSlots_Is7To22()
     {
         Assert.Equal(new CalendarHourRange(7, 22), Sut.GetWeekHours([]));
     }
 
     [Fact]
-    public void GetWeekHours_WidensToTheFullHourAroundEarlyAndLateSessions()
+    public void GetWeekHours_WidensToTheFullHourAroundEarlyAndLateSlots()
     {
-        Assert.Equal(new CalendarHourRange(6, 23), Sut.GetWeekHours([Session(6, 30, 60), Session(21, 30, 45)]));
+        Assert.Equal(new CalendarHourRange(6, 23), Sut.GetWeekHours([Slot(6, 30, 60), Slot(21, 30, 45)]));
     }
 
     [Fact]
-    public void GetWeekHours_WithSessionEndingOnTheHour_DoesNotAddAnHour()
+    public void GetWeekHours_WithSlotEndingOnTheHour_DoesNotAddAnHour()
     {
-        Assert.Equal(new CalendarHourRange(7, 22), Sut.GetWeekHours([Session(7, 0, 60), Session(21, 0, 60)]));
+        Assert.Equal(new CalendarHourRange(7, 22), Sut.GetWeekHours([Slot(7, 0, 60), Slot(21, 0, 60)]));
     }
 
     [Fact]
-    public void GetWeekHours_WithSessionEndingAtMidnight_EndsAt24()
+    public void GetWeekHours_WithSlotEndingAtMidnight_EndsAt24()
     {
-        Assert.Equal(new CalendarHourRange(7, 24), Sut.GetWeekHours([Session(23, 0, 60)]));
+        Assert.Equal(new CalendarHourRange(7, 24), Sut.GetWeekHours([Slot(23, 0, 60)]));
     }
 }

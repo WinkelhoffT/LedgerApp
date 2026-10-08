@@ -13,7 +13,7 @@ public sealed class CalendarOrchestrator(
     ICourseRepository courseRepository,
     ISemesterRepository semesterRepository,
     ICalendarPeriodProvider periodProvider,
-    IStudySessionLaneProcessor laneProcessor
+    ICalendarLaneProcessor laneProcessor
 ) : ICalendarOrchestrator
 {
     public async Task<CalendarMonthDto> GetMonthAsync(int year, int month, CancellationToken cancellationToken = default)
@@ -32,7 +32,7 @@ public sealed class CalendarOrchestrator(
     {
         var period = periodProvider.GetWeek(date);
         var sessions = await sessionRepository.GetByDateRangeAsync(period.Start, period.End, cancellationToken);
-        var hours = periodProvider.GetWeekHours(sessions);
+        var hours = periodProvider.GetWeekHours(sessions.Select(ToSlot));
 
         return new CalendarWeekDto(
             period.Start,
@@ -68,14 +68,23 @@ public sealed class CalendarOrchestrator(
         var sessionsByDate = sessions.ToLookup(s => s.Date);
 
         return period.Days
-            .Select(date => new CalendarDayDto(
-                date,
-                laneProcessor.Assign(sessionsByDate[date])
-                    .Select(lane => new CalendarSessionDto(ToDto(lane.Session, courses, semesters), lane.Lane, lane.LaneCount))
-                    .ToList(),
-                []))
+            .Select(date =>
+            {
+                var daySessions = sessionsByDate[date].OrderBy(s => s.StartTime).ToList();
+                var lanes = laneProcessor.Assign(daySessions.Select(ToSlot)).ToDictionary(l => l.Id);
+
+                return new CalendarDayDto(
+                    date,
+                    daySessions
+                        .Select(s => new CalendarSessionDto(ToDto(s, courses, semesters), lanes[s.Id].Lane, lanes[s.Id].LaneCount))
+                        .ToList(),
+                    []);
+            })
             .ToList();
     }
+
+    private static CalendarTimeSlot ToSlot(StudySession session) =>
+        new(session.Id, session.StartTime, session.DurationMinutes);
 
     private static StudySessionDto ToDto(
         StudySession session,
