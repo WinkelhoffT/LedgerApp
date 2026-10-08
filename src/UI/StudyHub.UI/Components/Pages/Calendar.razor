@@ -6,15 +6,19 @@
 <div class="cal-toolbar">
     <div class="cal-period">@PeriodTitle</div>
     <div class="cal-nav">
-        <button class="icon-btn" type="button" aria-label="Previous month" @onclick="ShowPrevious">
+        <button class="icon-btn" type="button" aria-label="@(IsWeek ? "Previous week" : "Previous month")" @onclick="ShowPrevious">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
         </button>
-        <button class="icon-btn" type="button" aria-label="Next month" @onclick="ShowNext">
+        <button class="icon-btn" type="button" aria-label="@(IsWeek ? "Next week" : "Next month")" @onclick="ShowNext">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
         </button>
     </div>
     <button class="btn btn-outline btn-sm" type="button" @onclick="ShowToday">Today</button>
-    <button class="btn btn-primary cal-add" type="button" disabled="@(Month is null)" @onclick="AddSessionForSelectedDay">
+    <div class="cal-view-toggle" role="group" aria-label="Calendar view">
+        <button class="btn @(IsWeek ? null : "active")" type="button" aria-pressed="@(IsWeek ? "false" : "true")" @onclick="() => ShowView(week: false)">Month</button>
+        <button class="btn @(IsWeek ? "active" : null)" type="button" aria-pressed="@(IsWeek ? "true" : "false")" @onclick="() => ShowView(week: true)">Week</button>
+    </div>
+    <button class="btn btn-primary cal-add" type="button" disabled="@(Today is null)" @onclick="AddSessionForSelectedDay">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         Add session
     </button>
@@ -35,7 +39,7 @@
     <div class="form-error page-error">@ErrorMessage</div>
 }
 
-@if (Month is null)
+@if (Today is not { } today)
 {
     <p class="placeholder-hint">Loading calendar…</p>
 }
@@ -43,10 +47,18 @@ else
 {
     <div class="cal-layout">
         <div class="card cal-main">
-            <CalendarMonthView Month="Month" SelectedDate="SelectedDate" OnDaySelected="SelectDay" />
+            @if (IsWeek)
+            {
+                <CalendarWeekView Week="Week!" SelectedDate="SelectedDate" OnDaySelected="SelectDay"
+                                  OnSessionSelected="OpenEdit" OnSlotSelected="slot => OpenCreate(slot.Date, slot.StartTime)" />
+            }
+            else
+            {
+                <CalendarMonthView Month="Month!" SelectedDate="SelectedDate" OnDaySelected="SelectDay" />
+            }
         </div>
 
-        <CalendarDayPanel Date="SelectedDate" Today="Month.Today" Sessions="SelectedDaySessions"
+        <CalendarDayPanel Date="SelectedDate" Today="today" Sessions="SelectedDaySessions"
                           OnSessionSelected="OpenEdit" OnAddSession="AddSessionForSelectedDay" />
     </div>
 }

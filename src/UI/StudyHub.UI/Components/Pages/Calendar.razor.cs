@@ -11,6 +11,9 @@ namespace StudyHub.UI.Components.Pages;
 public partial class Calendar
 {
     private const string DateFormat = "yyyy-MM-dd";
+    private const string WeekView = "week";
+    private const string MonthView = "month";
+    private const int DaysPerWeek = 7;
 
     private static readonly TimeOnly DefaultStartTime = new(9, 0);
 
@@ -23,11 +26,19 @@ public partial class Calendar
     [Inject]
     private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
-    /// <summary>The selected day (<c>yyyy-MM-dd</c>); the calendar shows the period that contains it.</summary>
+    /// <summary><c>month</c> (default) or <c>week</c>.</summary>
+    [SupplyParameterFromQuery(Name = "view")]
+    public string? View { get; set; }
+
+    /// <summary>The selected day (<c>yyyy-MM-dd</c>); the calendar shows the month or week that contains it.</summary>
     [SupplyParameterFromQuery(Name = "date")]
     public string? Date { get; set; }
 
+    private bool IsWeek { get; set; }
+
     private CalendarMonthDto? Month { get; set; }
+
+    private CalendarWeekDto? Week { get; set; }
 
     private DateOnly SelectedDate { get; set; }
 
@@ -47,9 +58,14 @@ public partial class Calendar
     // Navigating quickly starts overlapping loads; only the latest one may update the page.
     private int _loadVersion;
 
-    private string PeriodTitle => Month is null ? string.Empty : CalendarFormatter.FormatMonth(Month.Year, Month.Month);
+    /// <summary>Today as reported with the period on screen; <c>null</c> until that period has loaded.</summary>
+    private DateOnly? Today => IsWeek ? Week?.Today : Month?.Today;
 
-    private IReadOnlyList<CalendarDayDto> VisibleDays => Month?.Days ?? [];
+    private string PeriodTitle => IsWeek
+        ? Week is null ? string.Empty : CalendarFormatter.FormatWeek(Week.IsoWeek, Week.Start, Week.End)
+        : Month is null ? string.Empty : CalendarFormatter.FormatMonth(Month.Year, Month.Month);
+
+    private IReadOnlyList<CalendarDayDto> VisibleDays => (IsWeek ? Week?.Days : Month?.Days) ?? [];
 
     private IReadOnlyList<CalendarSessionDto> SelectedDaySessions =>
         VisibleDays.FirstOrDefault(d => d.Date == SelectedDate)?.Sessions ?? [];
@@ -66,6 +82,7 @@ public partial class Calendar
 
     protected override async Task OnParametersSetAsync()
     {
+        IsWeek = string.Equals(View, WeekView, StringComparison.OrdinalIgnoreCase);
         var requestedDate = DateOnly.TryParseExact(Date, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
             ? parsed
             : (DateOnly?)null;
@@ -86,24 +103,41 @@ public partial class Calendar
         PageHeader.SetHeader("Calendar", PeriodTitle);
     }
 
-    private bool IsLoaded(DateOnly date) =>
-        Month is not null && Month.Year == date.Year && Month.Month == date.Month;
+    private bool IsLoaded(DateOnly date) => IsWeek
+        ? Week is not null && Week.Start <= date && date <= Week.End
+        : Month is not null && Month.Year == date.Year && Month.Month == date.Month;
 
     private async Task<bool> LoadAsync(DateOnly date)
     {
         var version = ++_loadVersion;
+        var isWeek = IsWeek;
         ErrorMessage = null;
 
         try
         {
-            var month = await CalendarAccessor.GetMonthAsync(date.Year, date.Month);
-            if (version != _loadVersion)
+            if (isWeek)
             {
-                return false;
+                var week = await CalendarAccessor.GetWeekAsync(date);
+                if (version != _loadVersion)
+                {
+                    return false;
+                }
+
+                Week = week;
+                _today = week.Today;
+            }
+            else
+            {
+                var month = await CalendarAccessor.GetMonthAsync(date.Year, date.Month);
+                if (version != _loadVersion)
+                {
+                    return false;
+                }
+
+                Month = month;
+                _today = month.Today;
             }
 
-            Month = month;
-            _today = month.Today;
             return true;
         }
         catch (HttpRequestException)
@@ -113,36 +147,54 @@ public partial class Calendar
         }
     }
 
-    // Today if it lies in the visible month, otherwise the 1st.
-    private DateOnly GetDefaultSelection() =>
-        Month!.Today.Year == Month.Year && Month.Today.Month == Month.Month
-            ? Month.Today
-            : new DateOnly(Month.Year, Month.Month, 1);
+    // Today if it lies in the visible period, otherwise the 1st of the month or the Monday of the week.
+    private DateOnly GetDefaultSelection()
+    {
+        var today = Today!.Value;
+        if (IsLoaded(today))
+        {
+            return today;
+        }
 
-    private void SelectDay(DateOnly date) => Navigate(date, replace: true);
+        return IsWeek ? Week!.Start : new DateOnly(Month!.Year, Month.Month, 1);
+    }
+
+    private void SelectDay(DateOnly date) => Navigate(IsWeek, date, replace: true);
+
+    private void ShowView(bool week) => Navigate(week, SelectedDate);
 
     private void ShowToday()
     {
         if (_today is { } today)
         {
-            Navigate(today);
+            Navigate(IsWeek, today);
         }
     }
 
-    private void ShowPrevious() => ShowMonth(-1);
+    private void ShowPrevious() => ShowPeriod(-1);
 
-    private void ShowNext() => ShowMonth(1);
+    private void ShowNext() => ShowPeriod(1);
 
-    // Lands on today when the target month contains it, otherwise on the 1st.
-    private void ShowMonth(int offset)
+    // Lands on today when the target period contains it, otherwise on its first day.
+    private void ShowPeriod(int offset)
     {
-        if (Month is null)
+        DateOnly first, last;
+        if (IsWeek && Week is not null)
+        {
+            first = Week.Start.AddDays(offset * DaysPerWeek);
+            last = first.AddDays(DaysPerWeek - 1);
+        }
+        else if (!IsWeek && Month is not null)
+        {
+            first = new DateOnly(Month.Year, Month.Month, 1).AddMonths(offset);
+            last = first.AddMonths(1).AddDays(-1);
+        }
+        else
         {
             return;
         }
 
-        var first = new DateOnly(Month.Year, Month.Month, 1).AddMonths(offset);
-        Navigate(_today is { } today && today.Year == first.Year && today.Month == first.Month ? today : first);
+        Navigate(IsWeek, _today is { } today && first <= today && today <= last ? today : first);
     }
 
     private void AddSessionForSelectedDay() => OpenCreate(SelectedDate, DefaultStartTime);
@@ -183,6 +235,8 @@ public partial class Calendar
 
     private async Task HandleDeletedAsync(StudySessionDto _) => await LoadAsync(SelectedDate);
 
-    private void Navigate(DateOnly date, bool replace = false) =>
-        NavigationManager.NavigateTo($"calendar?date={date.ToString(DateFormat, CultureInfo.InvariantCulture)}", replace: replace);
+    private void Navigate(bool week, DateOnly date, bool replace = false) =>
+        NavigationManager.NavigateTo(
+            $"calendar?view={(week ? WeekView : MonthView)}&date={date.ToString(DateFormat, CultureInfo.InvariantCulture)}",
+            replace: replace);
 }

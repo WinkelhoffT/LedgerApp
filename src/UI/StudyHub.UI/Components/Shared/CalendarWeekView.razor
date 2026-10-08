@@ -1,0 +1,52 @@
+@using StudyHub.UI.Calendar
+
+<div class="cal-week" style="--cal-hours:@(Week.EndHour - Week.StartHour)">
+    <div class="cal-week-head">
+        <div class="cal-week-corner"></div>
+        @foreach (var day in Week.Days)
+        {
+            <button class="cal-week-day @GetDayClass(day.Date)" type="button" aria-label="@CalendarFormatter.FormatDate(day.Date)"
+                    aria-pressed="@(day.Date == SelectedDate ? "true" : "false")" aria-current="@(day.Date == Week.Today ? "date" : null)"
+                    @onclick="() => OnDaySelected.InvokeAsync(day.Date)">
+                <span class="cal-week-dow">@CalendarFormatter.FormatShortWeekday(day.Date)</span>
+                <span class="cal-week-date">@day.Date.Day</span>
+            </button>
+        }
+    </div>
+
+    <div class="cal-week-body">
+        <div class="cal-week-hours" aria-hidden="true">
+            @for (var hour = Week.StartHour; hour < Week.EndHour; hour++)
+            {
+                <div class="cal-week-hour">@CalendarFormatter.FormatHour(hour)</div>
+            }
+        </div>
+
+        @foreach (var day in Week.Days)
+        {
+            <div class="cal-week-col @GetDayClass(day.Date)">
+                @* Mouse shortcut only; keyboard users add sessions with the "Add session" buttons. *@
+                @for (var hour = Week.StartHour; hour < Week.EndHour; hour++)
+                {
+                    var slot = new CalendarSlot(day.Date, new TimeOnly(hour, 0));
+                    <div class="cal-week-slot" aria-hidden="true" title="Add session at @CalendarFormatter.FormatHour(hour)"
+                         @onclick="() => OnSlotSelected.InvokeAsync(slot)"></div>
+                }
+
+                @foreach (var item in day.Sessions)
+                {
+                    var isCompact = item.Session.DurationMinutes < CompactMinutes;
+                    <button class="cal-block @(day.Date < Week.Today ? "is-past" : null) @(isCompact ? "is-compact" : null)" type="button" style="@GetBlockStyle(item)"
+                            aria-label="@($"Edit {CalendarFormatter.FormatSessionLabel(item.Session)}")" @onclick="() => OnSessionSelected.InvokeAsync(item.Session)">
+                        <span class="cal-block-title">@item.Session.Title</span>
+                        <span class="cal-block-meta">@(isCompact ? CalendarFormatter.FormatTime(item.Session.StartTime) : CalendarFormatter.FormatTimeRange(item.Session))</span>
+                        @if (item.Session.Location is not null && !isCompact)
+                        {
+                            <span class="cal-block-meta">@item.Session.Location</span>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
