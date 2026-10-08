@@ -682,6 +682,11 @@ select:focus-visible,
   .cal-block.is-compact .cal-block-meta { display: none; }
 }
 
+.sessions-today-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sessions-today-empty { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--text-3); }
+.sessions-today-empty a { font-weight: 600; color: var(--accent); }
+.sessions-today-empty a:hover { text-decoration: underline; }
+
 @media (max-width: 991.98px) {
   .cal-layout { grid-template-columns: 1fr; }
 }

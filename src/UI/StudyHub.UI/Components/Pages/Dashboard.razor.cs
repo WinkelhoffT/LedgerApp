@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Dashboard;
+using StudyHub.Shared.Calendar;
 using StudyHub.Shared.Dashboard;
 using StudyHub.Shared.Flashcards;
 using StudyHub.UI.Services;
@@ -18,11 +19,14 @@ public partial class Dashboard
 
     private FlashcardsDueDto? FlashcardsDue { get; set; }
 
+    private CalendarDayDto? SessionsToday { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         PageHeader.SetHeader("Dashboard", "Welcome back, Anna");
         Progress = await DashboardAccessor.GetSemesterProgressAsync();
         FlashcardsDue = await DashboardAccessor.GetFlashcardsDueAsync();
+        SessionsToday = await DashboardAccessor.GetSessionsTodayAsync();
     }
 
     private static string FormatPercent(double? percentComplete) =>
