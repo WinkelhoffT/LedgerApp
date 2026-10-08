@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Calendar;
 using StudyHub.Shared.Calendar;
+using StudyHub.Shared.StudySessions;
 using StudyHub.UI.Calendar;
 using StudyHub.UI.Services;
 
@@ -10,6 +11,8 @@ namespace StudyHub.UI.Components.Pages;
 public partial class Calendar
 {
     private const string DateFormat = "yyyy-MM-dd";
+
+    private static readonly TimeOnly DefaultStartTime = new(9, 0);
 
     [Inject]
     private ICalendarAccessor CalendarAccessor { get; set; } = default!;
@@ -29,6 +32,14 @@ public partial class Calendar
     private DateOnly SelectedDate { get; set; }
 
     private string? ErrorMessage { get; set; }
+
+    private bool IsDialogOpen { get; set; }
+
+    private StudySessionDto? EditingSession { get; set; }
+
+    private DateOnly NewSessionDate { get; set; }
+
+    private TimeOnly NewSessionStartTime { get; set; }
 
     // The latest "today" the Api reported; it follows the Api's calendar time zone, not this host's clock.
     private DateOnly? _today;
@@ -133,6 +144,44 @@ public partial class Calendar
         var first = new DateOnly(Month.Year, Month.Month, 1).AddMonths(offset);
         Navigate(_today is { } today && today.Year == first.Year && today.Month == first.Month ? today : first);
     }
+
+    private void AddSessionForSelectedDay() => OpenCreate(SelectedDate, DefaultStartTime);
+
+    private void OpenCreate(DateOnly date, TimeOnly startTime)
+    {
+        EditingSession = null;
+        NewSessionDate = date;
+        NewSessionStartTime = startTime;
+        IsDialogOpen = true;
+    }
+
+    private void OpenEdit(StudySessionDto session)
+    {
+        EditingSession = session;
+        IsDialogOpen = true;
+    }
+
+    private void CloseDialog()
+    {
+        IsDialogOpen = false;
+        EditingSession = null;
+    }
+
+    // Shows the saved session's day, which may lie in another period than the one on screen.
+    private async Task HandleSavedAsync(StudySessionDto session)
+    {
+        if (IsLoaded(session.Date))
+        {
+            await LoadAsync(SelectedDate);
+        }
+
+        if (session.Date != SelectedDate)
+        {
+            SelectDay(session.Date);
+        }
+    }
+
+    private async Task HandleDeletedAsync(StudySessionDto _) => await LoadAsync(SelectedDate);
 
     private void Navigate(DateOnly date, bool replace = false) =>
         NavigationManager.NavigateTo($"calendar?date={date.ToString(DateFormat, CultureInfo.InvariantCulture)}", replace: replace);
