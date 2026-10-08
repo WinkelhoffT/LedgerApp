@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StudyHub.Shared.CalendarEvents;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Flashcards;
@@ -29,6 +30,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<FlashcardReview> FlashcardReviews => Set<FlashcardReview>();
 
     public DbSet<StudySession> StudySessions => Set<StudySession>();
+
+    public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -424,6 +427,65 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 t.HasCheckConstraint(
                     "CK_StudySessions_Duration",
                     $"(\"DurationMinutes\" >= {StudySession.MinDurationMinutes} AND \"DurationMinutes\" <= {StudySession.MaxDurationMinutes})");
+            });
+        });
+
+        modelBuilder.Entity<CalendarEvent>(builder =>
+        {
+            builder.ToTable("CalendarEvents");
+
+            builder.HasKey(e => e.Id);
+
+            builder.Property(e => e.Kind)
+                .IsRequired();
+
+            builder.Property(e => e.Title)
+                .HasMaxLength(CalendarEvent.TitleMaxLength)
+                .IsRequired();
+
+            builder.Property(e => e.Date)
+                .IsRequired();
+
+            builder.Property(e => e.Location)
+                .HasMaxLength(CalendarEvent.LocationMaxLength);
+
+            builder.Property(e => e.CreatedAt)
+                .IsRequired();
+
+            builder.Property(e => e.UpdatedAt)
+                .IsRequired();
+
+            // Serves the calendar views and the Dashboard's upcoming events.
+            builder.HasIndex(e => e.Date);
+
+            builder.HasIndex(e => e.CourseId);
+
+            builder.HasIndex(e => e.SemesterId);
+
+            // Restrict, not Cascade: courses and semesters are only ever archived, never hard-deleted.
+            builder.HasOne<Course>()
+                .WithMany()
+                .HasForeignKey(e => e.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Semester>()
+                .WithMany()
+                .HasForeignKey(e => e.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mirror the rules in CalendarEventLifecycle that hold for every kind; the kind-specific
+            // rules (a timed exam needs a duration, a deadline has none) stay in the Domain only.
+            builder.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_CalendarEvents_AtMostOneParent",
+                    "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+                t.HasCheckConstraint(
+                    "CK_CalendarEvents_Duration",
+                    $"(\"DurationMinutes\" IS NULL OR (\"DurationMinutes\" >= {CalendarEvent.MinDurationMinutes} AND \"DurationMinutes\" <= {CalendarEvent.MaxDurationMinutes}))");
+                t.HasCheckConstraint(
+                    "CK_CalendarEvents_DurationNeedsStart",
+                    "(\"DurationMinutes\" IS NULL OR \"StartTime\" IS NOT NULL)");
             });
         });
     }
