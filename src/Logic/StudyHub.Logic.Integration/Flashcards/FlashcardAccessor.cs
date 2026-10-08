@@ -23,20 +23,6 @@ public sealed class FlashcardAccessor(HttpClient httpClient) : IFlashcardAccesso
         return (await response.Content.ReadFromJsonAsync<FlashcardSetDto>(cancellationToken))!;
     }
 
-    public async Task<FlashcardExportDto> ExportAsync(ExportFlashcardsRequest request, CancellationToken cancellationToken = default)
-    {
-        using var response = await httpClient.PostAsJsonAsync("api/flashcards/export", request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-
-        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
-            ?? response.Content.Headers.ContentDisposition?.FileName
-            ?? request.FileName;
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "text/csv";
-
-        return new FlashcardExportDto(fileName.Trim('"'), contentType, content);
-    }
-
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)

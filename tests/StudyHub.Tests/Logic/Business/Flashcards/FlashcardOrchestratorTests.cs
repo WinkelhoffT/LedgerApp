@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.Extensions.Options;
 using Moq;
 using StudyHub.Data.Contract;
@@ -6,21 +5,16 @@ using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Integration.Ai;
 using StudyHub.Shared.Configuration;
-using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
-using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Logic.Business.Flashcards;
 
 public class FlashcardOrchestratorTests
 {
     private static readonly Guid CourseId = Guid.NewGuid();
-    private static readonly Guid SemesterId = Guid.NewGuid();
 
     private readonly Mock<INoteRepository> _noteRepository = new();
-    private readonly Mock<ICourseRepository> _courseRepository = new();
-    private readonly Mock<ISemesterRepository> _semesterRepository = new();
     private readonly Mock<IFlashcardGenerator> _generator = new();
     private readonly FlashcardOrchestrator _sut;
 
@@ -28,21 +22,13 @@ public class FlashcardOrchestratorTests
     {
         _sut = new FlashcardOrchestrator(
             _noteRepository.Object,
-            _courseRepository.Object,
-            _semesterRepository.Object,
             new FlashcardValidator(),
-            new AnkiCsvSerializer(),
             _generator.Object,
             new ConfiguredAiModelCatalog(Options.Create(new AnthropicOptions
             {
                 DefaultModel = "claude-sonnet-5-5",
                 Models = [new AnthropicModelOption { Id = "claude-opus-5-5", DisplayName = "Opus" }],
             })));
-
-        _courseRepository.Setup(r => r.GetByIdAsync(CourseId, default))
-            .ReturnsAsync(new Course(CourseId, "Algorithms", null, "#2563eb", SemesterId, false, DateTime.UtcNow, DateTime.UtcNow));
-        _semesterRepository.Setup(r => r.GetByIdAsync(SemesterId, default))
-            .ReturnsAsync(new Semester(SemesterId, "WS 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31), false, DateTime.UtcNow, DateTime.UtcNow));
 
         _generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
             .ReturnsAsync([new FlashcardDto("Frage 1", "Antwort 1", ["graphen"]), new FlashcardDto("Frage 2", "Antwort 2", [])]);
@@ -59,15 +45,13 @@ public class FlashcardOrchestratorTests
     }
 
     [Fact]
-    public async Task GenerateAsync_WithCourseNote_ReturnsCardsAndCourseDeckName()
+    public async Task GenerateAsync_ReturnsValidatedCardsForTheNote()
     {
         var note = SetupNote();
 
         var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, "Laufzeit"));
 
         Assert.Equal(note.Id, result.NoteId);
-        Assert.Equal("StudyHub::Algorithms::Dijkstra", result.DeckName);
-        Assert.Equal("Dijkstra.csv", result.FileName);
         Assert.Equal("claude-sonnet-5-5", result.Model);
         Assert.Equal(["Frage 1", "Frage 2"], result.Cards.Select(c => c.Front));
         _generator.Verify(g => g.GenerateAsync(
@@ -94,16 +78,6 @@ public class FlashcardOrchestratorTests
         await Assert.ThrowsAsync<FlashcardValidationException>(
             () => _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null, "gpt-unknown")));
         _generator.Verify(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default), Times.Never);
-    }
-
-    [Fact]
-    public async Task GenerateAsync_WithSemesterNote_UsesSemesterNameInDeck()
-    {
-        var note = SetupNote(semesterId: SemesterId);
-
-        var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null));
-
-        Assert.Equal("StudyHub::WS 2025/26::Dijkstra", result.DeckName);
     }
 
     [Fact]
@@ -170,40 +144,5 @@ public class FlashcardOrchestratorTests
         var result = await _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 1, null));
 
         Assert.Single(result.Cards);
-    }
-
-    [Fact]
-    public async Task ExportAsync_WithEditedCards_ReturnsCsvWithEdits()
-    {
-        var request = new ExportFlashcardsRequest(
-            "StudyHub::Algorithms::Dijkstra",
-            "Dijkstra.csv",
-            [new FlashcardDto("Bearbeitete Frage", "Antwort", ["graphen"])]);
-
-        var result = await _sut.ExportAsync(request);
-
-        Assert.Equal("Dijkstra.csv", result.FileName);
-        Assert.Equal("text/csv", result.ContentType);
-        var csv = Encoding.UTF8.GetString(result.Content);
-        Assert.Contains("#deck:StudyHub::Algorithms::Dijkstra\n", csv);
-        Assert.Contains("\"Bearbeitete Frage\";\"Antwort\";\"graphen\"", csv);
-    }
-
-    [Fact]
-    public async Task ExportAsync_SanitizesClientSuppliedFileName()
-    {
-        var request = new ExportFlashcardsRequest("Deck", "../evil\".csv", [new FlashcardDto("Q", "A", [])]);
-
-        var result = await _sut.ExportAsync(request);
-
-        Assert.Equal("evil.csv", result.FileName);
-    }
-
-    [Fact]
-    public async Task ExportAsync_WithInvalidCard_ThrowsValidation()
-    {
-        var request = new ExportFlashcardsRequest("Deck", "x.csv", [new FlashcardDto("Q", "", [])]);
-
-        await Assert.ThrowsAsync<FlashcardValidationException>(() => _sut.ExportAsync(request));
     }
 }
