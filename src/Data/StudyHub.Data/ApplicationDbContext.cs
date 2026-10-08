@@ -4,6 +4,7 @@ using StudyHub.Shared.Documents;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
 using StudyHub.Shared.Semesters;
+using StudyHub.Shared.StudySessions;
 
 namespace StudyHub.Data;
 
@@ -26,6 +27,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Flashcard> Flashcards => Set<Flashcard>();
 
     public DbSet<FlashcardReview> FlashcardReviews => Set<FlashcardReview>();
+
+    public DbSet<StudySession> StudySessions => Set<StudySession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -364,6 +367,64 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(r => r.FlashcardId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StudySession>(builder =>
+        {
+            builder.ToTable("StudySessions");
+
+            builder.HasKey(s => s.Id);
+
+            builder.Property(s => s.Title)
+                .HasMaxLength(StudySession.TitleMaxLength)
+                .IsRequired();
+
+            builder.Property(s => s.Date)
+                .IsRequired();
+
+            builder.Property(s => s.StartTime)
+                .IsRequired();
+
+            builder.Property(s => s.DurationMinutes)
+                .IsRequired();
+
+            builder.Property(s => s.Location)
+                .HasMaxLength(StudySession.LocationMaxLength);
+
+            builder.Property(s => s.CreatedAt)
+                .IsRequired();
+
+            builder.Property(s => s.UpdatedAt)
+                .IsRequired();
+
+            // Serves the month and week views, which load the sessions of a date range.
+            builder.HasIndex(s => s.Date);
+
+            builder.HasIndex(s => s.CourseId);
+
+            builder.HasIndex(s => s.SemesterId);
+
+            // Restrict, not Cascade: courses and semesters are only ever archived, never hard-deleted.
+            builder.HasOne<Course>()
+                .WithMany()
+                .HasForeignKey(s => s.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Semester>()
+                .WithMany()
+                .HasForeignKey(s => s.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mirror the rules in StudySessionLifecycle; the same-day rule stays in the Domain only.
+            builder.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_StudySessions_AtMostOneParent",
+                    "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+                t.HasCheckConstraint(
+                    "CK_StudySessions_Duration",
+                    $"(\"DurationMinutes\" >= {StudySession.MinDurationMinutes} AND \"DurationMinutes\" <= {StudySession.MaxDurationMinutes})");
+            });
         });
     }
 }
