@@ -57,6 +57,9 @@ implemented versus planned.
   sessions are added, edited and deleted in the calendar, can belong to a course or a semester,
   are shown in the course color, overlapping sessions sit side by side in the week view, and the
   Dashboard shows today's sessions (see [Calendar time zone](#calendar-time-zone)).
+- Exams and deadlines in the calendar: an exam is all-day or has a start time and a duration, a
+  deadline has an optional due time. They stand out in the month and week views and the day
+  panel, and the Dashboard lists the next ones with a countdown.
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -68,7 +71,7 @@ been implemented yet.
 - Study planning and study session tracking.
 - Document management and a document library.
 - Markdown-based notes.
-- Deadlines, exams and recurring study sessions in the calendar.
+- Recurring study sessions in the calendar.
 
 ### Future Ideas
 

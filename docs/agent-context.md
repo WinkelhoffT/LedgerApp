@@ -29,7 +29,7 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
   `IDashboardAccessor`, and for flashcards `IFlashcardAccessor` (generation),
   `IFlashcardDeckAccessor`, `IFlashcardStudyAccessor`, `IFlashcardTransferAccessor`, and for the
-  calendar `ICalendarAccessor`, `IStudySessionAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
+  calendar `ICalendarAccessor`, `IStudySessionAccessor`, `ICalendarEventAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
   for HttpClient/DI registration. Depends only on `StudyHub.Shared` — never on `Logic.Business` or
   `Logic.Domain` (LAY-7 in `docs/agent-rule-catalog.md`). Also home of AI provider adapters:
   `Ai/` holds `IFlashcardGenerator`/`ClaudeFlashcardGenerator` (official Anthropic SDK, structured
@@ -42,7 +42,8 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   `StudyHub.Data`.
 - `src/UI/StudyHub.Api`: ASP.NET Core backend host. Controllers (`SemesterController`,
   `CourseController`, `DocumentController`, `DashboardController`, `FlashcardDeckController`,
-  `FlashcardStudyController`, `CalendarController`, `StudySessionController`, …) call a Business
+  `FlashcardStudyController`, `CalendarController`, `StudySessionController`,
+  `CalendarEventController`, …) call a Business
   orchestrator;
   `*ExceptionHandler` classes map Business/Domain exceptions to `ProblemDetails`.
 - `src/UI/StudyHub.UI`: Blazor Web App frontend — `Components/Pages`, `Components/Layout`,
@@ -96,7 +97,12 @@ and courses.
   `docs/plans/calendar-plan.md`).
 - Calendar: the month view shows whole Monday-to-Sunday weeks, the week view an ISO 8601 week
   (`ICalendarPeriodProvider`, `Calendar` options for the time zone that decides "today");
-  `IStudySessionLaneProcessor` places overlapping sessions of a day side by side.
+  `ICalendarLaneProcessor` places overlapping sessions and timed exams of a day side by side.
+- `CalendarEvent`: an exam or a deadline in the calendar (`CalendarEventKind`), linked to at most
+  one of a `Course` or a `Semester`. An exam is all-day or has a start time and a duration; a
+  deadline has an optional due time and no duration (`ICalendarEventLifecycle`). Not study time,
+  deleted for real, and listed on the Dashboard with a countdown (see
+  `docs/plans/calendar-events-plan.md`).
 - `SemesterProgress`: a computed value describing how far along a semester is, produced by
   `ISemesterProgressCalculator`/`SemesterProgressCalculator`.
 - Soft delete: `Course`/`Semester`/`Document`/`Note`/`FlashcardDeck` use an `IsArchived` flag with

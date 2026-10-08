@@ -59,7 +59,8 @@ Out of scope (follow-ups, section 11):
 - Recurring sessions (weekly series, e.g. a fixed weekly lecture slot).
 - Drag and drop to move or resize sessions.
 - Session tracking: mark as done, actual duration, timer, statistics (milestone 7 and Analytics).
-- Deadlines, exams and semester start/end markers. There is no deadline entity yet.
+- Deadlines, exams and semester start/end markers. There is no deadline entity yet. (Exams and
+  deadlines followed in `calendar-events-plan.md`.)
 - Day view, agenda list view, year view.
 - iCal export or import, Google/Outlook sync, reminders and notifications.
 - Flashcard due counts per day.
@@ -414,3 +415,5 @@ Where the implementation differs from or adds to the plan above:
   sideways on narrow screens.
 - **Phone width.** Below 640 px the month grid shows a dot for days with sessions instead of the
   chips, as in the mockup.
+- **Later change.** With exams and deadlines (`calendar-events-plan.md`), `StudySessionLaneProcessor`
+  became `CalendarLaneProcessor` over time slots, so timed exams share the lanes with sessions.

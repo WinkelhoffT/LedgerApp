@@ -1,6 +1,6 @@
 # Feature Plan: Exams and Deadlines in the Calendar
 
-Status: Planned.
+Status: Implemented. Section 9 lists where the implementation differs from this plan.
 Classification (per `CLAUDE.md`): **Medium**. It adds a new domain object (`CalendarEvent`), a CRUD
 workflow, calendar display and a Dashboard card. This plan covers the planned architecture, the
 affected layers, the required contracts and the database impact. It builds on
@@ -142,3 +142,19 @@ One migration, **`AddCalendarEvents`**, with one new table `CalendarEvents`: `Id
   all consumers live in this repository.
 - The lane processor is renamed and generalized; it was added on this branch and is not merged yet.
 - Timed exams in the week view use the same minimum block height as sessions.
+
+## 9. Implementation Notes
+
+- **Week view.** The all-day row only appears in weeks that have an all-day exam or a deadline. A
+  deadline with a due time sits in that row with its time, since it has no duration to place in
+  the grid. Clicking an empty hour still adds a session; exams and deadlines are added with the
+  "Add exam or deadline" buttons.
+- **Month view on phones.** Event chips are hidden like session chips; a day with an exam or a
+  deadline gets an orange dot instead of the accent one.
+- **Dialog.** The kind is a toggle at the top; the duration field only shows for an exam with a
+  start time (default 120 minutes), so the UI cannot send a duration for an all-day exam or a
+  deadline. The Domain still checks it for other callers of the Api.
+- **Dashboard.** The card is titled "Upcoming Exams & Deadlines"; countdowns of the next three
+  days are highlighted, and each title links to the calendar week of its date.
+- **Order in `CalendarDayDto`.** The new list is the last parameter (`Date`, `Sessions`, `Events`).
+
