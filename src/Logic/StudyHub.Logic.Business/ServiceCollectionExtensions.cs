@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFlashcardTransferOrchestrator, FlashcardTransferOrchestrator>();
         services.AddScoped<IStudySessionOrchestrator, StudySessionOrchestrator>();
         services.AddScoped<ICalendarOrchestrator, CalendarOrchestrator>();
+        services.AddScoped<ICalendarEventOrchestrator, CalendarEventOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
