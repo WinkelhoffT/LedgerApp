@@ -60,6 +60,7 @@ public partial class FlashcardDeckDetail
     {
         try
         {
+            NotFound = false;
             Deck = await DeckAccessor.GetByIdAsync(DeckId);
             Cards = (await DeckAccessor.GetCardsAsync(DeckId, AppliedSearch)).ToList();
             CourseName = Deck.CourseId is { } courseId

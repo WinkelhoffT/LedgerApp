@@ -43,6 +43,7 @@ public partial class FlashcardStudy
     protected override async Task OnParametersSetAsync()
     {
         PageHeader.SetHeader("Study", "Spaced repetition");
+        DeckName = null;
         await LoadNextAsync();
     }
 
