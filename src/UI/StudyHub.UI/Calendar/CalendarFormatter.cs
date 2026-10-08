@@ -92,4 +92,20 @@ public static class CalendarFormatter
 
     /// <summary><c>Tue 20 Oct</c>.</summary>
     public static string FormatShortDate(DateOnly date) => date.ToString("ddd d MMM", Culture);
+
+    /// <summary>The Dashboard's line under an exam or deadline: <c>Tue 20 Oct · 10:00 – 12:00 · Algorithms</c>.</summary>
+    public static string FormatUpcomingDetails(CalendarEventDto calendarEvent)
+    {
+        var time = calendarEvent switch
+        {
+            { StartTime: { } start, EndTime: { } end } => $"{FormatTime(start)} – {FormatTime(end)}",
+            { StartTime: { } due } => $"Due {FormatTime(due)}",
+            _ => null,
+        };
+
+        return string.Join(" · ", new[] { FormatShortDate(calendarEvent.Date), time, calendarEvent.OwnerName }.Where(part => !string.IsNullOrEmpty(part)));
+    }
+
+    /// <summary>The calendar's week view with <paramref name="date"/> selected.</summary>
+    public static string GetWeekUrl(DateOnly date) => $"calendar?view=week&date={date.ToString("yyyy-MM-dd", Culture)}";
 }

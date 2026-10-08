@@ -1,4 +1,5 @@
 @page "/"
+@using StudyHub.UI.Calendar
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -128,12 +129,37 @@
         }
     </div>
 
-    <div class="card card-pad placeholder-card">
-        <div class="section-title">Upcoming Deadlines</div>
-        <p class="placeholder-hint">Platzhalter – Inhalt folgt</p>
-        @for (var i = 1; i <= 3; i++)
+    <div class="card card-pad">
+        <div class="section-title">Upcoming Exams &amp; Deadlines</div>
+        @if (UpcomingEvents is null)
         {
-            <div class="placeholder-row">Deadline placeholder @i</div>
+            <p class="placeholder-hint">Loading exams and deadlines…</p>
+        }
+        else if (UpcomingEvents.Count == 0)
+        {
+            <div class="sessions-today-empty">
+                <span>No exams or deadlines ahead</span>
+                <a href="calendar">Add one in the calendar</a>
+            </div>
+        }
+        else
+        {
+            <ul class="upcoming-list">
+                @foreach (var item in UpcomingEvents)
+                {
+                    <li class="upcoming-row" style="--session-color:@CalendarFormatter.GetColor(item.Event)">
+                        <span class="upcoming-icon" title="@CalendarFormatter.FormatKind(item.Event.Kind)">
+                            <CalendarEventIcon Kind="item.Event.Kind" Size="15" />
+                        </span>
+                        <div class="upcoming-main">
+                            <a class="upcoming-title" href="@CalendarFormatter.GetWeekUrl(item.Event.Date)"
+                               aria-label="@CalendarFormatter.FormatEventLabel(item.Event)">@item.Event.Title</a>
+                            <div class="upcoming-sub">@CalendarFormatter.FormatUpcomingDetails(item.Event)</div>
+                        </div>
+                        <span class="upcoming-countdown @(item.DaysUntil <= SoonDays ? "is-soon" : null)">@CalendarFormatter.FormatCountdown(item.DaysUntil)</span>
+                    </li>
+                }
+            </ul>
         }
     </div>
 </div>
