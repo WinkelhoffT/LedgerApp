@@ -103,7 +103,7 @@ public class DashboardOrchestratorTests
     }
 
     private static FlashcardDeck Deck(string name, bool isArchived = false) =>
-        new(Guid.NewGuid(), name, null, 20, 200, isArchived, DateTime.UtcNow, DateTime.UtcNow);
+        new(Guid.NewGuid(), name, null, null, 20, 200, isArchived, DateTime.UtcNow, DateTime.UtcNow);
 
     [Fact]
     public async Task GetFlashcardsDueAsync_SumsActiveDecksAndListsTheDecksWithMostDueCards()

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Integration.Flashcards;
 
@@ -32,6 +33,8 @@ internal static class FlashcardProblemDetailsMapper
             FlashcardErrorCodes.FlashcardImportFailed => new FlashcardImportException(detail ?? "The file could not be imported."),
             CourseErrorCodes.CourseNotFound => new CourseNotFoundException(GetGuid(problemDetails, "courseId")),
             CourseErrorCodes.CourseArchived => new CourseArchivedException(GetGuid(problemDetails, "courseId")),
+            SemesterErrorCodes.SemesterNotFound => new SemesterNotFoundException(GetGuid(problemDetails, "semesterId")),
+            SemesterErrorCodes.SemesterArchived => new SemesterArchivedException(GetGuid(problemDetails, "semesterId")),
             NoteErrorCodes.NoteNotFound => new NoteNotFoundException(GetGuid(problemDetails, "noteId")),
             _ => new HttpRequestException(
                 $"StudyHub.Api returned {(int)response.StatusCode} ({response.StatusCode}): {detail}",

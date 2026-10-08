@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Flashcards;
+using StudyHub.Logic.Integration.Semesters;
 using StudyHub.Shared.Flashcards;
 using StudyHub.UI.Services;
 
@@ -18,6 +19,9 @@ public partial class Flashcards
     private ICourseAccessor CourseAccessor { get; set; } = default!;
 
     [Inject]
+    private ISemesterAccessor SemesterAccessor { get; set; } = default!;
+
+    [Inject]
     private IFileDownloadAccessor FileDownloadAccessor { get; set; } = default!;
 
     [Inject]
@@ -31,6 +35,8 @@ public partial class Flashcards
     private IReadOnlyList<FlashcardDeckDto> ActiveDecks => Decks?.Where(d => !d.IsArchived).ToList() ?? [];
 
     private Dictionary<Guid, string> CourseNamesById { get; set; } = [];
+
+    private Dictionary<Guid, string> SemesterNamesById { get; set; } = [];
 
     private bool ShowArchived { get; set; }
 
@@ -48,6 +54,8 @@ public partial class Flashcards
 
         var courses = await CourseAccessor.GetAllAsync();
         CourseNamesById = courses.ToDictionary(c => c.Id, c => c.Name);
+        var semesters = await SemesterAccessor.GetAllAsync();
+        SemesterNamesById = semesters.ToDictionary(s => s.Id, s => s.Name);
         await LoadDecksAsync();
     }
 
@@ -56,8 +64,12 @@ public partial class Flashcards
         Decks = await DeckAccessor.GetAllAsync(ShowArchived);
     }
 
-    private string GetCourseName(Guid? courseId) =>
-        courseId is { } id ? CourseNamesById.GetValueOrDefault(id, "Unknown course") : "—";
+    private string? GetOwnerName(FlashcardDeckDto deck) => deck switch
+    {
+        { CourseId: { } courseId } => CourseNamesById.GetValueOrDefault(courseId, "Unknown course"),
+        { SemesterId: { } semesterId } => SemesterNamesById.GetValueOrDefault(semesterId, "Unknown semester"),
+        _ => null,
+    };
 
     private void HandleDeckCreated(FlashcardDeckDto deck) =>
         NavigationManager.NavigateTo($"flashcards/decks/{deck.Id}");

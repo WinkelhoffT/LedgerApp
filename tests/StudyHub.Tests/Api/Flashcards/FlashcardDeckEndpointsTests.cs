@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Shared.Flashcards;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Tests.Api.Flashcards;
 
@@ -12,7 +13,7 @@ public class FlashcardDeckEndpointsTests
 {
     private static async Task<FlashcardDeckDto> CreateDeckAsync(HttpClient client, string name = "Algorithmen")
     {
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest(name, null, 20, 200));
+        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest(name, null, null, 20, 200));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<FlashcardDeckDto>())!;
     }
@@ -69,7 +70,7 @@ public class FlashcardDeckEndpointsTests
         using var client = factory.CreateClient();
         await CreateDeckAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("algorithmen", null, 20, 200));
+        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("algorithmen", null, null, 20, 200));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(FlashcardErrorCodes.DuplicateFlashcardDeckName, await GetErrorCodeAsync(response));
@@ -212,5 +213,35 @@ public class FlashcardDeckEndpointsTests
         var csv = Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
         Assert.Contains("#deck:Informatik::Algorithmen\n", csv);
         Assert.Contains("\"Größe?\";\"Antwort\";\"graphen\"", csv);
+    }
+
+    [Fact]
+    public async Task Create_WithSemester_ReturnsDeckLinkedToTheSemester()
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+        var semesterResponse = await client.PostAsJsonAsync(
+            "api/semesters",
+            new CreateSemesterRequest("Programmierworkshop", new DateOnly(2026, 10, 1), new DateOnly(2026, 12, 18)));
+        var semester = (await semesterResponse.Content.ReadFromJsonAsync<SemesterDto>())!;
+
+        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Workshop", null, semester.Id, 20, 200));
+
+        response.EnsureSuccessStatusCode();
+        var deck = await response.Content.ReadFromJsonAsync<FlashcardDeckDto>();
+        Assert.Equal(semester.Id, deck!.SemesterId);
+        Assert.Null(deck.CourseId);
+    }
+
+    [Fact]
+    public async Task Create_WithUnknownSemester_Returns404WithSemesterErrorCode()
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Workshop", null, Guid.NewGuid(), 20, 200));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(SemesterErrorCodes.SemesterNotFound, await GetErrorCodeAsync(response));
     }
 }

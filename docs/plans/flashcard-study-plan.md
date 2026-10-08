@@ -437,6 +437,17 @@ Reported per `CLAUDE.md`, not resolved by guessing:
 - **Accessor tests:** `tests/StudyHub.Tests/Logic/Integration/Flashcards` runs the accessors against
   the real Api (`WebApplicationFactory`) to cover both sides of the wire contract.
 
+### Decks for a semester (added after review)
+
+A deck can also belong to a **semester** instead of a course, e.g. for a workshop that is set up as
+a semester. `FlashcardDeck` got a nullable `SemesterId`; a deck belongs to at most one of a course
+or a semester, or to neither (enforced in `FlashcardDeckLifecycle` and by the check constraint
+`CK_FlashcardDecks_AtMostOneParent`). As with courses, an archived semester cannot be newly linked,
+but a deck that is already linked keeps it. Separate migration `AddFlashcardDeckSemester` (FK to
+`Semesters` with `Restrict`, index on `SemesterId`), since `AddFlashcardDecks` may already be
+applied (DAT-006). In the UI the deck dialog offers courses and semesters in one "Belongs to"
+dropdown, and "Save to deck" in the generator gives a new deck the note's course or semester.
+
 ### Validation notes
 
 - The test files under `tests/StudyHub.Tests/TestData/Flashcards/` are hand-written in the layout

@@ -9,8 +9,8 @@ public class FlashcardImportProcessorTests
 {
     private static readonly DateTime Now = new(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
 
-    private static readonly FlashcardDeck Algorithms = new(Guid.NewGuid(), "Algorithmen", null, 20, 200, false, Now, Now);
-    private static readonly FlashcardDeck Archived = new(Guid.NewGuid(), "Altes Deck", null, 20, 200, true, Now, Now);
+    private static readonly FlashcardDeck Algorithms = new(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, false, Now, Now);
+    private static readonly FlashcardDeck Archived = new(Guid.NewGuid(), "Altes Deck", null, null, 20, 200, true, Now, Now);
     private static readonly IReadOnlyList<FlashcardDeck> Decks = [Algorithms, Archived];
 
     private readonly FlashcardImportProcessor _sut;

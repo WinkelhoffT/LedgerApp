@@ -1,10 +1,14 @@
 namespace StudyHub.Shared.Flashcards;
 
-/// <summary>A flat deck of Basic cards with its own daily study limits.</summary>
+/// <summary>
+/// A flat deck of Basic cards with its own daily study limits. A deck belongs to at most one of a
+/// course or a semester (a course already belongs to a semester), or to neither.
+/// </summary>
 public sealed record FlashcardDeck(
     Guid Id,
     string Name,
     Guid? CourseId,
+    Guid? SemesterId,
     int NewCardsPerDay,
     int ReviewsPerDay,
     bool IsArchived,

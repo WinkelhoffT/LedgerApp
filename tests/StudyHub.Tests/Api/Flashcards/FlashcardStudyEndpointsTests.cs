@@ -12,7 +12,7 @@ public class FlashcardStudyEndpointsTests
 {
     private static async Task<Guid> CreateDeckWithCardsAsync(HttpClient client, params string[] fronts)
     {
-        var deckResponse = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Algorithmen", null, 20, 200));
+        var deckResponse = await client.PostAsJsonAsync("api/flashcard-decks", new CreateFlashcardDeckRequest("Algorithmen", null, null, 20, 200));
         var deck = (await deckResponse.Content.ReadFromJsonAsync<FlashcardDeckDto>())!;
 
         if (fronts.Length > 0)

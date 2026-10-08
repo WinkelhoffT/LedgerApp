@@ -33,6 +33,7 @@ internal static class FlashcardMapper
             deck.Id,
             deck.Name,
             deck.CourseId,
+            deck.SemesterId,
             deck.NewCardsPerDay,
             deck.ReviewsPerDay,
             deck.IsArchived,

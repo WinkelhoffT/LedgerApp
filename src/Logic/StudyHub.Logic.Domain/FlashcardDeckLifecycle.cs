@@ -6,14 +6,16 @@ namespace StudyHub.Logic.Domain;
 
 public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : IFlashcardDeckLifecycle
 {
-    public FlashcardDeck Create(string name, Guid? courseId, int newCardsPerDay, int reviewsPerDay)
+    public FlashcardDeck Create(string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay)
     {
+        ValidateOwner(courseId, semesterId);
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
         return new FlashcardDeck(
             Id: Guid.CreateVersion7(),
             Name: NormalizeName(name),
             CourseId: courseId,
+            SemesterId: semesterId,
             NewCardsPerDay: ValidateLimit(newCardsPerDay, "New cards per day"),
             ReviewsPerDay: ValidateLimit(reviewsPerDay, "Reviews per day"),
             IsArchived: false,
@@ -21,17 +23,20 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
             UpdatedAt: now);
     }
 
-    public FlashcardDeck Update(FlashcardDeck deck, string name, Guid? courseId, int newCardsPerDay, int reviewsPerDay)
+    public FlashcardDeck Update(FlashcardDeck deck, string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay)
     {
         if (deck.IsArchived)
         {
             throw new FlashcardDeckArchivedException(deck.Id);
         }
 
+        ValidateOwner(courseId, semesterId);
+
         return deck with
         {
             Name = NormalizeName(name),
             CourseId = courseId,
+            SemesterId = semesterId,
             NewCardsPerDay = ValidateLimit(newCardsPerDay, "New cards per day"),
             ReviewsPerDay = ValidateLimit(reviewsPerDay, "Reviews per day"),
             UpdatedAt = timeProvider.GetUtcNow().UtcDateTime,
@@ -62,6 +67,14 @@ public sealed partial class FlashcardDeckLifecycle(TimeProvider timeProvider) : 
         }
 
         return normalized;
+    }
+
+    private static void ValidateOwner(Guid? courseId, Guid? semesterId)
+    {
+        if (courseId is not null && semesterId is not null)
+        {
+            throw new FlashcardValidationException("A deck can belong to a course or a semester, not both.");
+        }
     }
 
     private static int ValidateLimit(int value, string label)

@@ -70,7 +70,8 @@ and courses.
   constructor and, per `review.md` §3, intended as a DB check constraint).
 - `Note`: a Markdown note following the same "exactly one of Course or Semester" ownership pattern
   as `Document` (see `docs/plans/markdown-notes-plan.md`).
-- `FlashcardDeck`: a flat deck of cards, optionally linked to a `Course`, with its own daily limits
+- `FlashcardDeck`: a flat deck of cards, linked to at most one of a `Course` or a `Semester` (or to
+  neither), with its own daily limits
   (new cards / reviews per day). Soft-deleted like the other aggregates (see
   `docs/plans/flashcard-study-plan.md`).
 - `Flashcard`: an Anki "Basic" card (front/back/space-separated tags) stored in a deck with its

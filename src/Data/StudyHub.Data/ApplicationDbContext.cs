@@ -277,11 +277,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             builder.HasIndex(d => d.CourseId);
 
-            // Restrict, not Cascade: courses are only ever archived, never hard-deleted.
+            builder.HasIndex(d => d.SemesterId);
+
+            // Restrict, not Cascade: courses and semesters are only ever archived, never hard-deleted.
             builder.HasOne<Course>()
                 .WithMany()
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Semester>()
+                .WithMany()
+                .HasForeignKey(d => d.SemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mirrors the rule in FlashcardDeckLifecycle: a deck belongs to at most one of a Course
+            // or a Semester (unlike notes and documents, it may also belong to neither).
+            builder.ToTable(t => t.HasCheckConstraint(
+                "CK_FlashcardDecks_AtMostOneParent",
+                "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)"));
         });
 
         modelBuilder.Entity<Flashcard>(builder =>

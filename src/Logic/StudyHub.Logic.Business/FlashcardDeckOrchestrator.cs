@@ -3,6 +3,7 @@ using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
+using StudyHub.Shared.Semesters;
 
 namespace StudyHub.Logic.Business;
 
@@ -10,6 +11,7 @@ public sealed class FlashcardDeckOrchestrator(
     IFlashcardDeckRepository deckRepository,
     IFlashcardRepository flashcardRepository,
     ICourseRepository courseRepository,
+    ISemesterRepository semesterRepository,
     IFlashcardDeckLifecycle deckLifecycle,
     IStudyQueueProvider studyQueueProvider,
     IStudyDayProvider studyDayProvider
@@ -50,10 +52,16 @@ public sealed class FlashcardDeckOrchestrator(
         CancellationToken cancellationToken = default
     )
     {
-        var deck = deckLifecycle.Create(request.Name, request.CourseId, request.NewCardsPerDay, request.ReviewsPerDay);
+        var deck = deckLifecycle.Create(
+            request.Name,
+            request.CourseId,
+            request.SemesterId,
+            request.NewCardsPerDay,
+            request.ReviewsPerDay);
 
         await EnsureNameIsUniqueAsync(deck.Name, excludingId: null, cancellationToken);
         await EnsureCourseIsAssignableAsync(deck.CourseId, currentCourseId: null, cancellationToken);
+        await EnsureSemesterIsAssignableAsync(deck.SemesterId, currentSemesterId: null, cancellationToken);
 
         await deckRepository.AddAsync(deck, cancellationToken);
         await deckRepository.SaveChangesAsync(cancellationToken);
@@ -67,10 +75,17 @@ public sealed class FlashcardDeckOrchestrator(
     )
     {
         var deck = await GetExistingDeckAsync(request.Id, cancellationToken);
-        var updated = deckLifecycle.Update(deck, request.Name, request.CourseId, request.NewCardsPerDay, request.ReviewsPerDay);
+        var updated = deckLifecycle.Update(
+            deck,
+            request.Name,
+            request.CourseId,
+            request.SemesterId,
+            request.NewCardsPerDay,
+            request.ReviewsPerDay);
 
         await EnsureNameIsUniqueAsync(updated.Name, deck.Id, cancellationToken);
         await EnsureCourseIsAssignableAsync(updated.CourseId, deck.CourseId, cancellationToken);
+        await EnsureSemesterIsAssignableAsync(updated.SemesterId, deck.SemesterId, cancellationToken);
 
         deckRepository.Update(updated);
         await deckRepository.SaveChangesAsync(cancellationToken);
@@ -121,6 +136,21 @@ public sealed class FlashcardDeckOrchestrator(
         if (course.IsArchived && id != currentCourseId)
         {
             throw new CourseArchivedException(id);
+        }
+    }
+
+    // An archived semester cannot be newly linked; a deck already linked to it may keep the link.
+    private async Task EnsureSemesterIsAssignableAsync(Guid? semesterId, Guid? currentSemesterId, CancellationToken cancellationToken)
+    {
+        if (semesterId is not { } id)
+        {
+            return;
+        }
+
+        var semester = await semesterRepository.GetByIdAsync(id, cancellationToken) ?? throw new SemesterNotFoundException(id);
+        if (semester.IsArchived && id != currentSemesterId)
+        {
+            throw new SemesterArchivedException(id);
         }
     }
 

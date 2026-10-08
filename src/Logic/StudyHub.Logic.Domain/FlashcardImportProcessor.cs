@@ -157,7 +157,7 @@ public sealed class FlashcardImportProcessor(
             return deck.IsArchived ? null : deck;
         }
 
-        deck = deckLifecycle.Create(name, courseId: null, FlashcardDeck.DefaultNewCardsPerDay, FlashcardDeck.DefaultReviewsPerDay);
+        deck = deckLifecycle.Create(name, courseId: null, semesterId: null, FlashcardDeck.DefaultNewCardsPerDay, FlashcardDeck.DefaultReviewsPerDay);
         decksByName[deck.Name] = deck;
         createdDecks.Add(deck);
         return deck;

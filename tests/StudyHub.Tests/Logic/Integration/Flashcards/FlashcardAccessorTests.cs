@@ -2,6 +2,7 @@ using System.Text;
 using StudyHub.Logic.Integration.Dashboard;
 using StudyHub.Logic.Integration.Flashcards;
 using StudyHub.Shared.Flashcards;
+using StudyHub.Shared.Semesters;
 using StudyHub.Tests.Api;
 
 namespace StudyHub.Tests.Logic.Integration.Flashcards;
@@ -16,7 +17,7 @@ public class FlashcardAccessorTests
         var client = factory.CreateClient();
         var decks = new FlashcardDeckAccessor(client);
         var study = new FlashcardStudyAccessor(client);
-        var deck = await decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, 20, 200));
+        var deck = await decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, null, 20, 200));
         await decks.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [new FlashcardDto("Q", "A", ["graphen"])], null));
 
         var card = await study.GetNextAsync(deck.Id);
@@ -33,14 +34,16 @@ public class FlashcardAccessorTests
         using var factory = InMemoryApiFactory.Create();
         var client = factory.CreateClient();
         var decks = new FlashcardDeckAccessor(client);
-        var deck = await decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, 20, 200));
+        var deck = await decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, null, 20, 200));
 
         var duplicate = await Assert.ThrowsAsync<DuplicateFlashcardDeckNameException>(
-            () => decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, 20, 200)));
+            () => decks.CreateAsync(new CreateFlashcardDeckRequest("Algorithmen", null, null, 20, 200)));
         var notFound = await Assert.ThrowsAsync<FlashcardDeckNotFoundException>(() => decks.GetByIdAsync(Guid.NewGuid()));
         await Assert.ThrowsAsync<FlashcardValidationException>(() => decks.AddCardsAsync(new AddFlashcardsRequest(deck.Id, [], null)));
         await decks.ArchiveAsync(deck.Id);
         var archived = await Assert.ThrowsAsync<FlashcardDeckArchivedException>(() => new FlashcardStudyAccessor(client).GetNextAsync(deck.Id));
+        await Assert.ThrowsAsync<SemesterNotFoundException>(
+            () => decks.CreateAsync(new CreateFlashcardDeckRequest("Workshop", null, Guid.NewGuid(), 20, 200)));
 
         Assert.Equal("Algorithmen", duplicate.Name);
         Assert.NotEqual(Guid.Empty, notFound.DeckId);

@@ -16,7 +16,7 @@ public class FlashcardDeckRepositoryTests
     }
 
     private static FlashcardDeck Deck(string name) =>
-        new(Guid.NewGuid(), name, null, 20, 200, false, DateTime.UtcNow, DateTime.UtcNow);
+        new(Guid.NewGuid(), name, null, null, 20, 200, false, DateTime.UtcNow, DateTime.UtcNow);
 
     [Fact]
     public async Task ExistsByNameAsync_MatchesNameIgnoringCaseAndSurroundingSpaces()

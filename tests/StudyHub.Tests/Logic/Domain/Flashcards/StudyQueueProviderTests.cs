@@ -7,7 +7,7 @@ namespace StudyHub.Tests.Logic.Domain.Flashcards;
 public class StudyQueueProviderTests
 {
     private static readonly DateTime Now = new(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
-    private static readonly FlashcardDeck Deck = new(Guid.NewGuid(), "Algorithmen", null, 20, 200, false, Now, Now);
+    private static readonly FlashcardDeck Deck = new(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, false, Now, Now);
     private static readonly FlashcardStudyCountsDto AllLeft = new(5, 1, 5);
     private static readonly StudyDay Today = new(Now, new DateOnly(2026, 10, 8), Now.Date.AddHours(2), Now.Date.AddDays(1).AddHours(2));
 

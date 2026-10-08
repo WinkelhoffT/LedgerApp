@@ -7,6 +7,7 @@ using StudyHub.Shared.Ai;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
+using StudyHub.Shared.Semesters;
 using StudyHub.UI.Flashcards;
 using StudyHub.UI.Services;
 
@@ -172,11 +173,14 @@ public partial class FlashcardGenerator
         }
         catch (Exception ex) when (ex is FlashcardValidationException or DuplicateFlashcardDeckNameException
                                        or FlashcardDeckArchivedException or FlashcardDeckNotFoundException
-                                       or NoteNotFoundException or CourseArchivedException)
+                                       or NoteNotFoundException or CourseArchivedException or SemesterArchivedException)
         {
-            ErrorMessage = ex is CourseArchivedException
-                ? "The note's course is archived. Choose an existing deck instead."
-                : ex.Message;
+            ErrorMessage = ex switch
+            {
+                CourseArchivedException => "The note's course is archived. Choose an existing deck instead.",
+                SemesterArchivedException => "The note's semester is archived. Choose an existing deck instead.",
+                _ => ex.Message,
+            };
         }
         catch (HttpRequestException)
         {
@@ -188,13 +192,18 @@ public partial class FlashcardGenerator
         }
     }
 
-    // A new deck takes the note's course, so it shows up next to the course's other material.
-    private Task<FlashcardDeckDto> CreateDeckForNoteAsync(Guid noteId) =>
-        DeckAccessor.CreateAsync(new CreateFlashcardDeckRequest(
+    // A new deck takes the note's course or semester, so it shows up next to the note's other material.
+    private Task<FlashcardDeckDto> CreateDeckForNoteAsync(Guid noteId)
+    {
+        var note = NotesById.GetValueOrDefault(noteId);
+
+        return DeckAccessor.CreateAsync(new CreateFlashcardDeckRequest(
             NewDeckName,
-            NotesById.GetValueOrDefault(noteId)?.CourseId,
+            note?.CourseId,
+            note?.SemesterId,
             FlashcardDeck.DefaultNewCardsPerDay,
             FlashcardDeck.DefaultReviewsPerDay));
+    }
 
     private void RemoveCard(EditableFlashcard card) => Cards.Remove(card);
 

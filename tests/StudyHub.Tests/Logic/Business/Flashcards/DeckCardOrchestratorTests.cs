@@ -33,7 +33,7 @@ public class DeckCardOrchestratorTests
 
     private FlashcardDeck SetupDeck(bool isArchived = false)
     {
-        var deck = new FlashcardDeck(Guid.NewGuid(), "Algorithmen", null, 20, 200, isArchived, Now, Now);
+        var deck = new FlashcardDeck(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, isArchived, Now, Now);
         _deckRepository.Setup(r => r.GetByIdAsync(deck.Id, default)).ReturnsAsync(deck);
         return deck;
     }

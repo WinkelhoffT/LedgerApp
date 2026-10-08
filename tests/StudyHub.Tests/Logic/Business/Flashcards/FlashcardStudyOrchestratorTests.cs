@@ -17,7 +17,7 @@ public class FlashcardStudyOrchestratorTests
     private readonly Mock<IFlashcardDeckRepository> _deckRepository = new();
     private readonly Mock<IFlashcardRepository> _flashcardRepository = new();
     private readonly FlashcardStudyOrchestrator _sut;
-    private readonly FlashcardDeck _deck = new(Guid.NewGuid(), "Algorithmen", null, 20, 200, false, Now, Now);
+    private readonly FlashcardDeck _deck = new(Guid.NewGuid(), "Algorithmen", null, null, 20, 200, false, Now, Now);
 
     public FlashcardStudyOrchestratorTests()
     {

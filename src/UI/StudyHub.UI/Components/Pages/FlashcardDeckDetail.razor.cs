@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Flashcards;
+using StudyHub.Logic.Integration.Semesters;
 using StudyHub.Shared.Flashcards;
 using StudyHub.UI.Services;
 
@@ -18,6 +19,9 @@ public partial class FlashcardDeckDetail
     private ICourseAccessor CourseAccessor { get; set; } = default!;
 
     [Inject]
+    private ISemesterAccessor SemesterAccessor { get; set; } = default!;
+
+    [Inject]
     private IFileDownloadAccessor FileDownloadAccessor { get; set; } = default!;
 
     [Inject]
@@ -28,7 +32,8 @@ public partial class FlashcardDeckDetail
 
     private FlashcardDeckDto? Deck { get; set; }
 
-    private string? CourseName { get; set; }
+    /// <summary>Name of the course or semester the deck belongs to.</summary>
+    private string? OwnerName { get; set; }
 
     private List<DeckCardDto>? Cards { get; set; }
 
@@ -63,9 +68,12 @@ public partial class FlashcardDeckDetail
             NotFound = false;
             Deck = await DeckAccessor.GetByIdAsync(DeckId);
             Cards = (await DeckAccessor.GetCardsAsync(DeckId, AppliedSearch)).ToList();
-            CourseName = Deck.CourseId is { } courseId
-                ? (await CourseAccessor.GetAllAsync()).FirstOrDefault(c => c.Id == courseId)?.Name
-                : null;
+            OwnerName = Deck switch
+            {
+                { CourseId: { } courseId } => (await CourseAccessor.GetAllAsync()).FirstOrDefault(c => c.Id == courseId)?.Name,
+                { SemesterId: { } semesterId } => (await SemesterAccessor.GetAllAsync()).FirstOrDefault(s => s.Id == semesterId)?.Name,
+                _ => null,
+            };
             PageHeader.SetHeader(Deck.Name, "Flashcard deck");
         }
         catch (FlashcardDeckNotFoundException)

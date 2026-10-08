@@ -46,7 +46,7 @@ else
             <thead>
                 <tr>
                     <th>Deck</th>
-                    <th class="deck-course-col">Course</th>
+                    <th class="deck-course-col">Belongs to</th>
                     <th class="deck-number-col">Cards</th>
                     <th class="deck-due-col">Due today</th>
                     <th class="deck-actions-col"></th>
@@ -63,7 +63,7 @@ else
                                 <span class="badge-archived">Archived</span>
                             }
                         </td>
-                        <td class="deck-course-col">@GetCourseName(deck.CourseId)</td>
+                        <td class="deck-course-col">@(GetOwnerName(deck) ?? "—")</td>
                         <td class="deck-number-col">@deck.CardCount</td>
                         <td class="deck-due-col"><FlashcardStudyCounts Counts="deck.DueCounts" /></td>
                         <td class="deck-actions-col">

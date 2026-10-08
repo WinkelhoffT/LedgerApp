@@ -24,12 +24,26 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="deck-course">Course (optional)</label>
-                        <select id="deck-course" class="form-control" @bind="CourseId">
-                            <option value="@Guid.Empty">No course</option>
-                            @foreach (var course in SelectableCourses)
+                        <label for="deck-owner">Belongs to (optional)</label>
+                        <select id="deck-owner" class="form-control" @bind="OwnerKey">
+                            <option value="">No course or semester</option>
+                            @if (SelectableCourses.Any())
                             {
-                                <option value="@course.Id">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                                <optgroup label="Courses">
+                                    @foreach (var course in SelectableCourses)
+                                    {
+                                        <option value="@(CoursePrefix + course.Id)">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                            @if (SelectableSemesters.Any())
+                            {
+                                <optgroup label="Semesters">
+                                    @foreach (var semester in SelectableSemesters)
+                                    {
+                                        <option value="@(SemesterPrefix + semester.Id)">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
                             }
                         </select>
                     </div>
