@@ -18,7 +18,11 @@
         <button class="btn @(IsWeek ? null : "active")" type="button" aria-pressed="@(IsWeek ? "false" : "true")" @onclick="() => ShowView(week: false)">Month</button>
         <button class="btn @(IsWeek ? "active" : null)" type="button" aria-pressed="@(IsWeek ? "true" : "false")" @onclick="() => ShowView(week: true)">Week</button>
     </div>
-    <button class="btn btn-primary cal-add" type="button" disabled="@(Today is null)" @onclick="AddSessionForSelectedDay">
+    <button class="btn btn-outline cal-add" type="button" disabled="@(Today is null)" @onclick="AddEventForSelectedDay">
+        <CalendarEventIcon Kind="StudyHub.Shared.CalendarEvents.CalendarEventKind.Exam" Size="15" />
+        Add exam or deadline
+    </button>
+    <button class="btn btn-primary" type="button" disabled="@(Today is null)" @onclick="AddSessionForSelectedDay">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         Add session
     </button>
@@ -50,7 +54,8 @@ else
             @if (IsWeek)
             {
                 <CalendarWeekView Week="Week!" SelectedDate="SelectedDate" OnDaySelected="SelectDay"
-                                  OnSessionSelected="OpenEdit" OnSlotSelected="slot => OpenCreate(slot.Date, slot.StartTime)" />
+                                  OnSessionSelected="OpenEdit" OnEventSelected="OpenEventEdit"
+                                  OnSlotSelected="slot => OpenCreate(slot.Date, slot.StartTime)" />
             }
             else
             {
@@ -58,11 +63,15 @@ else
             }
         </div>
 
-        <CalendarDayPanel Date="SelectedDate" Today="today" Sessions="SelectedDaySessions"
-                          OnSessionSelected="OpenEdit" OnAddSession="AddSessionForSelectedDay" />
+        <CalendarDayPanel Date="SelectedDate" Today="today" Sessions="SelectedDay?.Sessions ?? []" Events="SelectedDay?.Events ?? []"
+                          OnSessionSelected="OpenEdit" OnEventSelected="OpenEventEdit"
+                          OnAddSession="AddSessionForSelectedDay" OnAddEvent="AddEventForSelectedDay" />
     </div>
 }
 
 <StudySessionFormDialog IsOpen="IsDialogOpen" EditingSession="EditingSession"
                         NewSessionDate="NewSessionDate" NewSessionStartTime="NewSessionStartTime"
-                        OnClose="CloseDialog" OnSaved="HandleSavedAsync" OnDeleted="HandleDeletedAsync" />
+                        OnClose="CloseDialog" OnSaved="session => HandleSavedAsync(session.Date)" OnDeleted="HandleDeletedAsync" />
+
+<CalendarEventFormDialog IsOpen="IsEventDialogOpen" EditingEvent="EditingEvent" NewEventDate="NewEventDate"
+                         OnClose="CloseEventDialog" OnSaved="calendarEvent => HandleSavedAsync(calendarEvent.Date)" OnDeleted="HandleDeletedAsync" />

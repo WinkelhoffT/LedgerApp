@@ -346,6 +346,9 @@ select:focus-visible,
 .color-field input[type="color"] { width: 42px; height: 38px; padding: 2px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
 .form-error { font-size: 12.5px; color: var(--danger); background: var(--danger-softer); border: 1px solid var(--danger-soft); border-radius: 8px; padding: 9px 12px; }
 .modal-footer-start { display: flex; gap: 8px; margin-right: auto; }
+.form-hint { font-size: 12px; color: var(--text-3); }
+.event-kind-toggle { align-self: flex-start; }
+.event-kind-toggle .btn { gap: 6px; }
 
 /* ---------- Notes ---------- */
 .notes-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
@@ -629,10 +632,28 @@ select:focus-visible,
 }
 .cal-ev.is-past, .session-card.is-past { opacity: .6; }
 
+/* Exams and deadlines: a stronger tint, a thicker edge and the kind's icon set them apart from sessions. */
+/* Icons are blocks by default (see the svg rule above); the kind icon sits inline with its text. */
+.event-icon { display: inline-block; flex-shrink: 0; vertical-align: -1px; }
+.cal-ev-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cal-ev.is-event {
+  display: flex; align-items: center; gap: 4px; border-left-width: 3px; font-weight: 700;
+  background: color-mix(in srgb, var(--session-color) 30%, var(--surface));
+}
+.event-card { background: color-mix(in srgb, var(--session-color) 8%, var(--surface)); }
+.event-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.event-kind {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: color-mix(in srgb, var(--session-color) 75%, var(--text));
+  background: color-mix(in srgb, var(--session-color) 20%, var(--surface));
+}
+
 .cal-side-weekday { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
 .cal-side-date { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 2px 0 16px; }
 .cal-side-empty { text-align: center; padding: 24px 0; color: var(--text-3); font-size: 13px; }
-.cal-side-add { width: 100%; margin-top: 6px; }
+.cal-side-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.cal-side-actions .btn { width: 100%; }
 
 .session-card {
   display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; margin-bottom: 10px; padding: 12px 13px;
@@ -655,6 +676,9 @@ select:focus-visible,
 .cal-week-dow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
 .cal-week-date { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-2); }
 .cal-week-day.today .cal-week-date { background: var(--accent-strong); color: #fff; }
+.cal-week-allday { display: grid; grid-template-columns: 56px repeat(7, minmax(92px, 1fr)); min-width: 700px; border-bottom: 1px solid var(--border); }
+.cal-week-allday-label { padding: 6px 8px 0 0; text-align: right; font-size: 10.5px; font-weight: 600; color: var(--text-3); }
+.cal-week-allday-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 4px; border-left: 1px solid var(--border); }
 .cal-week-hour { height: var(--cal-hour-height); padding: 3px 8px 0 0; text-align: right; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-3); }
 /* The hour axis stays in view while the day columns scroll sideways on narrow screens. */
 .cal-week-corner, .cal-week-hours { position: sticky; left: 0; z-index: 2; background: var(--surface); }
@@ -672,6 +696,8 @@ select:focus-visible,
 }
 .cal-block:hover, .cal-block:focus-visible { z-index: 1; box-shadow: var(--shadow); }
 .cal-block.is-past { opacity: .6; }
+.cal-block.is-event { border-left-width: 4px; background: color-mix(in srgb, var(--session-color) 32%, var(--surface)); }
+.cal-block-title .event-icon { margin-right: 2px; }
 .cal-block-title { max-width: 100%; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-block-meta { max-width: 100%; font-size: 10.5px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-block.is-compact { flex-direction: row; align-items: center; gap: 6px; padding-top: 2px; padding-bottom: 2px; }
@@ -693,6 +719,7 @@ select:focus-visible,
 
 @media (max-width: 640px) {
   .cal-cell { min-height: 64px; padding: 6px 4px; align-items: center; }
-  .cal-ev, .cal-more { display: none; }
-  .cal-cell.has-sessions::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cal-ev, .cal-ev.is-event, .cal-more { display: none; }
+  .cal-cell.has-entries::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cal-cell.has-events::after { background: var(--warning); }
 }

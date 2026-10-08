@@ -1,26 +1,39 @@
 @using StudyHub.UI.Calendar
 
-<aside class="card card-pad cal-side" aria-label="Sessions on @CalendarFormatter.FormatDate(Date)">
+<aside class="card card-pad cal-side" aria-label="Entries on @CalendarFormatter.FormatDate(Date)">
     <div class="cal-side-weekday">@CalendarFormatter.FormatWeekday(Date)</div>
     <div class="cal-side-date">@CalendarFormatter.FormatDate(Date)</div>
 
-    @if (Sessions.Count == 0)
+    @if (Events.Count == 0 && Sessions.Count == 0)
     {
-        <div class="cal-side-empty">No sessions scheduled</div>
+        <div class="cal-side-empty">Nothing scheduled</div>
     }
     else
     {
+        @foreach (var item in Events)
+        {
+            <CalendarEventCard Event="item.Event" Today="Today" OnSelected="OnEventSelected" />
+        }
         @foreach (var item in Sessions)
         {
             <StudySessionCard Session="item.Session" Today="Today" OnSelected="OnSessionSelected" />
         }
     }
 
-    @if (OnAddSession.HasDelegate)
-    {
-        <button class="btn btn-secondary cal-side-add" type="button" @onclick="OnAddSession">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-            Add session
-        </button>
-    }
+    <div class="cal-side-actions">
+        @if (OnAddSession.HasDelegate)
+        {
+            <button class="btn btn-secondary" type="button" @onclick="OnAddSession">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                Add session
+            </button>
+        }
+        @if (OnAddEvent.HasDelegate)
+        {
+            <button class="btn btn-outline" type="button" @onclick="OnAddEvent">
+                <CalendarEventIcon Kind="StudyHub.Shared.CalendarEvents.CalendarEventKind.Exam" Size="15" />
+                Add exam or deadline
+            </button>
+        }
+    </div>
 </aside>

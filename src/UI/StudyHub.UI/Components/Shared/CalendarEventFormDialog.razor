@@ -1,0 +1,112 @@
+@using StudyHub.Shared.CalendarEvents
+@using StudyHub.UI.Calendar
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(EditingEvent is null ? $"New {CalendarFormatter.FormatKind(Kind)}" : $"Edit {CalendarFormatter.FormatKind(Kind)}")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="cal-view-toggle event-kind-toggle" role="group" aria-label="Kind">
+                        @foreach (var kind in Kinds)
+                        {
+                            <button class="btn @(Kind == kind ? "active" : null)" type="button" aria-pressed="@(Kind == kind ? "true" : "false")" @onclick="() => Kind = kind">
+                                <CalendarEventIcon Kind="kind" Size="13" />
+                                @CalendarFormatter.FormatKind(kind)
+                            </button>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="event-title">Title</label>
+                        <input id="event-title" class="form-control" maxlength="@CalendarEvent.TitleMaxLength" @bind="Title" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="event-owner">Belongs to (optional)</label>
+                        <select id="event-owner" class="form-control" @bind="OwnerKey">
+                            <option value="">No course or semester</option>
+                            @if (SelectableCourses.Any())
+                            {
+                                <optgroup label="Courses">
+                                    @foreach (var course in SelectableCourses)
+                                    {
+                                        <option value="@(CoursePrefix + course.Id)">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                            @if (SelectableSemesters.Any())
+                            {
+                                <optgroup label="Semesters">
+                                    @foreach (var semester in SelectableSemesters)
+                                    {
+                                        <option value="@(SemesterPrefix + semester.Id)">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-date">Date</label>
+                            <input id="event-date" class="form-control" type="date" @bind="Date" />
+                        </div>
+                        <div class="form-group">
+                            <label for="event-time">@(Kind == CalendarEventKind.Deadline ? "Due time (optional)" : "Start (optional)")</label>
+                            <input id="event-time" class="form-control" type="time" step="300" @bind="StartTime" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        @if (HasDuration)
+                        {
+                            <div class="form-group">
+                                <label for="event-duration">Duration (minutes)</label>
+                                <input id="event-duration" class="form-control" type="number" step="5"
+                                       min="@CalendarEvent.MinDurationMinutes" max="@CalendarEvent.MaxDurationMinutes" @bind="DurationMinutes" />
+                            </div>
+                        }
+                        <div class="form-group">
+                            <label for="event-location">Location (optional)</label>
+                            <input id="event-location" class="form-control" maxlength="@CalendarEvent.LocationMaxLength" @bind="Location" />
+                        </div>
+                    </div>
+
+                    <p class="form-hint">@TimeHint</p>
+                </div>
+
+                <div class="modal-footer">
+                    @if (EditingEvent is not null)
+                    {
+                        <div class="modal-footer-start">
+                            @if (IsConfirmingDelete)
+                            {
+                                <button class="btn btn-danger-outline" type="button" disabled="@IsSaving" @onclick="DeleteAsync">Delete?</button>
+                                <button class="btn btn-secondary" type="button" disabled="@IsSaving" @onclick="() => IsConfirmingDelete = false">Keep</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-danger-outline" type="button" disabled="@IsSaving" @onclick="() => IsConfirmingDelete = true">Delete</button>
+                            }
+                        </div>
+                    }
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@IsSaving">@(EditingEvent is null ? $"Add {CalendarFormatter.FormatKind(Kind)}" : "Save Changes")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}

@@ -1,0 +1,10 @@
+@using StudyHub.Shared.CalendarEvents
+
+@if (Kind == CalendarEventKind.Exam)
+{
+    <svg class="event-icon" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 2 9 2 12 0v-5" /></svg>
+}
+else
+{
+    <svg class="event-icon" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4" /><path d="M4 4h12l-2 4 2 4H4" /></svg>
+}

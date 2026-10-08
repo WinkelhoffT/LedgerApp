@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using StudyHub.Logic.Integration.Calendar;
 using StudyHub.Shared.Calendar;
+using StudyHub.Shared.CalendarEvents;
 using StudyHub.Shared.StudySessions;
 using StudyHub.UI.Calendar;
 using StudyHub.UI.Services;
@@ -52,6 +53,12 @@ public partial class Calendar
 
     private TimeOnly NewSessionStartTime { get; set; }
 
+    private bool IsEventDialogOpen { get; set; }
+
+    private CalendarEventDto? EditingEvent { get; set; }
+
+    private DateOnly NewEventDate { get; set; }
+
     // The latest "today" the Api reported; it follows the Api's calendar time zone, not this host's clock.
     private DateOnly? _today;
 
@@ -67,16 +74,16 @@ public partial class Calendar
 
     private IReadOnlyList<CalendarDayDto> VisibleDays => (IsWeek ? Week?.Days : Month?.Days) ?? [];
 
-    private IReadOnlyList<CalendarSessionDto> SelectedDaySessions =>
-        VisibleDays.FirstOrDefault(d => d.Date == SelectedDate)?.Sessions ?? [];
+    private CalendarDayDto? SelectedDay => VisibleDays.FirstOrDefault(d => d.Date == SelectedDate);
 
     private IReadOnlyList<(string Name, string Color)> LegendCourses =>
         VisibleDays
-            .SelectMany(d => d.Sessions)
-            .Select(s => s.Session)
-            .Where(s => s.CourseId is not null && s.Color is not null)
-            .DistinctBy(s => s.CourseId)
-            .Select(s => (s.OwnerName ?? string.Empty, s.Color!))
+            .SelectMany(d => d.Sessions
+                .Select(s => (s.Session.CourseId, s.Session.OwnerName, s.Session.Color))
+                .Concat(d.Events.Select(e => (e.Event.CourseId, e.Event.OwnerName, e.Event.Color))))
+            .Where(c => c.CourseId is not null && c.Color is not null)
+            .DistinctBy(c => c.CourseId)
+            .Select(c => (c.OwnerName ?? string.Empty, c.Color!))
             .OrderBy(c => c.Item1, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -219,21 +226,40 @@ public partial class Calendar
         EditingSession = null;
     }
 
-    // Shows the saved session's day, which may lie in another period than the one on screen.
-    private async Task HandleSavedAsync(StudySessionDto session)
+    private void AddEventForSelectedDay()
     {
-        if (IsLoaded(session.Date))
+        EditingEvent = null;
+        NewEventDate = SelectedDate;
+        IsEventDialogOpen = true;
+    }
+
+    private void OpenEventEdit(CalendarEventDto calendarEvent)
+    {
+        EditingEvent = calendarEvent;
+        IsEventDialogOpen = true;
+    }
+
+    private void CloseEventDialog()
+    {
+        IsEventDialogOpen = false;
+        EditingEvent = null;
+    }
+
+    // Shows the saved entry's day, which may lie in another period than the one on screen.
+    private async Task HandleSavedAsync(DateOnly date)
+    {
+        if (IsLoaded(date))
         {
             await LoadAsync(SelectedDate);
         }
 
-        if (session.Date != SelectedDate)
+        if (date != SelectedDate)
         {
-            SelectDay(session.Date);
+            SelectDay(date);
         }
     }
 
-    private async Task HandleDeletedAsync(StudySessionDto _) => await LoadAsync(SelectedDate);
+    private async Task HandleDeletedAsync() => await LoadAsync(SelectedDate);
 
     private void Navigate(bool week, DateOnly date, bool replace = false) =>
         NavigationManager.NavigateTo(
