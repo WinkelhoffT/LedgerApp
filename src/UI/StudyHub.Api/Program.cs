@@ -16,6 +16,7 @@ builder.Services.AddStudyHubData(builder.Configuration, builder.Environment.Cont
 builder.Services.AddStudyHubDataRepositories();
 builder.Services.AddStudyHubInfrastructure();
 builder.Services.AddStudyHubBusiness();
+builder.Services.AddStudyHubFlashcardStudy(builder.Configuration);
 builder.Services.AddStudyHubAi(builder.Configuration);
 builder.Services.AddControllers();
 

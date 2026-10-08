@@ -1,6 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StudyHub.Data;
+using StudyHub.Shared.Configuration;
 
 namespace StudyHub.Api;
 
@@ -19,6 +21,28 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Binds <see cref="FlashcardStudyOptions"/> and validates it at startup, so a misconfigured time
+    /// zone fails fast instead of on the first study request.
+    /// </summary>
+    public static IServiceCollection AddStudyHubFlashcardStudy(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<FlashcardStudyOptions>()
+            .Bind(configuration.GetSection(FlashcardStudyOptions.SectionName))
+            .Validate(options => options.DayStartHour is >= 0 and <= 23, "Flashcards:DayStartHour must be between 0 and 23.")
+            .Validate(options => IsKnownTimeZone(options.TimeZone), "Flashcards:TimeZone must be a known IANA time zone id.")
+            .ValidateOnStart();
+
+        // The Domain's StudyDayProvider takes the plain options object, keeping Domain free of the Options package.
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<FlashcardStudyOptions>>().Value);
+
+        return services;
+    }
+
+    private static bool IsKnownTimeZone(string? timeZoneId) =>
+        !string.IsNullOrWhiteSpace(timeZoneId) && TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _);
 
     private static string ResolveConnectionString(IConfiguration configuration, string contentRootPath)
     {

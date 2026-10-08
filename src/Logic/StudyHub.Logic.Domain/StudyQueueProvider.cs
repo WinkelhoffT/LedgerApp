@@ -34,14 +34,14 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
         FlashcardDeck deck,
         StudyQueueCandidates candidates,
         FlashcardStudyCountsDto counts,
-        DateTime now)
+        StudyDay today)
     {
         if (deck.IsArchived)
         {
             return null;
         }
 
-        if (candidates.FirstLearning is { } dueLearning && dueLearning.DueAt <= now)
+        if (candidates.FirstLearning is { } dueLearning && dueLearning.DueAt <= today.Now)
         {
             return dueLearning;
         }
@@ -56,8 +56,18 @@ public sealed class StudyQueueProvider : IStudyQueueProvider
             return newCard;
         }
 
-        return candidates.FirstLearning is { } learning && learning.DueAt <= now + LearnAheadLimit
+        return candidates.FirstLearning is { } learning && learning.DueAt <= today.Now + LearnAheadLimit
             ? learning
             : null;
     }
+
+    public bool IsDue(FlashcardDeck deck, Flashcard card, FlashcardStudyCountsDto counts, StudyDay today) =>
+        !deck.IsArchived
+        && card.DeckId == deck.Id
+        && card.State switch
+        {
+            FlashcardState.New => counts.New > 0,
+            FlashcardState.Review => counts.Review > 0 && card.DueAt < today.NextStart,
+            _ => card.DueAt <= today.Now + LearnAheadLimit,
+        };
 }

@@ -10,5 +10,8 @@ public interface IStudyQueueProvider
     FlashcardStudyCountsDto GetCounts(FlashcardDeck deck, FlashcardDeckCardCounts? cardCounts, FlashcardDeckReviewCounts? reviewCounts);
 
     /// <summary>The card to study next, or <c>null</c> when the deck is finished for now.</summary>
-    Flashcard? SelectNext(FlashcardDeck deck, StudyQueueCandidates candidates, FlashcardStudyCountsDto counts, DateTime now);
+    Flashcard? SelectNext(FlashcardDeck deck, StudyQueueCandidates candidates, FlashcardStudyCountsDto counts, StudyDay today);
+
+    /// <summary>Whether <paramref name="card"/> may be answered now: it is in one of the deck's queues today.</summary>
+    bool IsDue(FlashcardDeck deck, Flashcard card, FlashcardStudyCountsDto counts, StudyDay today);
 }

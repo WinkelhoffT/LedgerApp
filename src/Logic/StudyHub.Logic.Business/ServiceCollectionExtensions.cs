@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using StudyHub.Logic.Business.Contract;
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Domain.Contract;
@@ -15,6 +16,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDocumentOrchestrator, DocumentOrchestrator>();
         services.AddScoped<INoteOrchestrator, NoteOrchestrator>();
         services.AddScoped<IFlashcardOrchestrator, FlashcardOrchestrator>();
+        services.AddScoped<IFlashcardDeckOrchestrator, FlashcardDeckOrchestrator>();
+        services.AddScoped<IDeckCardOrchestrator, DeckCardOrchestrator>();
+        services.AddScoped<IFlashcardStudyOrchestrator, FlashcardStudyOrchestrator>();
+        services.AddScoped<IFlashcardTransferOrchestrator, FlashcardTransferOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
@@ -23,6 +28,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INoteLifecycle, NoteLifecycle>();
         services.AddScoped<IFlashcardValidator, FlashcardValidator>();
         services.AddScoped<IAnkiCsvSerializer, AnkiCsvSerializer>();
+        services.AddScoped<IAnkiCsvParser, AnkiCsvParser>();
+        services.AddScoped<IFlashcardImportProcessor, FlashcardImportProcessor>();
+        services.AddScoped<IFlashcardDeckLifecycle, FlashcardDeckLifecycle>();
+        services.AddScoped<IFlashcardLifecycle, FlashcardLifecycle>();
+        services.AddScoped<IFlashcardReviewProcessor, FlashcardReviewProcessor>();
+        services.AddScoped<IStudyQueueProvider, StudyQueueProvider>();
+
+        // Needs a FlashcardStudyOptions instance, which the host binds from configuration.
+        services.AddSingleton<IStudyDayProvider, StudyDayProvider>();
+        services.TryAddSingleton(TimeProvider.System);
 
         return services;
     }

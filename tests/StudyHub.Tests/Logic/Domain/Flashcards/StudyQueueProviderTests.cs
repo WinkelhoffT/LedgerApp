@@ -9,6 +9,7 @@ public class StudyQueueProviderTests
     private static readonly DateTime Now = new(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
     private static readonly FlashcardDeck Deck = new(Guid.NewGuid(), "Algorithmen", null, 20, 200, false, Now, Now);
     private static readonly FlashcardStudyCountsDto AllLeft = new(5, 1, 5);
+    private static readonly StudyDay Today = new(Now, new DateOnly(2026, 10, 8), Now.Date.AddHours(2), Now.Date.AddDays(1).AddHours(2));
 
     private readonly StudyQueueProvider _sut = new();
 
@@ -59,7 +60,7 @@ public class StudyQueueProviderTests
         var learning = Card(FlashcardState.Learning, Now.AddSeconds(-1));
         var candidates = new StudyQueueCandidates(learning, Card(FlashcardState.Review, Now.AddDays(-2)), Card(FlashcardState.New, Now));
 
-        Assert.Same(learning, _sut.SelectNext(Deck, candidates, AllLeft, Now));
+        Assert.Same(learning, _sut.SelectNext(Deck, candidates, AllLeft, Today));
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class StudyQueueProviderTests
         var review = Card(FlashcardState.Review, Now.AddDays(-2));
         var candidates = new StudyQueueCandidates(Card(FlashcardState.Learning, Now.AddMinutes(5)), review, Card(FlashcardState.New, Now));
 
-        Assert.Same(review, _sut.SelectNext(Deck, candidates, AllLeft, Now));
+        Assert.Same(review, _sut.SelectNext(Deck, candidates, AllLeft, Today));
     }
 
     [Fact]
@@ -77,7 +78,7 @@ public class StudyQueueProviderTests
         var newCard = Card(FlashcardState.New, Now);
         var candidates = new StudyQueueCandidates(null, Card(FlashcardState.Review, Now.AddDays(-2)), newCard);
 
-        Assert.Same(newCard, _sut.SelectNext(Deck, candidates, AllLeft with { Review = 0 }, Now));
+        Assert.Same(newCard, _sut.SelectNext(Deck, candidates, AllLeft with { Review = 0 }, Today));
     }
 
     [Fact]
@@ -86,7 +87,7 @@ public class StudyQueueProviderTests
         var learning = Card(FlashcardState.Learning, Now.AddMinutes(20));
         var candidates = new StudyQueueCandidates(learning, null, Card(FlashcardState.New, Now));
 
-        Assert.Same(learning, _sut.SelectNext(Deck, candidates, AllLeft with { New = 0 }, Now));
+        Assert.Same(learning, _sut.SelectNext(Deck, candidates, AllLeft with { New = 0 }, Today));
     }
 
     [Fact]
@@ -94,7 +95,7 @@ public class StudyQueueProviderTests
     {
         var candidates = new StudyQueueCandidates(Card(FlashcardState.Relearning, Now.AddMinutes(21)), null, null);
 
-        Assert.Null(_sut.SelectNext(Deck, candidates, AllLeft, Now));
+        Assert.Null(_sut.SelectNext(Deck, candidates, AllLeft, Today));
     }
 
     [Fact]
@@ -102,6 +103,38 @@ public class StudyQueueProviderTests
     {
         var candidates = new StudyQueueCandidates(Card(FlashcardState.Learning, Now.AddMinutes(-1)), null, null);
 
-        Assert.Null(_sut.SelectNext(Deck with { IsArchived = true }, candidates, AllLeft, Now));
+        Assert.Null(_sut.SelectNext(Deck with { IsArchived = true }, candidates, AllLeft, Today));
+    }
+
+    [Theory]
+    [InlineData(FlashcardState.Learning, 20, true)]
+    [InlineData(FlashcardState.Relearning, 21, false)]
+    public void IsDue_LearningCard_DependsOnTheLearnAheadLimit(FlashcardState state, int dueInMinutes, bool expected)
+    {
+        Assert.Equal(expected, _sut.IsDue(Deck, Card(state, Now.AddMinutes(dueInMinutes)), AllLeft, Today));
+    }
+
+    [Fact]
+    public void IsDue_ReviewCard_MustBeDueTodayWithinTheLimit()
+    {
+        Assert.True(_sut.IsDue(Deck, Card(FlashcardState.Review, Today.NextStart.AddTicks(-1)), AllLeft, Today));
+        Assert.False(_sut.IsDue(Deck, Card(FlashcardState.Review, Today.NextStart), AllLeft, Today));
+        Assert.False(_sut.IsDue(Deck, Card(FlashcardState.Review, Now), AllLeft with { Review = 0 }, Today));
+    }
+
+    [Fact]
+    public void IsDue_NewCard_DependsOnTheNewCardLimit()
+    {
+        Assert.True(_sut.IsDue(Deck, Card(FlashcardState.New, Now), AllLeft, Today));
+        Assert.False(_sut.IsDue(Deck, Card(FlashcardState.New, Now), AllLeft with { New = 0 }, Today));
+    }
+
+    [Fact]
+    public void IsDue_CardOfAnotherOrArchivedDeck_IsFalse()
+    {
+        var card = Card(FlashcardState.New, Now);
+
+        Assert.False(_sut.IsDue(Deck with { Id = Guid.NewGuid() }, card, AllLeft, Today));
+        Assert.False(_sut.IsDue(Deck with { IsArchived = true }, card, AllLeft, Today));
     }
 }
