@@ -1,3 +1,4 @@
+using StudyHub.Shared.Calendar;
 using StudyHub.Shared.Dashboard;
 using StudyHub.Shared.Flashcards;
 
@@ -12,4 +13,6 @@ public interface IDashboardAccessor
     Task<SemesterProgressDto> GetSemesterProgressAsync(CancellationToken cancellationToken = default);
 
     Task<FlashcardsDueDto> GetFlashcardsDueAsync(CancellationToken cancellationToken = default);
+
+    Task<CalendarDayDto> GetSessionsTodayAsync(CancellationToken cancellationToken = default);
 }

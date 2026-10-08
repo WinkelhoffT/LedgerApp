@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using StudyHub.Shared.Calendar;
 using StudyHub.Shared.Dashboard;
 using StudyHub.Shared.Flashcards;
 
@@ -18,5 +19,12 @@ public sealed class DashboardAccessor(HttpClient httpClient) : IDashboardAccesso
         using var response = await httpClient.GetAsync("api/dashboard/flashcards-due", cancellationToken);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<FlashcardsDueDto>(cancellationToken))!;
+    }
+
+    public async Task<CalendarDayDto> GetSessionsTodayAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await httpClient.GetAsync("api/dashboard/sessions-today", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<CalendarDayDto>(cancellationToken))!;
     }
 }

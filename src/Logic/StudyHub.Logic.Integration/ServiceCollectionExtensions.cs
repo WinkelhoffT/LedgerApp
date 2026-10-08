@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Logic.Integration.Calendar;
 using StudyHub.Logic.Integration.Courses;
 using StudyHub.Logic.Integration.Dashboard;
 using StudyHub.Logic.Integration.Documents;
 using StudyHub.Logic.Integration.Flashcards;
 using StudyHub.Logic.Integration.Notes;
 using StudyHub.Logic.Integration.Semesters;
+using StudyHub.Logic.Integration.StudySessions;
 
 namespace StudyHub.Logic.Integration;
 
@@ -23,6 +25,8 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IFlashcardDeckAccessor, FlashcardDeckAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<IFlashcardStudyAccessor, FlashcardStudyAccessor>(client => client.BaseAddress = apiBaseAddress);
         services.AddHttpClient<IFlashcardTransferAccessor, FlashcardTransferAccessor>(client => client.BaseAddress = apiBaseAddress);
+        services.AddHttpClient<ICalendarAccessor, CalendarAccessor>(client => client.BaseAddress = apiBaseAddress);
+        services.AddHttpClient<IStudySessionAccessor, StudySessionAccessor>(client => client.BaseAddress = apiBaseAddress);
 
         // Generation waits for Claude (typically 15-60 s, up to the SDK timeout plus one retry).
         services.AddHttpClient<IFlashcardAccessor, FlashcardAccessor>(client =>
