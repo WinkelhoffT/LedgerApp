@@ -1,5 +1,47 @@
 @page "/calendar"
+@using StudyHub.UI.Calendar
 
 <PageTitle>Calendar</PageTitle>
 
-<p>Calendar — coming soon.</p>
+<div class="cal-toolbar">
+    <div class="cal-period">@PeriodTitle</div>
+    <div class="cal-nav">
+        <button class="icon-btn" type="button" aria-label="Previous month" @onclick="ShowPrevious">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="Next month" @onclick="ShowNext">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+    </div>
+    <button class="btn btn-outline btn-sm" type="button" @onclick="ShowToday">Today</button>
+</div>
+
+@if (LegendCourses.Count > 0)
+{
+    <div class="cal-legend" aria-label="Courses in this period">
+        @foreach (var course in LegendCourses)
+        {
+            <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:@course.Color"></span>@course.Name</span>
+        }
+    </div>
+}
+
+@if (ErrorMessage is not null)
+{
+    <div class="form-error page-error">@ErrorMessage</div>
+}
+
+@if (Month is null)
+{
+    <p class="placeholder-hint">Loading calendar…</p>
+}
+else
+{
+    <div class="cal-layout">
+        <div class="card cal-main">
+            <CalendarMonthView Month="Month" SelectedDate="SelectedDate" OnDaySelected="SelectDay" />
+        </div>
+
+        <CalendarDayPanel Date="SelectedDate" Today="Month.Today" Sessions="SelectedDaySessions" />
+    </div>
+}

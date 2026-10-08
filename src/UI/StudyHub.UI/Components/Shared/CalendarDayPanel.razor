@@ -1,0 +1,26 @@
+@using StudyHub.UI.Calendar
+
+<aside class="card card-pad cal-side" aria-label="Sessions on @CalendarFormatter.FormatDate(Date)">
+    <div class="cal-side-weekday">@CalendarFormatter.FormatWeekday(Date)</div>
+    <div class="cal-side-date">@CalendarFormatter.FormatDate(Date)</div>
+
+    @if (Sessions.Count == 0)
+    {
+        <div class="cal-side-empty">No sessions scheduled</div>
+    }
+    else
+    {
+        @foreach (var item in Sessions)
+        {
+            <StudySessionCard Session="item.Session" Today="Today" OnSelected="OnSessionSelected" />
+        }
+    }
+
+    @if (OnAddSession.HasDelegate)
+    {
+        <button class="btn btn-secondary cal-side-add" type="button" @onclick="OnAddSession">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            Add session
+        </button>
+    }
+</aside>
