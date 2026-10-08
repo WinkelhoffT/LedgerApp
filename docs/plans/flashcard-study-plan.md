@@ -448,6 +448,14 @@ but a deck that is already linked keeps it. Separate migration `AddFlashcardDeck
 applied (DAT-006). In the UI the deck dialog offers courses and semesters in one "Belongs to"
 dropdown, and "Save to deck" in the generator gives a new deck the note's course or semester.
 
+### Target deck chosen before generating (added after review)
+
+The generator's options include the **deck** the cards go to (an existing deck or "New deck…" with
+a name that follows the selected note's title until the user types one). After reviewing the cards,
+"Save to <deck>" stores them there; nothing is saved without that click. `/flashcards/generate?deckId=…`
+preselects the deck, and the deck page links to it with "Generate with AI". This is UI only: the
+generation request is unchanged, and saving still uses `AddFlashcardsRequest`.
+
 ### Validation notes
 
 - The test files under `tests/StudyHub.Tests/TestData/Flashcards/` are hand-written in the layout

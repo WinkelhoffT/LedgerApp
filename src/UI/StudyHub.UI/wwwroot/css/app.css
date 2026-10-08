@@ -534,9 +534,9 @@ select:focus-visible,
 .card-state.state-review { color: var(--success); }
 
 .flashcard-saved { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-.flashcard-saved-actions, .flashcard-save-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.flashcard-save-deck { width: 220px; }
-.flashcard-save-name { width: 220px; }
+.flashcard-saved-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flashcard-deck-field { flex: 1 1 180px; }
+.flashcard-save-button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
 .import-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13px; color: var(--text-2); }
 .import-summary b { display: block; font-family: var(--font-display); font-size: 20px; color: var(--text); }

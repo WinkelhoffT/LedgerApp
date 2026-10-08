@@ -37,6 +37,10 @@ public partial class FlashcardGenerator
     [SupplyParameterFromQuery]
     public Guid? NoteId { get; set; }
 
+    /// <summary>Preselects the deck the cards are saved to, e.g. when coming from a deck page.</summary>
+    [SupplyParameterFromQuery]
+    public Guid? DeckId { get; set; }
+
     private IReadOnlyList<NoteGroup>? NoteGroups { get; set; }
 
     private Dictionary<Guid, NoteDto> NotesById { get; set; } = [];
@@ -57,7 +61,7 @@ public partial class FlashcardGenerator
 
     private IReadOnlyList<FlashcardDeckDto> Decks { get; set; } = [];
 
-    private Guid SaveDeckId { get; set; }
+    private Guid TargetDeckId { get; set; }
 
     private string NewDeckName { get; set; } = string.Empty;
 
@@ -75,6 +79,13 @@ public partial class FlashcardGenerator
 
     private string? CurrentNoteTitle =>
         CurrentSet is not null && NotesById.TryGetValue(CurrentSet.NoteId, out var note) ? note.Title : null;
+
+    private string TargetDeckLabel =>
+        Decks.FirstOrDefault(d => d.Id == TargetDeckId)?.Name
+        ?? (string.IsNullOrWhiteSpace(NewDeckName) ? "new deck" : NewDeckName.Trim());
+
+    // The new-deck name follows the selected note until the user types a name of their own.
+    private string? _suggestedDeckName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -101,6 +112,21 @@ public partial class FlashcardGenerator
         if (NoteId is { } noteId && notes.Any(n => n.Id == noteId))
         {
             SelectedNoteId = noteId;
+            HandleNoteChanged();
+        }
+
+        if (DeckId is { } deckId && Decks.Any(d => d.Id == deckId))
+        {
+            TargetDeckId = deckId;
+        }
+    }
+
+    private void HandleNoteChanged()
+    {
+        if (string.IsNullOrWhiteSpace(NewDeckName) || NewDeckName == _suggestedDeckName)
+        {
+            _suggestedDeckName = NotesById.GetValueOrDefault(SelectedNoteId)?.Title;
+            NewDeckName = _suggestedDeckName ?? string.Empty;
         }
     }
 
@@ -119,7 +145,6 @@ public partial class FlashcardGenerator
                     string.IsNullOrWhiteSpace(FocusHint) ? null : FocusHint,
                     SelectedModel));
             Cards = CurrentSet.Cards.Select(EditableFlashcard.FromDto).ToList();
-            NewDeckName = CurrentNoteTitle ?? string.Empty;
         }
         catch (Exception ex) when (ex is FlashcardValidationException or FlashcardGenerationFailedException
                                        or AiNotConfiguredException or NoteNotFoundException or NoteArchivedException)
@@ -157,9 +182,9 @@ public partial class FlashcardGenerator
                 card.IsEditing = false;
             }
 
-            var deck = SaveDeckId == Guid.Empty
+            var deck = TargetDeckId == Guid.Empty
                 ? await CreateDeckForNoteAsync(CurrentSet.NoteId)
-                : Decks.First(d => d.Id == SaveDeckId);
+                : Decks.First(d => d.Id == TargetDeckId);
 
             var saved = await DeckAccessor.AddCardsAsync(
                 new AddFlashcardsRequest(deck.Id, Cards.Select(c => c.ToDto()).ToList(), CurrentSet.NoteId));
@@ -169,7 +194,7 @@ public partial class FlashcardGenerator
             CurrentSet = null;
             Cards = [];
             Decks = await DeckAccessor.GetAllAsync(includeArchived: false);
-            SaveDeckId = deck.Id;
+            TargetDeckId = deck.Id;
         }
         catch (Exception ex) when (ex is FlashcardValidationException or DuplicateFlashcardDeckNameException
                                        or FlashcardDeckArchivedException or FlashcardDeckNotFoundException

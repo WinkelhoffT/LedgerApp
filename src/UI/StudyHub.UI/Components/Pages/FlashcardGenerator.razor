@@ -26,7 +26,7 @@ else
         <div class="flashcard-options-row">
             <div class="form-group flashcard-note-field">
                 <label for="flashcard-note">Note</label>
-                <select id="flashcard-note" class="form-control" @bind="SelectedNoteId" disabled="@IsBusy">
+                <select id="flashcard-note" class="form-control" @bind="SelectedNoteId" @bind:after="HandleNoteChanged" disabled="@IsBusy">
                     <option value="@Guid.Empty">Select a note…</option>
                     @foreach (var group in NoteGroups)
                     {
@@ -39,6 +39,26 @@ else
                     }
                 </select>
             </div>
+
+            <div class="form-group flashcard-deck-field">
+                <label for="flashcard-deck">Deck</label>
+                <select id="flashcard-deck" class="form-control" @bind="TargetDeckId" disabled="@IsBusy">
+                    <option value="@Guid.Empty">New deck…</option>
+                    @foreach (var deck in Decks)
+                    {
+                        <option value="@deck.Id">@deck.Name</option>
+                    }
+                </select>
+            </div>
+
+            @if (TargetDeckId == Guid.Empty)
+            {
+                <div class="form-group flashcard-deck-field">
+                    <label for="flashcard-new-deck">New deck name</label>
+                    <input id="flashcard-new-deck" class="form-control" maxlength="@FlashcardDeck.NameMaxLength"
+                           placeholder="Defaults to the note title" @bind="NewDeckName" disabled="@IsBusy" />
+                </div>
+            }
 
             <div class="form-group flashcard-model-field">
                 <label for="flashcard-model">Model</label>
@@ -109,23 +129,9 @@ else
                     Generated with @GetModelName(CurrentSet.Model). @Cards.Count card(s). Cards are not saved yet — save them to a deck before leaving or reloading this page.
                 </div>
             </div>
-            <div class="flashcard-save-row">
-                <select class="form-control flashcard-save-deck" aria-label="Deck" @bind="SaveDeckId" disabled="@IsBusy">
-                    <option value="@Guid.Empty">New deck…</option>
-                    @foreach (var deck in Decks)
-                    {
-                        <option value="@deck.Id">@deck.Name</option>
-                    }
-                </select>
-                @if (SaveDeckId == Guid.Empty)
-                {
-                    <input class="form-control flashcard-save-name" aria-label="New deck name" maxlength="@FlashcardDeck.NameMaxLength"
-                           placeholder="Deck name" @bind="NewDeckName" disabled="@IsBusy" />
-                }
-                <button class="btn btn-primary" type="button" disabled="@(IsBusy || Cards.Count == 0)" @onclick="SaveToDeckAsync">
-                    @(IsSaving ? "Saving…" : "Save to deck")
-                </button>
-            </div>
+            <button class="btn btn-primary flashcard-save-button" type="button" disabled="@(IsBusy || Cards.Count == 0)" @onclick="SaveToDeckAsync">
+                @(IsSaving ? "Saving…" : $"Save to {TargetDeckLabel}")
+            </button>
         </div>
 
         @if (Cards.Count == 0)
