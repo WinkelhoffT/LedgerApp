@@ -5,6 +5,7 @@ using StudyHub.Api.Documents;
 using StudyHub.Api.Flashcards;
 using StudyHub.Api.Notes;
 using StudyHub.Api.Semesters;
+using StudyHub.Api.StudySessions;
 using StudyHub.Data;
 using StudyHub.Infrastructure;
 using StudyHub.Logic.Business;
@@ -17,6 +18,7 @@ builder.Services.AddStudyHubDataRepositories();
 builder.Services.AddStudyHubInfrastructure();
 builder.Services.AddStudyHubBusiness();
 builder.Services.AddStudyHubFlashcardStudy(builder.Configuration);
+builder.Services.AddStudyHubCalendar(builder.Configuration);
 builder.Services.AddStudyHubAi(builder.Configuration);
 builder.Services.AddControllers();
 
@@ -25,6 +27,7 @@ builder.Services.AddExceptionHandler<SemesterExceptionHandler>();
 builder.Services.AddExceptionHandler<DocumentExceptionHandler>();
 builder.Services.AddExceptionHandler<NoteExceptionHandler>();
 builder.Services.AddExceptionHandler<FlashcardExceptionHandler>();
+builder.Services.AddExceptionHandler<StudySessionExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks();
