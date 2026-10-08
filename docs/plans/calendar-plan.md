@@ -1,15 +1,16 @@
 # Feature Plan: Calendar (Epic 8)
 
-Status: Planned. Implementation starts after the open questions in section 10 are answered.
+Status: Implemented. The open questions in section 10 were settled with their recommendations;
+section 12 lists where the implementation differs from this plan.
 Classification (per `CLAUDE.md`): **Medium**. It adds a new domain object (`StudySession`), a new
 CRUD workflow and a new page with two views. Per the Medium workflow this plan covers the planned
 architecture, the affected layers, the required contracts and the database impact.
 
 Epic items:
 
-- [ ] Month view (Monatsansicht)
-- [ ] Week view (Wochenansicht)
-- [ ] Session display (Session Darstellung)
+- [x] Month view (Monatsansicht)
+- [x] Week view (Wochenansicht)
+- [x] Session display (Session Darstellung)
 
 Section 8 maps each item to its implementation steps.
 
@@ -324,16 +325,17 @@ existing migration is edited (DAT-006).
 
 ## 10. Open Questions, Assumptions, Risks
 
-### Open (please answer before implementation)
+### Open questions (settled with the recommendations)
 
 1. **Sessions in this epic:** is it OK that Epic 8 brings minimal **planned** sessions (CRUD from
    the calendar), while tracking (done, actual duration, timer) stays with milestone 7 "Study
-   Sessions"? Recommendation: yes. Otherwise the calendar has nothing to show.
+   Sessions"? Recommendation: yes. Otherwise the calendar has nothing to show. **Implemented
+   that way.**
 2. **Recurring sessions:** are they needed now (e.g. "every Monday 10:00")? Recommendation: no.
    Series need their own model (rule, end date, exceptions for single dates) and would roughly
-   double this epic. They are additive on top of single sessions later.
+   double this epic. They are additive on top of single sessions later. **Not implemented.**
 3. **Start of the week:** Monday (ISO 8601, German convention) instead of the mockup's Sunday?
-   Recommendation: Monday.
+   Recommendation: Monday. **Implemented that way.**
 
 ### Assumptions
 
@@ -383,3 +385,32 @@ Reported per `CLAUDE.md`, not resolved by guessing:
 - A "now" line in the week view.
 - iCal (`.ics`) export.
 - Day or agenda view for small screens.
+
+## 12. Implementation Notes
+
+Where the implementation differs from or adds to the plan above:
+
+- **Week view hours from the Api.** `CalendarWeekDto` also carries `StartHour` and `EndHour`, so the
+  rule "07:00–22:00, widened to the full hour around the earliest start and latest end" (section
+  5.3) is computed and tested in the Domain (`ICalendarPeriodProvider.GetWeekHours`, record
+  `CalendarHourRange`) instead of in the Razor component. The ISO week number also comes from the
+  provider (`GetIsoWeek`).
+- **Query validation.** `year` (1–9998), `month` (1–12) and `date` (up to 9998-12-31) are required
+  and range-checked with `[BindRequired]` and `[Range]`, so a missing value or a grid that would
+  run past the year 9999 returns `400` instead of `500`.
+- **URL state.** `date` is the selected day; the page shows the month or week that contains it.
+  Selecting a day replaces the URL entry, while previous/next, Today and the Month | Week toggle
+  add history entries. Without `date`, the page follows the Api's "today" (the UI host may run in
+  another time zone than `Calendar:TimeZone`).
+- **Start times** are kept to the whole minute; the Domain drops seconds.
+- **Month | Week toggle** is a small segmented control in `app.css`, not Bootstrap's `btn-group`:
+  `bootstrap.min.css` is linked in `App.razor` but not served (404), so Bootstrap classes have no
+  effect in the app today. The same affects `.form-control` in all dialogs, including the session
+  dialog.
+- **Week view details.** Clicking an empty hour is a mouse shortcut; keyboard and screen-reader
+  users add sessions with the "Add session" buttons, so the 100+ hour cells are not tab stops.
+  Sessions shorter than 45 minutes are shown in one line (title and start time; the time is hidden
+  when the block is too narrow), and the hour axis stays visible while the day columns scroll
+  sideways on narrow screens.
+- **Phone width.** Below 640 px the month grid shows a dot for days with sessions instead of the
+  chips, as in the mockup.

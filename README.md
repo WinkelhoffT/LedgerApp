@@ -53,6 +53,10 @@ implemented versus planned.
   options, daily limits, Again/Hard/Good/Easy with keyboard shortcuts), import of Anki's text
   export ("Notes in Plain Text", CSV/TXT/TSV), deck export in the same format, and a "Flashcards
   due today" card on the Dashboard (see [Flashcard study day](#flashcard-study-day)).
+- A calendar of planned study sessions with a month view and an ISO week view (Monday first):
+  sessions are added, edited and deleted in the calendar, can belong to a course or a semester,
+  are shown in the course color, overlapping sessions sit side by side in the week view, and the
+  Dashboard shows today's sessions (see [Calendar time zone](#calendar-time-zone)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -64,7 +68,7 @@ been implemented yet.
 - Study planning and study session tracking.
 - Document management and a document library.
 - Markdown-based notes.
-- Calendar integration for study sessions and deadlines.
+- Deadlines, exams and recurring study sessions in the calendar.
 
 ### Future Ideas
 
@@ -263,6 +267,13 @@ Like Anki's "next day starts at 4", a study day for flashcards starts at a fixed
 time zone. Both are set in the `Flashcards` section of `src/UI/StudyHub.Api/appsettings.json`
 (`TimeZone`: `Europe/Berlin`, `DayStartHour`: `4`) and are validated at Api startup — an unknown
 IANA time zone id or an hour outside 0–23 stops the Api with an error.
+
+### Calendar time zone
+
+Study sessions are stored as local wall-clock times (date, start, duration), so a session planned
+for 09:00 stays at 09:00 across daylight-saving changes. The time zone only decides which day is
+"today"; it is set in the `Calendar` section of `src/UI/StudyHub.Api/appsettings.json`
+(`TimeZone`: `Europe/Berlin`) and validated at Api startup like the flashcard time zone.
 
 ### Run the application (locally, without Docker)
 
