@@ -4,8 +4,9 @@ using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Api.Flashcards;
 
-// Note lookups during generation (NoteNotFoundException, NoteArchivedException) are handled by the
-// already registered NoteExceptionHandler, so this handler only covers flashcard-specific exceptions.
+// Note and course lookups (NoteNotFoundException, CourseArchivedException, ...) are handled by the
+// already registered NoteExceptionHandler/CourseExceptionHandler, so this handler only covers
+// flashcard-specific exceptions.
 public sealed class FlashcardExceptionHandler : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
@@ -18,6 +19,18 @@ public sealed class FlashcardExceptionHandler : IExceptionHandler
                 StatusCodes.Status502BadGateway, ex.Message, FlashcardErrorCodes.FlashcardGenerationFailed, "reason", ex.Reason.ToString()),
             AiNotConfiguredException ex => Build(
                 StatusCodes.Status503ServiceUnavailable, ex.Message, FlashcardErrorCodes.AiNotConfigured),
+            FlashcardDeckNotFoundException ex => Build(
+                StatusCodes.Status404NotFound, ex.Message, FlashcardErrorCodes.FlashcardDeckNotFound, "deckId", ex.DeckId),
+            FlashcardDeckArchivedException ex => Build(
+                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.FlashcardDeckArchived, "deckId", ex.DeckId),
+            DuplicateFlashcardDeckNameException ex => Build(
+                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.DuplicateFlashcardDeckName, "deckName", ex.Name),
+            FlashcardNotFoundException ex => Build(
+                StatusCodes.Status404NotFound, ex.Message, FlashcardErrorCodes.FlashcardNotFound, "flashcardId", ex.FlashcardId),
+            FlashcardNotDueException ex => Build(
+                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.FlashcardNotDue, "flashcardId", ex.FlashcardId),
+            FlashcardImportException ex => Build(
+                StatusCodes.Status400BadRequest, ex.Message, FlashcardErrorCodes.FlashcardImportFailed),
             _ => null,
         };
 

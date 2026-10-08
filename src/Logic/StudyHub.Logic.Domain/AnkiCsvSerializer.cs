@@ -7,45 +7,11 @@ namespace StudyHub.Logic.Domain;
 
 public sealed partial class AnkiCsvSerializer : IAnkiCsvSerializer
 {
-    private const string DeckRoot = "StudyHub";
-    private const string DeckSeparator = "::";
     private const string FileExtension = ".csv";
     private const string FallbackFileName = "flashcards";
     private const int FileNameMaxLength = 100;
 
     private static readonly UTF8Encoding Utf8WithoutBom = new(encoderShouldEmitUTF8Identifier: false);
-
-    public string CreateDeckName(string? parentName, string noteTitle)
-    {
-        var parts = new List<string> { DeckRoot };
-
-        if (CleanDeckPart(parentName) is { Length: > 0 } parent)
-        {
-            parts.Add(parent);
-        }
-
-        parts.Add(CleanDeckPart(noteTitle) is { Length: > 0 } title ? title : FallbackFileName);
-
-        return Truncate(string.Join(DeckSeparator, parts), ExportFlashcardsRequest.DeckNameMaxLength);
-    }
-
-    public string NormalizeDeckName(string deckName)
-    {
-        // Header lines end at a line break, so a deck name must stay on one line.
-        var normalized = CollapseWhitespace(deckName ?? string.Empty);
-        if (normalized.Length == 0)
-        {
-            throw new FlashcardValidationException("Deck name is required.");
-        }
-
-        if (normalized.Length > ExportFlashcardsRequest.DeckNameMaxLength)
-        {
-            throw new FlashcardValidationException(
-                $"Deck name must not exceed {ExportFlashcardsRequest.DeckNameMaxLength} characters.");
-        }
-
-        return normalized;
-    }
 
     public string CreateFileName(string name)
     {
@@ -92,10 +58,6 @@ public sealed partial class AnkiCsvSerializer : IAnkiCsvSerializer
     // Anki separates tags with spaces, so spaces inside a single tag become underscores.
     private static string FormatTags(IReadOnlyList<string> tags) =>
         string.Join(' ', tags.Select(tag => Whitespace().Replace(tag.Trim(), "_")).Where(tag => tag.Length > 0));
-
-    // "::" would create an unintended sub-deck, so it is reduced to a single colon inside one part.
-    private static string CleanDeckPart(string? value) =>
-        CollapseWhitespace((value ?? string.Empty).Replace(DeckSeparator, ":"));
 
     private static string CollapseWhitespace(string value) => Whitespace().Replace(value, " ").Trim();
 

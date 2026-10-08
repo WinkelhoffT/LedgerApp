@@ -1,0 +1,70 @@
+@using StudyHub.Shared.Flashcards
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(EditingDeck is null ? "New Deck" : "Deck Settings")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="form-group">
+                        <label for="deck-name">Name</label>
+                        <input id="deck-name" class="form-control" maxlength="@FlashcardDeck.NameMaxLength" @bind="Name" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="deck-owner">Belongs to (optional)</label>
+                        <select id="deck-owner" class="form-control" @bind="OwnerKey">
+                            <option value="">No course or semester</option>
+                            @if (SelectableCourses.Any())
+                            {
+                                <optgroup label="Courses">
+                                    @foreach (var course in SelectableCourses)
+                                    {
+                                        <option value="@(CoursePrefix + course.Id)">@course.Name@(course.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                            @if (SelectableSemesters.Any())
+                            {
+                                <optgroup label="Semesters">
+                                    @foreach (var semester in SelectableSemesters)
+                                    {
+                                        <option value="@(SemesterPrefix + semester.Id)">@semester.Name@(semester.IsArchived ? " (Archived)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deck-new-per-day">New cards per day</label>
+                            <input id="deck-new-per-day" class="form-control" type="number" min="0" max="@FlashcardDeck.MaxCardsPerDay" @bind="NewCardsPerDay" />
+                        </div>
+                        <div class="form-group">
+                            <label for="deck-reviews-per-day">Reviews per day</label>
+                            <input id="deck-reviews-per-day" class="form-control" type="number" min="0" max="@FlashcardDeck.MaxCardsPerDay" @bind="ReviewsPerDay" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@IsSaving">@(EditingDeck is null ? "Create Deck" : "Save Changes")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}

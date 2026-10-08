@@ -17,7 +17,7 @@ namespace StudyHub.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Courses.Course", b =>
+            modelBuilder.Entity("StudyHub.Shared.Courses.Course", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,7 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("Courses", (string)null);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Documents.Document", b =>
+            modelBuilder.Entity("StudyHub.Shared.Documents.Document", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -109,7 +109,155 @@ namespace StudyHub.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.Note", b =>
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.Flashcard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Back")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DeckId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EaseFactor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Front")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IntervalDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lapses")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Reps")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SourceNoteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Step")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(600)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceNoteId");
+
+                    b.HasIndex("DeckId", "State", "DueAt");
+
+                    b.ToTable("Flashcards", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.FlashcardDeck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NewCardsPerDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReviewsPerDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SemesterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("SemesterId");
+
+                    b.ToTable("FlashcardDecks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FlashcardDecks_AtMostOneParent", "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.FlashcardReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EaseFactorAfter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("FlashcardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IntervalDaysAfter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("IntervalDaysBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StateBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlashcardId");
+
+                    b.HasIndex("ReviewedAt");
+
+                    b.ToTable("FlashcardReviews", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Notes.Note", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -159,7 +307,7 @@ namespace StudyHub.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteDocument", b =>
+            modelBuilder.Entity("StudyHub.Shared.Notes.NoteDocument", b =>
                 {
                     b.Property<Guid>("NoteId")
                         .HasColumnType("TEXT");
@@ -174,7 +322,7 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("NoteDocuments", (string)null);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteLink", b =>
+            modelBuilder.Entity("StudyHub.Shared.Notes.NoteLink", b =>
                 {
                     b.Property<Guid>("SourceNoteId")
                         .HasColumnType("TEXT");
@@ -189,7 +337,7 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("NoteLinks", (string)null);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Semesters.Semester", b =>
+            modelBuilder.Entity("StudyHub.Shared.Semesters.Semester", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -223,65 +371,101 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("Semesters", (string)null);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Courses.Course", b =>
+            modelBuilder.Entity("StudyHub.Shared.Courses.Course", b =>
                 {
-                    b.HasOne("StudyHub.Logic.Domain.Semesters.Semester", null)
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
                         .WithMany()
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Documents.Document", b =>
+            modelBuilder.Entity("StudyHub.Shared.Documents.Document", b =>
                 {
-                    b.HasOne("StudyHub.Logic.Domain.Courses.Course", null)
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("StudyHub.Logic.Domain.Semesters.Semester", null)
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
                         .WithMany()
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.Note", b =>
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.Flashcard", b =>
                 {
-                    b.HasOne("StudyHub.Logic.Domain.Courses.Course", null)
+                    b.HasOne("StudyHub.Shared.Flashcards.FlashcardDeck", null)
+                        .WithMany()
+                        .HasForeignKey("DeckId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Shared.Notes.Note", null)
+                        .WithMany()
+                        .HasForeignKey("SourceNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.FlashcardDeck", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("StudyHub.Logic.Domain.Semesters.Semester", null)
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
                         .WithMany()
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteDocument", b =>
+            modelBuilder.Entity("StudyHub.Shared.Flashcards.FlashcardReview", b =>
                 {
-                    b.HasOne("StudyHub.Logic.Domain.Documents.Document", null)
+                    b.HasOne("StudyHub.Shared.Flashcards.Flashcard", null)
+                        .WithMany()
+                        .HasForeignKey("FlashcardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Notes.Note", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.Notes.NoteDocument", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Documents.Document", null)
                         .WithMany()
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                    b.HasOne("StudyHub.Shared.Notes.Note", null)
                         .WithMany()
                         .HasForeignKey("NoteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("StudyHub.Logic.Domain.Notes.NoteLink", b =>
+            modelBuilder.Entity("StudyHub.Shared.Notes.NoteLink", b =>
                 {
-                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                    b.HasOne("StudyHub.Shared.Notes.Note", null)
                         .WithMany()
                         .HasForeignKey("SourceNoteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StudyHub.Logic.Domain.Notes.Note", null)
+                    b.HasOne("StudyHub.Shared.Notes.Note", null)
                         .WithMany()
                         .HasForeignKey("TargetNoteId")
                         .OnDelete(DeleteBehavior.Restrict)

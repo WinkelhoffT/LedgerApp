@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Logic.Domain.Contract;
@@ -18,7 +19,10 @@ public interface IFlashcardValidator
     /// </summary>
     IReadOnlyList<FlashcardDto> FilterGeneratedCards(IReadOnlyList<FlashcardDto> cards, int maxCount);
 
-    /// <summary>Normalizes user-edited cards for export.</summary>
+    /// <summary>Normalizes user-edited cards before they are saved.</summary>
     /// <exception cref="FlashcardValidationException">No cards, too many cards, or a card breaks a rule.</exception>
-    IReadOnlyList<FlashcardDto> ValidateForExport(IReadOnlyList<FlashcardDto> cards);
+    IReadOnlyList<FlashcardDto> ValidateCards(IReadOnlyList<FlashcardDto> cards);
+
+    /// <summary>Normalizes one card; <paramref name="error"/> names the first rule it breaks.</summary>
+    bool TryNormalize(FlashcardDto card, out FlashcardDto normalized, [NotNullWhen(false)] out string? error);
 }

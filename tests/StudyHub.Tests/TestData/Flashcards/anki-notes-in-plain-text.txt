@@ -1,0 +1,11 @@
+#separator:tab
+#html:true
+#guid column:1
+#notetype column:2
+#deck column:3
+#tags column:6
+f]K9v@Lx0p	Basic	Informatik::Algorithmen	Was berechnet der <b>Dijkstra</b>-Algorithmus?	Kürzeste Wege von einem Startknoten<br>bei nicht-negativen Kantengewichten.	graphen kürzeste_wege
+q7%Tz2bW!m	Basic (and reversed card)	Informatik::Algorithmen	Laufzeit von Dijkstra mit Binärheap	<code>O((V + E) log V)</code>	graphen laufzeit
+Px3$wL9qe)	Cloze	Informatik::Algorithmen	Ein {{c1::B-Baum}} ist immer balanciert.		bäume
+N2v&Hk8s_c	Basic	Informatik::Datenbanken	"Was bedeutet ""ACID""?"	"Atomicity, Consistency,
+Isolation, Durability"	datenbanken transaktionen

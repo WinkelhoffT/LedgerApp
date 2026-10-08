@@ -1,6 +1,11 @@
 # Feature Plan: AI Flashcard Generation (Anki CSV Export)
 
 Status: Implemented (see "Implementation notes" at the end for deviations from this plan)
+
+> **Superseded in part by `docs/plans/flashcard-study-plan.md`:** generated cards are now saved to
+> a deck ("Save to deck") and studied in StudyHub. The generator moved to `/flashcards/generate`,
+> and its direct "Export for Anki" button (`POST api/flashcards/export`) was removed — a deck is
+> exported in the same Anki CSV format from the deck pages instead.
 Classification (per `CLAUDE.md`): **Large** (AI integration) — implementation starts only after
 this plan is reviewed and explicitly confirmed.
 

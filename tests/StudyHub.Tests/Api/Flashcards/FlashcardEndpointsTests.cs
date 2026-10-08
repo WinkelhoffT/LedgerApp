@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -89,7 +88,7 @@ public class FlashcardEndpointsTests
     }
 
     [Fact]
-    public async Task Generate_ReturnsCardsWithDeckAndFileName()
+    public async Task Generate_ReturnsCardsAndModel()
     {
         using var factory = CreateFactory(FakeGenerator(new FlashcardDto("Frage", "Antwort", ["graphen"])));
         using var client = factory.CreateClient();
@@ -99,8 +98,7 @@ public class FlashcardEndpointsTests
 
         response.EnsureSuccessStatusCode();
         var set = await response.Content.ReadFromJsonAsync<FlashcardSetDto>();
-        Assert.Equal("StudyHub::Algorithms::Dijkstra", set!.DeckName);
-        Assert.Equal("Dijkstra.csv", set.FileName);
+        Assert.Equal(note.Id, set!.NoteId);
         Assert.Equal("claude-sonnet-5-5", set.Model);
         Assert.Equal("Frage", Assert.Single(set.Cards).Front);
     }
@@ -182,35 +180,5 @@ public class FlashcardEndpointsTests
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal(FlashcardErrorCodes.AiNotConfigured, await GetProblemValueAsync(response, "errorCode"));
-    }
-
-    [Fact]
-    public async Task Export_ReturnsAnkiCsvFile()
-    {
-        using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync(
-            "api/flashcards/export",
-            new ExportFlashcardsRequest("StudyHub::Algorithms::Dijkstra", "Dijkstra.csv", [new FlashcardDto("Größe?", "Antwort", ["graphen"])]));
-
-        response.EnsureSuccessStatusCode();
-        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("Dijkstra.csv", response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName);
-        var csv = Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
-        Assert.StartsWith("#separator:Semicolon\n", csv);
-        Assert.Contains("\"Größe?\";\"Antwort\";\"graphen\"", csv);
-    }
-
-    [Fact]
-    public async Task Export_WithNoCards_Returns400WithErrorCode()
-    {
-        using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("api/flashcards/export", new ExportFlashcardsRequest("Deck", "x.csv", []));
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(FlashcardErrorCodes.FlashcardValidationFailed, await GetProblemValueAsync(response, "errorCode"));
     }
 }

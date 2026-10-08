@@ -1,0 +1,99 @@
+@using StudyHub.Shared.Flashcards
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel modal-panel-wide" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(Result is null ? "Import Anki Cards" : "Import Finished")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            @if (Result is null)
+            {
+                <EditForm Model="this" OnValidSubmit="ImportAsync">
+                    <div class="modal-body">
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="form-error">@ErrorMessage</div>
+                        }
+
+                        <div class="form-group">
+                            <label for="import-file">File (Anki "Notes in Plain Text" export or CSV, UTF-8, max 5 MB)</label>
+                            <InputFile id="import-file" class="form-control" accept=".csv,.txt,.tsv" OnChange="HandleFileSelected" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="import-target">Target deck</label>
+                            <select id="import-target" class="form-control" @bind="TargetDeckId">
+                                <option value="@Guid.Empty">New deck named after the file</option>
+                                @foreach (var deck in Decks)
+                                {
+                                    <option value="@deck.Id">@deck.Name</option>
+                                }
+                            </select>
+                            <span class="flashcard-hint">Rows that name their own deck (deck column or #deck: header) go into that deck instead.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="import-duplicates">If a card with the same front exists</label>
+                            <select id="import-duplicates" class="form-control" @bind="DuplicateMode">
+                                <option value="@ImportDuplicateMode.UpdateCurrent">Update current (keeps learning progress)</option>
+                                <option value="@ImportDuplicateMode.KeepCurrent">Keep current (skip the row)</option>
+                                <option value="@ImportDuplicateMode.KeepBoth">Keep both (add a new card)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsImporting">Cancel</button>
+                        <button class="btn btn-primary" type="submit" disabled="@(IsImporting || SelectedFile is null)">@(IsImporting ? "Importing…" : "Import")</button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <div class="modal-body">
+                    <div class="import-summary">
+                        <div><b>@Result.Added</b> added</div>
+                        <div><b>@Result.Updated</b> updated</div>
+                        <div><b>@Result.SkippedDuplicates</b> skipped (duplicate)</div>
+                        <div class="@(Result.Failed > 0 ? "import-failed" : "")"><b>@Result.Failed</b> failed</div>
+                    </div>
+
+                    @if (Result.Decks.Count > 0)
+                    {
+                        <div class="form-group">
+                            <label>Decks</label>
+                            <ul class="import-deck-list">
+                                @foreach (var deck in Result.Decks)
+                                {
+                                    <li><a href="@($"flashcards/decks/{deck.DeckId}")">@deck.Name</a>@(deck.IsNew ? " (new)" : "")</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (Result.Failures.Count > 0)
+                    {
+                        <div class="form-group">
+                            <label>Rows that were not imported</label>
+                            <ul class="import-failure-list">
+                                @foreach (var failure in Result.Failures)
+                                {
+                                    <li><span class="mono">Line @failure.LineNumber</span> @failure.Reason</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" @onclick="Close">Done</button>
+                </div>
+            }
+        </div>
+    </div>
+}

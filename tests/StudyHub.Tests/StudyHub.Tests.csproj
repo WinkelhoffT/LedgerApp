@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="TestData\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Data\StudyHub.Data\StudyHub.Data.csproj" />
     <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Domain\StudyHub.Logic.Domain.csproj" />
     <ProjectReference Include="..\..\src\Logic\StudyHub.Logic.Business\StudyHub.Logic.Business.csproj" />

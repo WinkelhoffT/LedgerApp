@@ -6,8 +6,8 @@ namespace StudyHub.Shared.Flashcards;
 /// </summary>
 public sealed record FlashcardDto(string Front, string Back, IReadOnlyList<string> Tags)
 {
-    public const int FrontMaxLength = 1_000;
-    public const int BackMaxLength = 4_000;
+    public const int FrontMaxLength = 2_000;
+    public const int BackMaxLength = 10_000;
     public const int TagMaxLength = 50;
     public const int MaxTagsPerCard = 10;
 }

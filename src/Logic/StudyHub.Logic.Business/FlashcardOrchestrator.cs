@@ -10,16 +10,11 @@ namespace StudyHub.Logic.Business;
 
 public sealed class FlashcardOrchestrator(
     INoteRepository noteRepository,
-    ICourseRepository courseRepository,
-    ISemesterRepository semesterRepository,
     IFlashcardValidator flashcardValidator,
-    IAnkiCsvSerializer ankiCsvSerializer,
     IFlashcardGenerator flashcardGenerator,
     IAiModelCatalog aiModelCatalog
 ) : IFlashcardOrchestrator
 {
-    private const string CsvContentType = "text/csv";
-
     public IReadOnlyList<AiModelDto> GetAvailableModels() => aiModelCatalog.GetModels();
 
     public async Task<FlashcardSetDto> GenerateAsync(
@@ -49,8 +44,6 @@ public sealed class FlashcardOrchestrator(
             throw new FlashcardValidationException("The note is empty - write some content before generating flashcards.");
         }
 
-        var parentName = await GetParentNameAsync(note, cancellationToken);
-
         var generatedCards = await flashcardGenerator.GenerateAsync(
             new FlashcardGenerationInput(model, note.Title, note.Content, request.CardCount, request.FocusHint),
             cancellationToken
@@ -65,43 +58,6 @@ public sealed class FlashcardOrchestrator(
             );
         }
 
-        return new FlashcardSetDto(
-            note.Id,
-            ankiCsvSerializer.CreateDeckName(parentName, note.Title),
-            ankiCsvSerializer.CreateFileName(note.Title),
-            model,
-            cards
-        );
-    }
-
-    public Task<FlashcardExportDto> ExportAsync(
-        ExportFlashcardsRequest request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var cards = flashcardValidator.ValidateForExport(request.Cards);
-        var deckName = ankiCsvSerializer.NormalizeDeckName(request.DeckName);
-        var fileName = ankiCsvSerializer.CreateFileName(request.FileName);
-
-        var content = ankiCsvSerializer.Serialize(deckName, cards);
-
-        return Task.FromResult(new FlashcardExportDto(fileName, CsvContentType, content));
-    }
-
-    private async Task<string?> GetParentNameAsync(Note note, CancellationToken cancellationToken)
-    {
-        if (note.CourseId is { } courseId)
-        {
-            var course = await courseRepository.GetByIdAsync(courseId, cancellationToken);
-            return course?.Name;
-        }
-
-        if (note.SemesterId is { } semesterId)
-        {
-            var semester = await semesterRepository.GetByIdAsync(semesterId, cancellationToken);
-            return semester?.Name;
-        }
-
-        return null;
+        return new FlashcardSetDto(note.Id, model, cards);
     }
 }

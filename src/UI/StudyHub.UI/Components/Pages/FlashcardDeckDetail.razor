@@ -1,0 +1,148 @@
+@page "/flashcards/decks/{DeckId:guid}"
+@using StudyHub.Shared.Flashcards
+@using StudyHub.UI.Flashcards
+
+<PageTitle>@(Deck?.Name ?? "Deck")</PageTitle>
+
+<div class="page-toolbar">
+    <a class="btn btn-outline btn-sm" href="flashcards">← All decks</a>
+</div>
+
+@if (NotFound)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">Deck not found</div>
+        <div class="empty-state-text">The deck may have been removed.</div>
+        <a class="btn btn-primary" href="flashcards">Back to decks</a>
+    </div>
+}
+else if (Deck is null)
+{
+    <p class="placeholder-hint">Loading deck…</p>
+}
+else
+{
+    <div class="card card-pad deck-header @(Deck.IsArchived ? "is-archived" : "")">
+        <div class="deck-header-main">
+            <div class="deck-title-row">
+                <div class="deck-title">@Deck.Name</div>
+                @if (Deck.IsArchived)
+                {
+                    <span class="badge-archived">Archived</span>
+                }
+            </div>
+            <div class="deck-meta">
+                <span>@(OwnerName ?? "No course or semester")</span>
+                <span>@Deck.CardCount card(s)</span>
+                <span>@Deck.NewCardsPerDay new / day</span>
+                <span>@Deck.ReviewsPerDay reviews / day</span>
+            </div>
+            <div class="deck-due">
+                <span class="deck-due-label">Due today</span>
+                <FlashcardStudyCounts Counts="Deck.DueCounts" />
+            </div>
+        </div>
+        <div class="deck-header-actions">
+            @if (Deck.IsArchived)
+            {
+                <button class="btn btn-secondary" type="button" disabled="@IsBusy" @onclick="RestoreAsync">Restore</button>
+            }
+            else
+            {
+                <a class="btn btn-primary @(Deck.DueCounts.Total == 0 ? "disabled" : "")" href="@($"flashcards/study/{Deck.Id}")"
+                   aria-disabled="@(Deck.DueCounts.Total == 0)">Study</a>
+                <a class="btn btn-outline" href="@($"flashcards/generate?deckId={Deck.Id}")">Generate with AI</a>
+                <button class="btn btn-outline" type="button" @onclick="() => IsSettingsOpen = true">Settings</button>
+            }
+            <button class="btn btn-outline" type="button" disabled="@IsBusy" @onclick="ExportAsync">Export</button>
+            @if (!Deck.IsArchived)
+            {
+                <button class="btn btn-danger-outline" type="button" disabled="@IsBusy" @onclick="ArchiveAsync">Archive</button>
+            }
+        </div>
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error page-error">@ErrorMessage</div>
+    }
+
+    <div class="page-toolbar deck-cards-toolbar">
+        <form class="deck-search" @onsubmit="SearchAsync">
+            <input class="form-control" type="search" placeholder="Search front, back or tags" aria-label="Search cards" @bind="Search" />
+            <button class="btn btn-secondary" type="submit">Search</button>
+        </form>
+        @if (!Deck.IsArchived)
+        {
+            <button class="btn btn-primary" type="button" @onclick="OpenAddCard">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                Add card
+            </button>
+        }
+    </div>
+
+    @if (Cards is null)
+    {
+        <p class="placeholder-hint">Loading cards…</p>
+    }
+    else if (Cards.Count == 0)
+    {
+        <div class="card empty-state">
+            <div class="empty-state-title">@(string.IsNullOrWhiteSpace(AppliedSearch) ? "No cards yet" : "No matching cards")</div>
+            <div class="empty-state-text">
+                @(string.IsNullOrWhiteSpace(AppliedSearch)
+                    ? "Add cards by hand, generate them from a note, or import an Anki export."
+                    : "Try another search term.")
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card flashcard-table-card">
+            <table class="table flashcard-table">
+                <thead>
+                    <tr>
+                        <th>Front</th>
+                        <th>Back</th>
+                        <th class="flashcard-tags-col">Tags</th>
+                        <th class="deck-state-col">State</th>
+                        <th class="deck-state-col">Due</th>
+                        <th class="flashcard-actions-col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Virtualize Items="Cards" Context="card" ItemSize="64" SpacerElement="tr">
+                        <tr>
+                            <td>@FlashcardHtmlFormatter.ToPreview(card.Front)</td>
+                            <td>@FlashcardHtmlFormatter.ToPreview(card.Back)</td>
+                            <td>
+                                @foreach (var tag in card.Tags)
+                                {
+                                    <span class="note-tag-f">#@tag</span>
+                                }
+                            </td>
+                            <td class="deck-state-col"><span class="card-state state-@card.State.ToString().ToLowerInvariant()">@card.State</span></td>
+                            <td class="deck-state-col">@(card.DueDate?.ToString("dd.MM.yyyy") ?? "—")</td>
+                            <td class="flashcard-actions-col">
+                                @if (!Deck.IsArchived && PendingDeleteId == card.Id)
+                                {
+                                    <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsBusy" @onclick="() => DeleteCardAsync(card)">Delete?</button>
+                                    <button class="btn btn-secondary btn-sm" type="button" @onclick="() => PendingDeleteId = null">Keep</button>
+                                }
+                                else if (!Deck.IsArchived)
+                                {
+                                    <button class="btn btn-outline btn-sm" type="button" @onclick="() => OpenEditCard(card)">Edit</button>
+                                    <button class="btn btn-danger-outline btn-sm" type="button" @onclick="() => PendingDeleteId = card.Id">Delete</button>
+                                }
+                            </td>
+                        </tr>
+                    </Virtualize>
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <FlashcardDeckFormDialog IsOpen="IsSettingsOpen" EditingDeck="Deck" OnClose="() => IsSettingsOpen = false" OnSaved="HandleSettingsSavedAsync" />
+
+    <FlashcardCardDialog IsOpen="IsCardDialogOpen" DeckId="Deck.Id" EditingCard="EditingCard" OnClose="CloseCardDialog" OnSaved="ReloadAsync" />
+}

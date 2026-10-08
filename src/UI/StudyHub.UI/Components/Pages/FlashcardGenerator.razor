@@ -1,0 +1,201 @@
+@page "/flashcards/generate"
+@using StudyHub.Shared.Flashcards
+@using StudyHub.UI.Flashcards
+
+<PageTitle>Generate Flashcards</PageTitle>
+
+<div class="page-toolbar">
+    <a class="btn btn-outline btn-sm" href="flashcards">← All decks</a>
+</div>
+
+@if (NoteGroups is null)
+{
+    <p class="placeholder-hint">Loading notes…</p>
+}
+else if (NoteGroups.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">No notes yet</div>
+        <div class="empty-state-text">Flashcards are generated from your Markdown notes. Write a note first.</div>
+        <a class="btn btn-primary" href="notes">Go to Notes</a>
+    </div>
+}
+else
+{
+    <div class="card card-pad flashcard-options">
+        <div class="flashcard-options-row">
+            <div class="form-group flashcard-note-field">
+                <label for="flashcard-note">Note</label>
+                <select id="flashcard-note" class="form-control" @bind="SelectedNoteId" @bind:after="HandleNoteChanged" disabled="@IsBusy">
+                    <option value="@Guid.Empty">Select a note…</option>
+                    @foreach (var group in NoteGroups)
+                    {
+                        <optgroup label="@group.Label">
+                            @foreach (var note in group.Notes)
+                            {
+                                <option value="@note.Id">@note.Title</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group flashcard-deck-field">
+                <label for="flashcard-deck">Deck</label>
+                <select id="flashcard-deck" class="form-control" @bind="TargetDeckId" disabled="@IsBusy">
+                    <option value="@Guid.Empty">New deck…</option>
+                    @foreach (var deck in Decks)
+                    {
+                        <option value="@deck.Id">@deck.Name</option>
+                    }
+                </select>
+            </div>
+
+            @if (TargetDeckId == Guid.Empty)
+            {
+                <div class="form-group flashcard-deck-field">
+                    <label for="flashcard-new-deck">New deck name</label>
+                    <input id="flashcard-new-deck" class="form-control" maxlength="@FlashcardDeck.NameMaxLength"
+                           placeholder="Defaults to the note title" @bind="NewDeckName" disabled="@IsBusy" />
+                </div>
+            }
+
+            <div class="form-group flashcard-model-field">
+                <label for="flashcard-model">Model</label>
+                <select id="flashcard-model" class="form-control" @bind="SelectedModel" disabled="@(IsBusy || Models.Count == 0)">
+                    @foreach (var model in Models)
+                    {
+                        <option value="@model.Id">@model.DisplayName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group flashcard-count-field">
+                <label for="flashcard-count">Cards</label>
+                <input id="flashcard-count" class="form-control" type="number"
+                       min="@GenerateFlashcardsRequest.MinCardCount" max="@GenerateFlashcardsRequest.MaxCardCount"
+                       @bind="CardCount" disabled="@IsBusy" />
+            </div>
+
+            <div class="form-group flashcard-focus-field">
+                <label for="flashcard-focus">Focus (optional)</label>
+                <input id="flashcard-focus" class="form-control" maxlength="@GenerateFlashcardsRequest.FocusHintMaxLength"
+                       placeholder="e.g. only the section on B-trees, definitions" @bind="FocusHint" disabled="@IsBusy" />
+            </div>
+
+            <button class="btn btn-primary" type="button" disabled="@(IsBusy || SelectedNoteId == Guid.Empty)" @onclick="GenerateAsync">
+                @(IsGenerating ? "Generating…" : Cards.Count > 0 ? "Regenerate" : "Generate")
+            </button>
+        </div>
+
+        <div class="flashcard-hint">
+            The note's content is sent to Anthropic (Claude) to generate the cards. Cards are always written in German.
+        </div>
+
+        @if (IsGenerating)
+        {
+            <div class="flashcard-progress">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Claude is writing your flashcards — this usually takes 15–60 seconds.
+            </div>
+        }
+
+        @if (ErrorMessage is not null)
+        {
+            <div class="form-error">@ErrorMessage</div>
+        }
+    </div>
+
+    @if (SavedDeck is not null)
+    {
+        <div class="card card-pad flashcard-saved">
+            <div>
+                <div class="section-title flashcard-deck">Saved @SavedCardCount card(s) to @SavedDeck.Name</div>
+                <div class="flashcard-hint">New cards are studied in the order they were added.</div>
+            </div>
+            <div class="flashcard-saved-actions">
+                <a class="btn btn-outline" href="@($"flashcards/decks/{SavedDeck.Id}")">Open deck</a>
+                <a class="btn btn-primary" href="@($"flashcards/study/{SavedDeck.Id}")">Study now</a>
+            </div>
+        </div>
+    }
+
+    @if (CurrentSet is not null)
+    {
+        <div class="flashcard-result-head">
+            <div>
+                <div class="section-title flashcard-deck">@CurrentNoteTitle</div>
+                <div class="flashcard-hint">
+                    Generated with @GetModelName(CurrentSet.Model). @Cards.Count card(s). Cards are not saved yet — save them to a deck before leaving or reloading this page.
+                </div>
+            </div>
+            <button class="btn btn-primary flashcard-save-button" type="button" disabled="@(IsBusy || Cards.Count == 0)" @onclick="SaveToDeckAsync">
+                @(IsSaving ? "Saving…" : $"Save to {TargetDeckLabel}")
+            </button>
+        </div>
+
+        @if (Cards.Count == 0)
+        {
+            <div class="card empty-state">
+                <div class="empty-state-title">All cards removed</div>
+                <div class="empty-state-text">Generate again to get a fresh set of cards.</div>
+            </div>
+        }
+        else
+        {
+            <div class="card flashcard-table-card">
+                <table class="table flashcard-table">
+                    <thead>
+                        <tr>
+                            <th class="flashcard-index">#</th>
+                            <th>Front</th>
+                            <th>Back</th>
+                            <th class="flashcard-tags-col">Tags</th>
+                            <th class="flashcard-actions-col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Cards.Count; i++)
+                        {
+                            var card = Cards[i];
+                            <tr>
+                                <td class="flashcard-index">@(i + 1)</td>
+                                @if (card.IsEditing)
+                                {
+                                    <td><textarea class="form-control" rows="3" maxlength="@FlashcardDto.FrontMaxLength" @bind="card.Front"></textarea></td>
+                                    <td><textarea class="form-control" rows="4" maxlength="@FlashcardDto.BackMaxLength" @bind="card.Back"></textarea></td>
+                                    <td><input class="form-control" placeholder="tag1, tag2" @bind="card.TagsText" /></td>
+                                    <td class="flashcard-actions-col">
+                                        <button class="btn btn-secondary btn-sm" type="button" @onclick="() => card.IsEditing = false">Done</button>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>@FlashcardHtmlFormatter.ToPreview(card.Front)</td>
+                                    <td>@FlashcardHtmlFormatter.ToPreview(card.Back)</td>
+                                    <td>
+                                        @foreach (var tag in card.ToDto().Tags)
+                                        {
+                                            <span class="note-tag-f">#@tag</span>
+                                        }
+                                    </td>
+                                    <td class="flashcard-actions-col">
+                                        <button class="btn btn-outline btn-sm" type="button" disabled="@IsBusy" @onclick="() => card.IsEditing = true">Edit</button>
+                                        <button class="btn btn-danger-outline btn-sm" type="button" disabled="@IsBusy" @onclick="() => RemoveCard(card)">Delete</button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+    else if (!IsGenerating && SavedDeck is null)
+    {
+        <div class="card empty-state">
+            <div class="empty-state-title">No flashcards yet</div>
+            <div class="empty-state-text">Pick a note and let Claude turn it into review cards, then save them to a deck to study them.</div>
+        </div>
+    }
+}

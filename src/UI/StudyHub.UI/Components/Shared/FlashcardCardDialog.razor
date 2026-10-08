@@ -1,0 +1,46 @@
+@using StudyHub.Shared.Flashcards
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-panel modal-panel-wide" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@(EditingCard is null ? "Add Card" : "Edit Card")</div>
+                <button class="icon-btn" type="button" aria-label="Close" @onclick="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <EditForm Model="this" OnValidSubmit="SubmitAsync">
+                <div class="modal-body">
+                    @if (ErrorMessage is not null)
+                    {
+                        <div class="form-error">@ErrorMessage</div>
+                    }
+
+                    <div class="form-group">
+                        <label for="card-front">Front</label>
+                        <textarea id="card-front" class="form-control" rows="3" maxlength="@FlashcardDto.FrontMaxLength" @bind="Front"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card-back">Back</label>
+                        <textarea id="card-back" class="form-control" rows="5" maxlength="@FlashcardDto.BackMaxLength" @bind="Back"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card-tags">Tags (separated by spaces or commas)</label>
+                        <input id="card-tags" class="form-control" placeholder="graphen dijkstra" @bind="TagsText" />
+                    </div>
+
+                    <div class="flashcard-hint">Simple HTML such as &lt;b&gt;, &lt;i&gt;, &lt;code&gt; and &lt;br&gt; is shown formatted, as in Anki.</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="Close" disabled="@IsSaving">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@IsSaving">@(EditingCard is null ? "Add Card" : "Save Changes")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}

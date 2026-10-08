@@ -57,24 +57,6 @@ public class AnkiCsvSerializerTests
         Assert.Contains("Größe", Encoding.UTF8.GetString(bytes));
     }
 
-    [Fact]
-    public void CreateDeckName_CombinesRootParentAndTitle()
-    {
-        Assert.Equal("StudyHub::Algorithms::Dijkstra vs Bellman-Ford", _sut.CreateDeckName("Algorithms", "Dijkstra vs Bellman-Ford"));
-    }
-
-    [Fact]
-    public void CreateDeckName_WithoutParent_SkipsParentLevel()
-    {
-        Assert.Equal("StudyHub::Syllabus", _sut.CreateDeckName(null, "Syllabus"));
-    }
-
-    [Fact]
-    public void CreateDeckName_RemovesSubDeckSeparatorsInsideParts()
-    {
-        Assert.Equal("StudyHub::C:Basics::Pointers", _sut.CreateDeckName("C::Basics", "Pointers"));
-    }
-
     [Theory]
     [InlineData("Lecture 1: Graphs/Trees?", "Lecture 1_ Graphs_Trees.csv")]
     [InlineData("notes.csv", "notes.csv")]
@@ -83,17 +65,5 @@ public class AnkiCsvSerializerTests
     public void CreateFileName_ProducesSafeCsvName(string input, string expected)
     {
         Assert.Equal(expected, _sut.CreateFileName(input));
-    }
-
-    [Fact]
-    public void NormalizeDeckName_CollapsesLineBreaks()
-    {
-        Assert.Equal("StudyHub::A B", _sut.NormalizeDeckName("StudyHub::A\nB"));
-    }
-
-    [Fact]
-    public void NormalizeDeckName_WithEmptyName_Throws()
-    {
-        Assert.Throws<FlashcardValidationException>(() => _sut.NormalizeDeckName("  "));
     }
 }

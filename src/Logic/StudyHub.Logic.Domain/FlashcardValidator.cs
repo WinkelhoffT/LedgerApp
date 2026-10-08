@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using StudyHub.Logic.Domain.Contract;
 using StudyHub.Shared.Flashcards;
 
@@ -27,17 +28,17 @@ public sealed class FlashcardValidator : IFlashcardValidator
             .Take(maxCount)
             .ToList();
 
-    public IReadOnlyList<FlashcardDto> ValidateForExport(IReadOnlyList<FlashcardDto> cards)
+    public IReadOnlyList<FlashcardDto> ValidateCards(IReadOnlyList<FlashcardDto> cards)
     {
         if (cards is null || cards.Count == 0)
         {
-            throw new FlashcardValidationException("At least one card is required for export.");
+            throw new FlashcardValidationException("At least one card is required.");
         }
 
-        if (cards.Count > GenerateFlashcardsRequest.MaxCardCount)
+        if (cards.Count > AddFlashcardsRequest.MaxCardCount)
         {
             throw new FlashcardValidationException(
-                $"At most {GenerateFlashcardsRequest.MaxCardCount} cards can be exported at once.");
+                $"At most {AddFlashcardsRequest.MaxCardCount} cards can be saved at once.");
         }
 
         var normalized = new List<FlashcardDto>(cards.Count);
@@ -53,6 +54,13 @@ public sealed class FlashcardValidator : IFlashcardValidator
         }
 
         return normalized;
+    }
+
+    public bool TryNormalize(FlashcardDto card, out FlashcardDto normalized, [NotNullWhen(false)] out string? error)
+    {
+        normalized = Normalize(card);
+        error = GetError(normalized);
+        return error is null;
     }
 
     private static FlashcardDto Normalize(FlashcardDto card) =>

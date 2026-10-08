@@ -54,6 +54,39 @@
     }
 </div>
 
+<div class="card card-pad flashcards-due-card" style="margin-bottom:16px">
+    <div class="flashcards-due-head">
+        <div class="section-title">Flashcards due today</div>
+        <a class="btn btn-outline btn-sm" href="flashcards">All decks</a>
+    </div>
+    @if (FlashcardsDue is null)
+    {
+        <p class="placeholder-hint">Loading flashcards…</p>
+    }
+    else if (FlashcardsDue.Total.Total == 0)
+    {
+        <div class="flashcards-due-empty">Nothing due today</div>
+    }
+    else
+    {
+        <div class="flashcards-due-totals">
+            <div class="due-total"><span class="due-total-val count-new">@FlashcardsDue.Total.New</span><span class="due-total-label">New</span></div>
+            <div class="due-total"><span class="due-total-val count-learning">@FlashcardsDue.Total.Learning</span><span class="due-total-label">Learning</span></div>
+            <div class="due-total"><span class="due-total-val count-review">@FlashcardsDue.Total.Review</span><span class="due-total-label">To review</span></div>
+        </div>
+        <ul class="flashcards-due-list">
+            @foreach (var deck in FlashcardsDue.Decks)
+            {
+                <li class="flashcards-due-row">
+                    <a class="flashcards-due-name" href="@($"flashcards/decks/{deck.DeckId}")">@deck.Name</a>
+                    <FlashcardStudyCounts Counts="deck.Counts" />
+                    <a class="btn btn-primary btn-sm" href="@($"flashcards/study/{deck.DeckId}")">Study</a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
 <div class="grid stat-grid" style="margin-bottom:16px">
     @foreach (var stat in Stats)
     {
