@@ -7,6 +7,7 @@ using StudyHub.Logic.Integration.Dashboard;
 using StudyHub.Logic.Integration.Documents;
 using StudyHub.Logic.Integration.Flashcards;
 using StudyHub.Logic.Integration.Notes;
+using StudyHub.Logic.Integration.PracticeExams;
 using StudyHub.Logic.Integration.Semesters;
 using StudyHub.Logic.Integration.StudySessions;
 
@@ -54,6 +55,12 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ICalendarEventAccessor, CalendarEventAccessor>(client =>
             client.BaseAddress = apiBaseAddress
         );
+        services.AddHttpClient<IPracticeExamAccessor, PracticeExamAccessor>(client =>
+            client.BaseAddress = apiBaseAddress
+        );
+        services.AddHttpClient<IPracticeExamAttemptAccessor, PracticeExamAttemptAccessor>(client =>
+            client.BaseAddress = apiBaseAddress
+        );
 
         // Generation waits for Claude (typically 15-60 s, up to the SDK timeout plus one retry).
         services.AddHttpClient<IFlashcardAccessor, FlashcardAccessor>(client =>
@@ -61,6 +68,15 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = apiBaseAddress;
             client.Timeout = TimeSpan.FromMinutes(6);
         });
+
+        // A practice exam streams from Claude and can take two to three minutes.
+        services.AddHttpClient<IPracticeExamGenerationAccessor, PracticeExamGenerationAccessor>(
+            client =>
+            {
+                client.BaseAddress = apiBaseAddress;
+                client.Timeout = TimeSpan.FromMinutes(6);
+            }
+        );
 
         return services;
     }
