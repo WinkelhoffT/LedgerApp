@@ -29,6 +29,8 @@ public sealed class StudySessionLifecycle(TimeProvider timeProvider) : IStudySes
                 StartTime: startTime,
                 DurationMinutes: durationMinutes,
                 Location: location,
+                CompletedAt: null,
+                ActualDurationMinutes: null,
                 CreatedAt: now,
                 UpdatedAt: now
             )

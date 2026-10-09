@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICalendarEventRepository, CalendarEventRepository>();
         services.AddScoped<IPracticeExamRepository, PracticeExamRepository>();
         services.AddScoped<IPracticeExamAttemptRepository, PracticeExamAttemptRepository>();
+        services.AddScoped<IStudyAnalyticsRepository, StudyAnalyticsRepository>();
 
         return services;
     }

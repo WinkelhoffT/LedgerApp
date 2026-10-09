@@ -41,6 +41,8 @@ public class StudySessionOrchestratorTests
             Nine,
             60,
             null,
+            null,
+            null,
             Now,
             Now
         );

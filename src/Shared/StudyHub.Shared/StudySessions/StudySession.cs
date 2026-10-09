@@ -5,6 +5,8 @@ namespace StudyHub.Shared.StudySessions;
 /// session planned for 09:00 stays at 09:00 across daylight-saving changes. A session belongs to at
 /// most one of a course or a semester, or to neither, and ends on the day it starts.
 /// </summary>
+/// <param name="CompletedAt">UTC instant the session was marked as done; <c>null</c> while it is not done.</param>
+/// <param name="ActualDurationMinutes">How long the student actually studied; set exactly when <see cref="CompletedAt"/> is set.</param>
 public sealed record StudySession(
     Guid Id,
     string Title,
@@ -14,6 +16,8 @@ public sealed record StudySession(
     TimeOnly StartTime,
     int DurationMinutes,
     string? Location,
+    DateTime? CompletedAt,
+    int? ActualDurationMinutes,
     DateTime CreatedAt,
     DateTime UpdatedAt
 )
