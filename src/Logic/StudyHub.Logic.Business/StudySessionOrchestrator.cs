@@ -88,12 +88,57 @@ public sealed class StudySessionOrchestrator(
         await sessionRepository.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<StudySessionDto> CompleteAsync(
+        Guid id,
+        CompleteStudySessionRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var session = await GetExistingSessionAsync(id, cancellationToken);
+        var completed = sessionLifecycle.Complete(session, request.ActualDurationMinutes);
+
+        sessionRepository.Update(completed);
+        await sessionRepository.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(completed, cancellationToken);
+    }
+
+    public async Task<StudySessionDto> ResetCompletionAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var session = await GetExistingSessionAsync(id, cancellationToken);
+        var reset = sessionLifecycle.ResetCompletion(session);
+
+        sessionRepository.Update(reset);
+        await sessionRepository.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(reset, cancellationToken);
+    }
+
     private async Task<StudySession> GetExistingSessionAsync(
         Guid id,
         CancellationToken cancellationToken
     ) =>
         await sessionRepository.GetByIdAsync(id, cancellationToken)
         ?? throw new StudySessionNotFoundException(id);
+
+    // The owner keeps its name and color in the result even when it is archived.
+    private async Task<StudySessionDto> ToDtoAsync(
+        StudySession session,
+        CancellationToken cancellationToken
+    )
+    {
+        var course = session.CourseId is { } courseId
+            ? await courseRepository.GetByIdAsync(courseId, cancellationToken)
+            : null;
+        var semester = session.SemesterId is { } semesterId
+            ? await semesterRepository.GetByIdAsync(semesterId, cancellationToken)
+            : null;
+
+        return StudySessionMapper.ToDto(session, course, semester);
+    }
 
     // An archived course cannot be newly linked; a session already linked to it may keep the link.
     private async Task<Course?> GetAssignableCourseAsync(

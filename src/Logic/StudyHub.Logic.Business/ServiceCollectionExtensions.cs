@@ -30,6 +30,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPracticeExamOrchestrator, PracticeExamOrchestrator>();
         services.AddScoped<IPracticeExamAttemptOrchestrator, PracticeExamAttemptOrchestrator>();
         services.AddScoped<IPracticeExamMaterialProvider, PracticeExamMaterialProvider>();
+        services.AddScoped<IStudyTimeOrchestrator, StudyTimeOrchestrator>();
+        services.AddScoped<ICourseProgressOrchestrator, CourseProgressOrchestrator>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
@@ -51,12 +53,17 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPracticeExamSourceProcessor, PracticeExamSourceProcessor>();
         services.AddScoped<IPracticeExamLifecycle, PracticeExamLifecycle>();
         services.AddScoped<IPracticeExamAttemptProcessor, PracticeExamAttemptProcessor>();
+        services.AddScoped<IStudyStreakProvider, StudyStreakProvider>();
+        services.AddScoped<ICourseProgressProcessor, CourseProgressProcessor>();
 
         // Needs a FlashcardStudyOptions instance, which the host binds from configuration.
         services.AddSingleton<IStudyDayProvider, StudyDayProvider>();
 
         // Needs a CalendarOptions instance, which the host binds from configuration.
         services.AddSingleton<ICalendarPeriodProvider, CalendarPeriodProvider>();
+
+        // Needs a CalendarOptions instance for the session times and the study day boundaries.
+        services.AddSingleton<IStudyTimeProcessor, StudyTimeProcessor>();
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton(Random.Shared);
 

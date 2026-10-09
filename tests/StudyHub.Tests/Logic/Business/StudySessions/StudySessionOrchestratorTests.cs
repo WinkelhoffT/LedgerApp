@@ -34,14 +34,18 @@ public class StudySessionOrchestratorTests
         );
     }
 
-    private StudySession SetupSession(Guid? courseId = null, Guid? semesterId = null)
+    private StudySession SetupSession(
+        Guid? courseId = null,
+        Guid? semesterId = null,
+        DateOnly? date = null
+    )
     {
         var session = new StudySession(
             Guid.NewGuid(),
             "Graph review",
             courseId,
             semesterId,
-            Date,
+            date ?? Date,
             Nine,
             60,
             null,
@@ -268,5 +272,81 @@ public class StudySessionOrchestratorTests
 
         Assert.Equal(id, ex.StudySessionId);
         _sessionRepository.Verify(r => r.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_SavesTheCompletionAndReturnsItWithTheOwner()
+    {
+        var course = SetupCourse(isArchived: true);
+        var session = SetupSession(course.Id);
+
+        var result = await _sut.CompleteAsync(session.Id, new CompleteStudySessionRequest(75));
+
+        Assert.True(result.IsCompleted);
+        Assert.Equal(Now, result.CompletedAt);
+        Assert.Equal(75, result.ActualDurationMinutes);
+        Assert.Equal("Algorithms", result.OwnerName);
+        _sessionRepository.Verify(
+            r =>
+                r.Update(
+                    It.Is<StudySession>(s =>
+                        s.Id == session.Id && s.CompletedAt == Now && s.ActualDurationMinutes == 75
+                    )
+                ),
+            Times.Once
+        );
+        _sessionRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_AFutureSession_ThrowsWithoutSaving()
+    {
+        var session = SetupSession(date: Date.AddDays(1));
+
+        await Assert.ThrowsAsync<StudySessionValidationException>(() =>
+            _sut.CompleteAsync(session.Id, new CompleteStudySessionRequest(60))
+        );
+
+        _sessionRepository.Verify(r => r.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_WithUnknownSession_Throws()
+    {
+        await Assert.ThrowsAsync<StudySessionNotFoundException>(() =>
+            _sut.CompleteAsync(Guid.NewGuid(), new CompleteStudySessionRequest(60))
+        );
+    }
+
+    [Fact]
+    public async Task ResetCompletionAsync_SavesTheSessionAsPlannedOnly()
+    {
+        var semester = SetupSemester();
+        var session = SetupSession(semesterId: semester.Id) with
+        {
+            CompletedAt = Now,
+            ActualDurationMinutes = 60,
+        };
+        _sessionRepository.Setup(r => r.GetByIdAsync(session.Id, default)).ReturnsAsync(session);
+
+        var result = await _sut.ResetCompletionAsync(session.Id);
+
+        Assert.False(result.IsCompleted);
+        Assert.Null(result.CompletedAt);
+        Assert.Null(result.ActualDurationMinutes);
+        Assert.Equal("Winter 2026/27", result.OwnerName);
+        _sessionRepository.Verify(
+            r => r.Update(It.Is<StudySession>(s => s.Id == session.Id && s.CompletedAt == null)),
+            Times.Once
+        );
+        _sessionRepository.Verify(r => r.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetCompletionAsync_WithUnknownSession_Throws()
+    {
+        await Assert.ThrowsAsync<StudySessionNotFoundException>(() =>
+            _sut.ResetCompletionAsync(Guid.NewGuid())
+        );
     }
 }
