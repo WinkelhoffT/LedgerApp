@@ -2,6 +2,7 @@ using Moq;
 using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain;
+using StudyHub.Shared.Configuration;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Semesters;
 using StudyHub.Shared.StudySessions;
@@ -24,7 +25,10 @@ public class StudySessionOrchestratorTests
     {
         _sut = new StudySessionOrchestrator(
             _sessionRepository.Object,
-            new StudySessionLifecycle(new FixedTimeProvider(Now)),
+            new StudySessionLifecycle(
+                new FixedTimeProvider(Now),
+                new CalendarPeriodProvider(new CalendarOptions(), new FixedTimeProvider(Now))
+            ),
             _courseRepository.Object,
             _semesterRepository.Object
         );

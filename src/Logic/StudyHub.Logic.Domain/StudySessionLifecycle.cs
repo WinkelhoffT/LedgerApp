@@ -3,7 +3,10 @@ using StudyHub.Shared.StudySessions;
 
 namespace StudyHub.Logic.Domain;
 
-public sealed class StudySessionLifecycle(TimeProvider timeProvider) : IStudySessionLifecycle
+public sealed class StudySessionLifecycle(
+    TimeProvider timeProvider,
+    ICalendarPeriodProvider periodProvider
+) : IStudySessionLifecycle
 {
     private static readonly TimeSpan EndOfDay = TimeSpan.FromDays(1);
 
@@ -46,8 +49,17 @@ public sealed class StudySessionLifecycle(TimeProvider timeProvider) : IStudySes
         TimeOnly startTime,
         int durationMinutes,
         string? location
-    ) =>
-        Validate(
+    )
+    {
+        // Study time must not lie in the future, so a session that is done stays today or earlier.
+        if (session.CompletedAt is not null && date > periodProvider.GetToday())
+        {
+            throw new StudySessionValidationException(
+                "A session that is done cannot move to a future date. Undo \"done\" first."
+            );
+        }
+
+        return Validate(
             session with
             {
                 Title = title,
@@ -60,6 +72,36 @@ public sealed class StudySessionLifecycle(TimeProvider timeProvider) : IStudySes
                 UpdatedAt = timeProvider.GetUtcNow().UtcDateTime,
             }
         );
+    }
+
+    public StudySession Complete(StudySession session, int actualDurationMinutes)
+    {
+        if (session.Date > periodProvider.GetToday())
+        {
+            throw new StudySessionValidationException(
+                "Only sessions of today or earlier can be marked as done."
+            );
+        }
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        return Validate(
+            session with
+            {
+                CompletedAt = session.CompletedAt ?? now,
+                ActualDurationMinutes = actualDurationMinutes,
+                UpdatedAt = now,
+            }
+        );
+    }
+
+    public StudySession ResetCompletion(StudySession session) =>
+        session with
+        {
+            CompletedAt = null,
+            ActualDurationMinutes = null,
+            UpdatedAt = timeProvider.GetUtcNow().UtcDateTime,
+        };
 
     private static StudySession Validate(StudySession session)
     {
@@ -100,6 +142,27 @@ public sealed class StudySessionLifecycle(TimeProvider timeProvider) : IStudySes
             throw new StudySessionValidationException(
                 "A session must end by midnight of the day it starts."
             );
+        }
+
+        if (session.ActualDurationMinutes is { } actualDurationMinutes)
+        {
+            if (
+                actualDurationMinutes
+                is < StudySession.MinDurationMinutes
+                    or > StudySession.MaxDurationMinutes
+            )
+            {
+                throw new StudySessionValidationException(
+                    $"Actual duration must be between {StudySession.MinDurationMinutes} and {StudySession.MaxDurationMinutes} minutes."
+                );
+            }
+
+            if (startTime.ToTimeSpan() + TimeSpan.FromMinutes(actualDurationMinutes) > EndOfDay)
+            {
+                throw new StudySessionValidationException(
+                    "The actual duration must end by midnight of the day the session starts."
+                );
+            }
         }
 
         var location = string.IsNullOrWhiteSpace(session.Location) ? null : session.Location.Trim();
