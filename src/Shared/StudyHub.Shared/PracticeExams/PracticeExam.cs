@@ -23,4 +23,5 @@ public sealed record PracticeExam(
     public const int TitleMaxLength = 200;
     public const int ModelMaxLength = 100;
     public const int PromptVersionMaxLength = 50;
+    public const int MaxTaskCount = 30;
 }
