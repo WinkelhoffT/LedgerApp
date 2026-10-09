@@ -57,6 +57,27 @@ public static class AnalyticsFormatter
     /// <summary><c>1 day</c> or <c>18 days</c>.</summary>
     public static string FormatDays(int days) => days == 1 ? "1 day" : $"{days} days";
 
+    /// <summary>The line under the streak: <c>18 days in a row — your best is 21.</c></summary>
+    public static string FormatStreak(int currentDays, int longestDays) =>
+        (currentDays, longestDays) switch
+        {
+            (0, 0) => "No streak yet. Study today to start one.",
+            (0, _) => $"No current streak. Your best is {FormatDays(longestDays)}.",
+            _ when currentDays == longestDays =>
+                $"{FormatDays(currentDays)} in a row — your best so far. Keep it going!",
+            _ => $"{FormatDays(currentDays)} in a row — your best is {FormatDays(longestDays)}.",
+        };
+
+    /// <summary><c>Practice exams: latest 50 %, best 90 % (3 graded)</c>, or a hint without graded attempts.</summary>
+    public static string FormatExamResults(CourseProgressDto course) =>
+        course.GradedAttempts == 0
+            ? "No graded practice exam yet"
+            : $"Practice exams: latest {FormatPercent(course.LatestExamPercent)}, best {FormatPercent(course.BestExamPercent)} ({course.GradedAttempts} graded)";
+
+    /// <summary><c>72 % learned</c>, or <c>No flashcards yet</c>.</summary>
+    public static string FormatLearned(FlashcardProgressDto progress) =>
+        progress.LearnedPercent is { } percent ? $"{percent} % learned" : "No flashcards yet";
+
     /// <summary><c>72 %</c>, or <c>—</c> without a value.</summary>
     public static string FormatPercent(int? percent) => percent is { } value ? $"{value} %" : "—";
 

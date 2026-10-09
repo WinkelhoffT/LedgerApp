@@ -829,7 +829,7 @@ label.exam-option { cursor: pointer; }
 
 /* ---------- Analytics ---------- */
 .an-grid-4 { grid-template-columns: repeat(4, 1fr); }
-.an-grid-2 { grid-template-columns: repeat(2, 1fr); align-items: start; }
+.an-grid-2 { grid-template-columns: repeat(2, 1fr); }
 .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .stat-delta {
   font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); white-space: nowrap;
@@ -917,4 +917,5 @@ label.exam-option { cursor: pointer; }
 @media (max-width: 640px) {
   .an-grid-4 { grid-template-columns: 1fr; }
   .bars { gap: 6px; }
+  .lcl { font-size: 9.5px; }
 }

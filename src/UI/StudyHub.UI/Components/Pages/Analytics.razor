@@ -1,5 +1,89 @@
 @page "/analytics"
+@using StudyHub.UI.Analytics
 
 <PageTitle>Analytics</PageTitle>
 
-<p>Analytics — coming soon.</p>
+@if (ErrorMessage is not null)
+{
+    <div class="form-error page-error">@ErrorMessage</div>
+}
+
+@if (StudyTime is null)
+{
+    @if (ErrorMessage is null)
+    {
+        <p class="placeholder-hint">Loading analytics…</p>
+    }
+}
+else if (!StudyTime.HasStudyTime)
+{
+    <div class="card empty-state analytics-empty">
+        <div class="empty-state-title">No study time recorded yet</div>
+        <div class="empty-state-text">
+            Study time comes from sessions you mark as done, flashcards you study and practice exams you submit.
+        </div>
+        <div class="empty-state-actions">
+            <a class="btn btn-primary" href="calendar">Mark a session as done</a>
+            <a class="btn btn-secondary" href="flashcards">Study flashcards</a>
+        </div>
+    </div>
+
+    <div class="card card-pad">
+        <div class="section-head">
+            <div class="section-title">Course progress</div>
+        </div>
+        <CourseProgressList Overview="CourseProgress" />
+    </div>
+}
+else
+{
+    <div class="grid an-grid-4" style="margin-bottom:16px">
+        <StatTile Icon="StatIconKind.StudyTime" Value="@AnalyticsFormatter.FormatHours(StudyTime.ThisWeekMinutes)" Label="Study time · this week"
+                  Delta="@AnalyticsFormatter.FormatHoursDifference(StudyTime.ThisWeekMinutes, StudyTime.LastWeekToDateMinutes)"
+                  DeltaClass="@AnalyticsFormatter.GetTrendClass(StudyTime.ThisWeekMinutes, StudyTime.LastWeekToDateMinutes)" />
+        <StatTile Icon="StatIconKind.Streak" Value="@StudyTime.CurrentStreakDays.ToString()" Label="Learning streak · days"
+                  Delta="@($"Best: {StudyTime.LongestStreakDays}")" />
+        <StatTile Icon="StatIconKind.Flashcards" Value="@StudyTime.ReviewsThisWeek.ToString()" Label="Flashcards reviewed · this week"
+                  Delta="@AnalyticsFormatter.FormatCountDifference(StudyTime.ReviewsThisWeek, StudyTime.ReviewsLastWeekToDate)"
+                  DeltaClass="@AnalyticsFormatter.GetTrendClass(StudyTime.ReviewsThisWeek, StudyTime.ReviewsLastWeekToDate)" />
+        <StatTile Icon="StatIconKind.Sessions" Value="@($"{StudyTime.SessionsDoneThisWeek} of {StudyTime.SessionsPlannedThisWeek}")"
+                  Label="Sessions done · this week" />
+    </div>
+
+    <div class="grid an-grid-2" style="margin-bottom:16px">
+        <div class="card card-pad">
+            <div class="section-head">
+                <div class="section-title">This week</div>
+                <span class="chip">Hours per day</span>
+            </div>
+            <StudyTimeBarChart Days="StudyTime.Days" />
+        </div>
+        <div class="card card-pad">
+            <div class="section-head">
+                <div class="section-title">Weekly study time</div>
+                <span class="chip">Last @StudyTime.Weeks.Count weeks</span>
+            </div>
+            <StudyTimeLineChart Weeks="StudyTime.Weeks" />
+        </div>
+    </div>
+
+    <div class="grid an-grid-2">
+        <div class="card card-pad">
+            <div class="section-head">
+                <div class="section-title">Course progress</div>
+                @if (CourseProgress?.SemesterName is { } semesterName)
+                {
+                    <span class="chip">@semesterName</span>
+                }
+            </div>
+            <CourseProgressList Overview="CourseProgress" />
+        </div>
+        <div class="card card-pad">
+            <div class="section-title">Learning streak</div>
+            <div class="streak-best">@AnalyticsFormatter.FormatStreak(StudyTime.CurrentStreakDays, StudyTime.LongestStreakDays)</div>
+            <StudyStreakStrip Days="StudyTime.Days" />
+            <div class="heat-caption">Study heatmap · last @(StudyTime.Heatmap.Count / 7) weeks</div>
+            <StudyHeatmap Days="StudyTime.Heatmap" />
+        </div>
+    </div>
+}
