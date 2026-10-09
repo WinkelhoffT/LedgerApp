@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using StudyHub.Shared.Analytics;
 using StudyHub.Shared.Calendar;
 using StudyHub.Shared.CalendarEvents;
 using StudyHub.Shared.Dashboard;
@@ -57,6 +58,20 @@ public sealed class DashboardAccessor(HttpClient httpClient) : IDashboardAccesso
             await response.Content.ReadFromJsonAsync<IReadOnlyList<UpcomingCalendarEventDto>>(
                 cancellationToken
             )
+        )!;
+    }
+
+    public async Task<StudyTimeStatisticsDto> GetStudyTimeAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var response = await httpClient.GetAsync(
+            "api/analytics/study-time",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+        return (
+            await response.Content.ReadFromJsonAsync<StudyTimeStatisticsDto>(cancellationToken)
         )!;
     }
 }
