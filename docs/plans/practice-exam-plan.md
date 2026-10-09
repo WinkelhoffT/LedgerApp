@@ -1,8 +1,8 @@
 # Feature Plan: AI Practice Exams from a Course or a Flashcard Deck
 
-Status: Proposed — waiting for review. No code has been written yet.
-Classification (per `CLAUDE.md`): **Large** (AI integration, new persistent domain). Implementation
-starts only after this plan is reviewed and the open questions in section 9 are answered.
+Status: Implemented on `feature-AddAIQuiz`. Section 11 lists how the open questions were decided
+and where the implementation differs from this plan.
+Classification (per `CLAUDE.md`): **Large** (AI integration, new persistent domain).
 
 Naming: the feature is called **practice exam** ("Probeklausur") in code and UI. Plain `Exam` is
 already taken by the calendar (`CalendarEventKind.Exam` is a real exam date), so the practice
@@ -641,3 +641,79 @@ Reported per `CLAUDE.md`, not resolved by guessing:
   Analytics").
 - A tool on the AI Assistant page, as in the mockup.
 - Renaming practice exams.
+
+## 11. Implementation Notes
+
+### Open questions (section 9)
+
+The plan was confirmed for implementation without separate answers, so every open question was
+decided as recommended:
+
+1. Level descriptions as in 3.2; the default level is Universität.
+2. Durations 30, 45, 60, 90 and 120 minutes (default 60), about one point per minute, 150,000
+   characters of material.
+3. No preview before saving; flawed tasks are excluded afterwards.
+4. Course sources are notes only.
+5. Refactoring 3.6 was done as a separate commit; the wire error code `flashcard_generation_failed`
+   is now `ai_generation_failed`.
+6. A separate "Practice Exams" nav entry in the "Study" group.
+7. Points and percentage only, no grades.
+
+### Differences from the plan
+
+- **Changing a grading after completion:** grading can be changed at any time after submission,
+  also after every open task is graded. The attempt keeps its first `GradedAt` and its total is
+  recomputed. With "until every open task is graded" a slip on the last task could not be fixed.
+  In the UI the ticked criteria of a task stay local until *Save grading* / *Update grading*; this
+  also lets the student grade an answer with 0 points (no criterion ticked). The points shown next
+  to the rubric update at once.
+- **Streaming and the SDK timeout (open check from section 9):** the SDK's `Timeout` ends with the
+  response headers. A local SSE server that streamed for 6 seconds against a client with a
+  2-second timeout completed normally, so the streamed call needs no timeout of its own. A stalled
+  stream is bounded by the generation accessor's 6-minute timeout, which aborts the Api request
+  and with it the Anthropic call. An SSE error event mid-stream (`AnthropicSseException`) maps to
+  `ServiceUnavailable`.
+- **Card sources** are sent as `<source id="…" kind="card">Front: …\nBack: …\nTags: …</source>`
+  without a title attribute, so the front is not sent twice. The "struggling cards first" order is
+  used for every deck; it only changes which cards are sent when a deck is over the limit. A card
+  that does not fit ends the selection. `</source` inside the material is escaped, and note titles
+  are HTML-encoded in the attribute.
+- **"Fewer usable tasks than planned"** is derived on the cover page: it shows a hint when the
+  exam has less than 75 % of "one point per minute". No count of dropped tasks is stored.
+- **Exam sheet of a submitted attempt:** `GET …/sheet` returns `409 practice_exam_attempt_submitted`,
+  and the attempt page then loads the review. Submitting twice returns the same review.
+- **Archived exams:** an open attempt can still be finished and reviewed; starting a new attempt
+  and excluding tasks return `409 practice_exam_archived`. Excluding every task makes a new start
+  fail with `400`.
+- **Additional types:** `PracticeExamAnswerCriterion` (entity of the join table),
+  `StoredPracticeExam` / `StoredPracticeExamTask` / `StoredPracticeExamAttempt` (what the
+  repositories load and save), `PracticeExamTaskTotals`, `PracticeExamSheetOptionDto`,
+  `PracticeExamReviewOptionDto`, `PracticeExamReviewCriterionDto`, and `PracticeExamSource` /
+  `PracticeExamMaterial`. The last two are in `Shared` because the Domain builds them and the
+  Integration generator consumes them (LAY-7). `PracticeExamAttemptStartOutcome` is in
+  `Logic.Domain.Contract`. `IPracticeExamGenerator.PromptVersion` gives the orchestrator the
+  version to store. `IFlashcardRepository.GetByIdsAsync` loads the cards behind the source links.
+- **Schema additions:** check constraint `CK_PracticeExamTasks_AtMostOneSource` and an index on
+  `PracticeExamAnswerCriteria.CriterionId`.
+- **Visibility:** `ClaudeFlashcardGenerator`, `ClaudePracticeExamGenerator` and
+  `ClaudeStructuredOutputProcessor` are `internal` and registered by `AddStudyHubAi`; the tests
+  resolve the generators through DI. `PracticeExamPrompt` and `PracticeExamResponseParser` are
+  public so they can be tested on their own, like `FlashcardResponseParser`.
+- **Title date** is the local date in the calendar time zone (`ICalendarPeriodProvider.GetToday`).
+- **Answers:** an open answer that is only whitespace is stored as no answer. Text is otherwise
+  stored as typed, so indented code keeps its indentation.
+- **Course link:** the cover page names the course without a link, because there is no course
+  page; a deck links to its deck page, a source note to `/notes?note=…`.
+- **Repository tests** run on SQLite in memory with the real migrations instead of the InMemory
+  provider, so the unique answer per task, the check constraint and `SetNull` are enforced.
+
+### Validation
+
+- `dotnet build StudyHub.slnx -warnaserror` (Debug and Release), `dotnet test StudyHub.slnx`
+  (689 tests) and `dotnet csharpier check .` are clean.
+- UI smoke test with Playwright against a locally started Api and UI, using an exam inserted
+  directly into the database (no API key in this environment): overview, generator (shows "AI
+  not configured"), cover page, a timed attempt with autosave and a reload in the middle, submit,
+  self-grading, and the cover page at phone width.
+- The manual checks with a real API key from section 8 (level calibration, Anki deck, both
+  models, token usage and cost) are still open.

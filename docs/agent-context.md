@@ -28,12 +28,15 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
 - `src/Logic/StudyHub.Logic.Integration/<Domain>/`: Accessor classes `StudyHub.UI` uses to call
   `StudyHub.Api` (`ISemesterAccessor`, `ICourseAccessor`, `IDocumentAccessor`,
   `IDashboardAccessor`, and for flashcards `IFlashcardAccessor` (generation),
-  `IFlashcardDeckAccessor`, `IFlashcardStudyAccessor`, `IFlashcardTransferAccessor`, and for the
-  calendar `ICalendarAccessor`, `IStudySessionAccessor`, `ICalendarEventAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
+  `IFlashcardDeckAccessor`, `IFlashcardStudyAccessor`, `IFlashcardTransferAccessor`, for the
+  calendar `ICalendarAccessor`, `IStudySessionAccessor`, `ICalendarEventAccessor`, and for practice
+  exams `IPracticeExamGenerationAccessor`, `IPracticeExamAccessor`, `IPracticeExamAttemptAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
   for HttpClient/DI registration. Depends only on `StudyHub.Shared` — never on `Logic.Business` or
   `Logic.Domain` (LAY-7 in `docs/agent-rule-catalog.md`). Also home of AI provider adapters:
-  `Ai/` holds `IFlashcardGenerator`/`ClaudeFlashcardGenerator` (official Anthropic SDK, structured
-  output), `IAiModelCatalog`/`ConfiguredAiModelCatalog` (the user-selectable models from
+  `Ai/` holds `IFlashcardGenerator`/`ClaudeFlashcardGenerator` and
+  `IPracticeExamGenerator`/`ClaudePracticeExamGenerator` (official Anthropic SDK, structured
+  output; both send their request through the internal `ClaudeStructuredOutputProcessor`, which
+  owns the SDK client, streams when asked and maps SDK failures to `AiGenerationFailedException`), `IAiModelCatalog`/`ConfiguredAiModelCatalog` (the user-selectable models from
   `Anthropic:Models`) plus `AddStudyHubAi`, which only the **Api** composition root calls — the UI references
   `Logic.Integration` for its accessors but never registers or uses the AI generator.
 - `src/Infrastructure/StudyHub.Infrastructure`: currently empty (just a no-op
@@ -43,9 +46,10 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
 - `src/UI/StudyHub.Api`: ASP.NET Core backend host. Controllers (`SemesterController`,
   `CourseController`, `DocumentController`, `DashboardController`, `FlashcardDeckController`,
   `FlashcardStudyController`, `CalendarController`, `StudySessionController`,
-  `CalendarEventController`, …) call a Business
-  orchestrator;
-  `*ExceptionHandler` classes map Business/Domain exceptions to `ProblemDetails`.
+  `CalendarEventController`, `PracticeExamController`, `PracticeExamAttemptController`, …) call a
+  Business orchestrator;
+  `*ExceptionHandler` classes map Business/Domain exceptions to `ProblemDetails`
+  (`Ai/AiExceptionHandler` maps the AI failures of every AI feature).
 - `src/UI/StudyHub.UI`: Blazor Web App frontend — `Components/Pages`, `Components/Layout`,
   `Components/Shared`, every component paired with a `.razor.cs` code-behind. Depends only on
   `StudyHub.Shared` and `StudyHub.Logic.Integration` (never `Logic.Business`/`Logic.Domain`
@@ -103,9 +107,18 @@ and courses.
   deadline has an optional due time and no duration (`ICalendarEventLifecycle`). Not study time,
   deleted for real, and listed on the Dashboard with a countdown (see
   `docs/plans/calendar-events-plan.md`).
+- `PracticeExam` ("Probeklausur"): an exam Claude writes from a course's notes or a flashcard deck
+  at a level (`PracticeExamLevel`: Oberschule, Gymnasium, Universität) for a duration (about one
+  point per minute). Its `PracticeExamTask`s are single choice (four `PracticeExamOption`s, one
+  correct, graded automatically) or open (a model solution and a rubric of
+  `PracticeExamCriterion`s the student grades their answer with). A `PracticeExamAttempt` is one
+  sitting with optional time limit; its `PracticeExamAnswer`s are saved as the student writes and
+  frozen on submission. Rules live in `IPracticeExamValidator`, `IPracticeExamSourceProcessor`,
+  `IPracticeExamLifecycle` and `IPracticeExamAttemptProcessor` (Domain). Plain `Exam` is the
+  calendar's real exam date (`CalendarEventKind.Exam`). See `docs/plans/practice-exam-plan.md`.
 - `SemesterProgress`: a computed value describing how far along a semester is, produced by
   `ISemesterProgressCalculator`/`SemesterProgressCalculator`.
-- Soft delete: `Course`/`Semester`/`Document`/`Note`/`FlashcardDeck` use an `IsArchived` flag with
+- Soft delete: `Course`/`Semester`/`Document`/`Note`/`FlashcardDeck`/`PracticeExam` use an `IsArchived` flag with
   `Archive()`/`Restore()` domain methods and a dedicated `*ArchivedException`, rather than hard
   deletes. Foreign keys use `DeleteBehavior.Restrict` for exactly this reason.
 
