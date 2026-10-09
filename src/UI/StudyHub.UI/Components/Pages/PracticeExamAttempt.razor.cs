@@ -195,8 +195,15 @@ public partial class PracticeExamAttempt : IAsyncDisposable
 
     private async Task SaveAsync(Guid taskId)
     {
-        if (Sheet is null || !_saving.Add(taskId))
+        if (Sheet is null)
         {
+            return;
+        }
+
+        if (!_saving.Add(taskId))
+        {
+            // A save of this task is still running; the next tick saves the newer answer.
+            _dirtySince.TryAdd(taskId, DateTime.MinValue);
             return;
         }
 
