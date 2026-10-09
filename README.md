@@ -48,7 +48,7 @@ implemented versus planned.
   persisted outside the Api container via a bind mount.
 - AI flashcard generation from a Markdown note (Claude via the Anthropic API), with review/editing
   in the app before saving the cards to a deck (see
-  [Configure AI features](#configure-ai-features-flashcards)).
+  [Configure AI features](#configure-ai-features)).
 - Flashcard decks studied with spaced repetition (Anki's SM-2 scheduler with Anki's default
   options, daily limits, Again/Hard/Good/Easy with keyboard shortcuts), import of Anki's text
   export ("Notes in Plain Text", CSV/TXT/TSV), deck export in the same format, and a "Flashcards
@@ -57,6 +57,13 @@ implemented versus planned.
   sessions are added, edited and deleted in the calendar, can belong to a course or a semester,
   are shown in the course color, overlapping sessions sit side by side in the week view, and the
   Dashboard shows today's sessions (see [Calendar time zone](#calendar-time-zone)).
+- AI practice exams ("Probeklausuren") from a course's notes or a flashcard deck (also one
+  imported from Anki), at the level Oberschule, Gymnasium or Universität and for 30 to 120
+  minutes: numbered single-choice and open tasks with points, written in one sitting with an
+  optional countdown and autosave. After submitting, single-choice tasks are graded
+  automatically with a rationale for every option, and open answers are self-graded against a
+  model solution and a rubric. Flawed tasks can be excluded; exams can be written again (see
+  [Configure AI features](#configure-ai-features)).
 - Exams and deadlines in the calendar: an exam is all-day or has a start time and a duration, a
   deadline has an optional due time. They stand out in the month and week views and the day
   panel, and the Dashboard lists the next ones with a countdown.
@@ -243,10 +250,10 @@ The database is owned by `StudyHub.Api` (not the UI). Its location is set via th
 Pending migrations are applied automatically at Api startup — there is no separate manual step for
 a fresh environment.
 
-### Configure AI features (flashcards)
+### Configure AI features
 
-Flashcard generation calls Claude through the Anthropic API from `StudyHub.Api` (the UI never talks
-to Anthropic). All settings live in the `Anthropic` section of `src/UI/StudyHub.Api/appsettings.json`.
+Flashcard generation and practice exams call Claude through the Anthropic API from `StudyHub.Api`
+(the UI never talks to Anthropic). All settings live in the `Anthropic` section of `src/UI/StudyHub.Api/appsettings.json`.
 `Anthropic:ApiKey` is committed **empty** — set the real key locally as a user secret, which
 overrides the empty value when `ASPNETCORE_ENVIRONMENT=Development`:
 
@@ -255,14 +262,19 @@ dotnet user-secrets set "Anthropic:ApiKey" "<your key>" \
   --project src/UI/StudyHub.Api/StudyHub.Api.csproj
 ```
 
-Without a key the app still starts; the generator page (`/flashcards/generate`) then shows an
-"AI not configured" message. Decks, study sessions and the Anki import work without a key.
+Without a key the app still starts; the generator pages (`/flashcards/generate`,
+`/practice-exams/new`) then show an "AI not configured" message. Decks, study sessions, the Anki
+import and writing practice exams that were already generated work without a key.
 
 The model is chosen per generation on the generator page. The choices come from
 `Anthropic:Models` (a list of `Id` + `DisplayName`), preselected with `Anthropic:DefaultModel`
 (`claude-sonnet-5-5`); the Api rejects any model that isn't in that list. Further settings:
-`Anthropic:Effort` (`medium`) and `Anthropic:MaxTokens`. Each generation is a paid API call (Opus
-costs about twice as much as Sonnet); note content is sent to Anthropic.
+`Anthropic:Effort` (`medium`), `Anthropic:MaxTokens` (flashcards) and
+`Anthropic:PracticeExamMaxTokens` (32,000; a practice exam with model solutions and rubrics is much
+longer, so that call streams). Each generation is a paid API call (Opus costs about twice as much
+as Sonnet; a 60-minute practice exam from a typical course is estimated at $0.10–0.15 with
+Sonnet); note and card content is sent to Anthropic. Writing and self-grading a practice exam
+cost nothing.
 
 ### Flashcard study day
 
@@ -346,7 +358,7 @@ This is the recommended way to run StudyHub as a portable, self-contained deploy
 docker compose up --build -d
 ```
 
-To enable flashcard generation, export `ANTHROPIC_API_KEY` in the shell (or put it in a `.env`
+To enable the AI features (flashcard generation, practice exams), export `ANTHROPIC_API_KEY` in the shell (or put it in a `.env`
 file next to `docker-compose.yml`, which is not committed) before starting; `docker-compose.yml`
 passes it to the `studyhub-api` container only, as `Anthropic__ApiKey` (user secrets are not used
 outside Development).
@@ -426,7 +438,8 @@ Planned development phases, roughly in order:
 6. **Markdown Notes** — note-taking tied to courses and documents.
 7. **Study Sessions** — plan and track study time.
 8. **Calendar** — visualize sessions, deadlines, and course schedules.
-9. **AI Features** — summaries, explanations, and review questions generated from study material.
+9. **AI Features** — summaries, explanations, review questions and practice exams generated from
+   study material.
 10. **Flashcards** — decks with spaced repetition, AI generation from notes, Anki import/export.
 11. **Analytics** — learning analytics and progress dashboards.
 

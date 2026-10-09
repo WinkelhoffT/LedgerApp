@@ -14,6 +14,11 @@ public interface IFlashcardRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<IReadOnlyList<Flashcard>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default
+    );
+
     Task<IReadOnlyList<Flashcard>> GetByDeckIdsAsync(
         IReadOnlyCollection<Guid> deckIds,
         CancellationToken cancellationToken = default

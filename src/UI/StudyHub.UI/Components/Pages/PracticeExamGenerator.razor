@@ -1,0 +1,174 @@
+@page "/practice-exams/new"
+@using StudyHub.Shared.PracticeExams
+@using StudyHub.UI.PracticeExams
+
+<PageTitle>New Practice Exam</PageTitle>
+
+<div class="page-toolbar">
+    <a class="btn btn-outline btn-sm" href="practice-exams">← All practice exams</a>
+</div>
+
+@if (Courses is null)
+{
+    <p class="placeholder-hint">Loading courses and decks…</p>
+}
+else
+{
+    <div class="card card-pad exam-generator">
+        <div class="form-group">
+            <label>Source</label>
+            <div class="cal-view-toggle" role="group" aria-label="Source">
+                <button class="btn @(SourceKind == PracticeExamSourceKind.Course ? "active" : null)" type="button" disabled="@IsGenerating"
+                        aria-pressed="@(SourceKind == PracticeExamSourceKind.Course ? "true" : "false")" @onclick="() => SourceKind = PracticeExamSourceKind.Course">
+                    Course
+                </button>
+                <button class="btn @(SourceKind == PracticeExamSourceKind.Deck ? "active" : null)" type="button" disabled="@IsGenerating"
+                        aria-pressed="@(SourceKind == PracticeExamSourceKind.Deck ? "true" : "false")" @onclick="() => SourceKind = PracticeExamSourceKind.Deck">
+                    Flashcard deck
+                </button>
+            </div>
+        </div>
+
+        @if (SourceKind == PracticeExamSourceKind.Course)
+        {
+            <div class="form-group">
+                <label for="exam-course">Course</label>
+                <select id="exam-course" class="form-control" @bind="SelectedCourseId" @bind:after="LoadNotesAsync" disabled="@IsGenerating">
+                    <option value="@Guid.Empty">Select a course…</option>
+                    @foreach (var course in Courses)
+                    {
+                        <option value="@course.Id">@course.Name</option>
+                    }
+                </select>
+            </div>
+
+            @if (SelectedCourseId != Guid.Empty)
+            {
+                <div class="form-group">
+                    <div class="exam-notes-head">
+                        <label>Notes</label>
+                        <span class="flashcard-hint @(IsMaterialOverLimit ? "exam-over-limit" : null)">
+                            @FormatCharacters(SelectedLength) of @FormatCharacters(GeneratePracticeExamRequest.MaxMaterialLength) characters
+                        </span>
+                    </div>
+                    @if (CourseNotes.Count == 0)
+                    {
+                        <div class="flashcard-hint">This course has no notes yet. Practice exams are written from your Markdown notes.</div>
+                    }
+                    else
+                    {
+                        <ul class="exam-note-list">
+                            @foreach (var note in CourseNotes)
+                            {
+                                var isEmpty = string.IsNullOrWhiteSpace(note.Content);
+                                <li>
+                                    <label class="toggle-check">
+                                        <input type="checkbox" checked="@(!isEmpty && SelectedNoteIds.Contains(note.Id))" disabled="@(IsGenerating || isEmpty)"
+                                               @onchange="e => ToggleNote(note.Id, e.Value is true)" />
+                                        <span>@note.Title</span>
+                                        <span class="flashcard-hint">@(isEmpty ? "empty" : FormatCharacters(GetLength(note)))</span>
+                                    </label>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    @if (IsMaterialOverLimit)
+                    {
+                        <div class="form-error">Deselect some notes: at most @FormatCharacters(GeneratePracticeExamRequest.MaxMaterialLength) characters can be used.</div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="form-group">
+                <label for="exam-deck">Deck</label>
+                <select id="exam-deck" class="form-control" @bind="SelectedDeckId" @bind:after="LoadDeckCardsAsync" disabled="@IsGenerating">
+                    <option value="@Guid.Empty">Select a deck…</option>
+                    @foreach (var deck in Decks)
+                    {
+                        <option value="@deck.Id">@deck.Name (@deck.CardCount card(s))</option>
+                    }
+                </select>
+                @if (DeckLength is { } deckLength)
+                {
+                    <div class="flashcard-hint">
+                        @if (deckLength > GeneratePracticeExamRequest.MaxMaterialLength)
+                        {
+                            @($"The deck has {FormatCharacters(deckLength)} characters; only about {FormatCharacters(GeneratePracticeExamRequest.MaxMaterialLength)} are used, cards you struggle with first.")
+                        }
+                        else
+                        {
+                            @($"{FormatCharacters(deckLength)} of {FormatCharacters(GeneratePracticeExamRequest.MaxMaterialLength)} characters")
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="form-group">
+            <label>Level</label>
+            <div class="exam-level-options" role="radiogroup" aria-label="Level">
+                @foreach (var level in PracticeExamFormatter.Levels)
+                {
+                    <button class="card exam-level-option @(Level == level ? "active" : null)" type="button" role="radio"
+                            aria-checked="@(Level == level ? "true" : "false")" disabled="@IsGenerating" @onclick="() => Level = level">
+                        <b>@PracticeExamFormatter.FormatLevel(level)</b>
+                        <span>@PracticeExamFormatter.DescribeLevel(level)</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="flashcard-options-row">
+            <div class="form-group exam-duration-field">
+                <label for="exam-duration">Duration</label>
+                <select id="exam-duration" class="form-control" @bind="DurationMinutes" disabled="@IsGenerating">
+                    @foreach (var minutes in GeneratePracticeExamRequest.AllowedDurations)
+                    {
+                        <option value="@minutes">@minutes minutes</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group flashcard-focus-field">
+                <label for="exam-focus">Focus (optional)</label>
+                <input id="exam-focus" class="form-control" maxlength="@GeneratePracticeExamRequest.FocusHintMaxLength"
+                       placeholder="e.g. only sorting algorithms" @bind="FocusHint" disabled="@IsGenerating" />
+            </div>
+
+            <div class="form-group flashcard-model-field">
+                <label for="exam-model">Model</label>
+                <select id="exam-model" class="form-control" @bind="SelectedModel" disabled="@(IsGenerating || Models.Count == 0)">
+                    @foreach (var model in Models)
+                    {
+                        <option value="@model.Id">@model.DisplayName</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="flashcard-hint">
+            About one point per minute. The selected @(SourceKind == PracticeExamSourceKind.Course ? "notes are" : "cards are") sent to Anthropic (Claude). The exam is written in German.
+        </div>
+
+        @if (IsGenerating)
+        {
+            <div class="flashcard-progress">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Claude is writing your practice exam — this can take one to three minutes.
+            </div>
+        }
+
+        @if (ErrorMessage is not null)
+        {
+            <div class="form-error">@ErrorMessage</div>
+        }
+
+        <div>
+            <button class="btn btn-primary" type="button" disabled="@(!CanGenerate)" @onclick="GenerateAsync">
+                @(IsGenerating ? "Generating…" : "Generate practice exam")
+            </button>
+        </div>
+    </div>
+}

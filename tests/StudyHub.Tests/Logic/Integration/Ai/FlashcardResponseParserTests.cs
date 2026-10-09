@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using StudyHub.Logic.Integration.Ai;
-using StudyHub.Shared.Configuration;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Tests.Logic.Integration.Ai;
@@ -27,21 +27,21 @@ public class FlashcardResponseParserTests
     [Fact]
     public void Parse_WithRefusal_ThrowsRefused()
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+        var ex = Assert.Throws<AiGenerationFailedException>(() =>
             FlashcardResponseParser.Parse("refusal", null)
         );
 
-        Assert.Equal(FlashcardGenerationFailureReason.Refused, ex.Reason);
+        Assert.Equal(AiGenerationFailureReason.Refused, ex.Reason);
     }
 
     [Fact]
     public void Parse_WithMaxTokens_ThrowsTruncated()
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+        var ex = Assert.Throws<AiGenerationFailedException>(() =>
             FlashcardResponseParser.Parse("max_tokens", "{\"cards\":[{\"fr")
         );
 
-        Assert.Equal(FlashcardGenerationFailureReason.Truncated, ex.Reason);
+        Assert.Equal(AiGenerationFailureReason.Truncated, ex.Reason);
     }
 
     [Theory]
@@ -51,11 +51,11 @@ public class FlashcardResponseParserTests
     [InlineData("{\"something\":1}")]
     public void Parse_WithUnusableText_ThrowsInvalidResponse(string? text)
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+        var ex = Assert.Throws<AiGenerationFailedException>(() =>
             FlashcardResponseParser.Parse("end_turn", text)
         );
 
-        Assert.Equal(FlashcardGenerationFailureReason.InvalidResponse, ex.Reason);
+        Assert.Equal(AiGenerationFailureReason.InvalidResponse, ex.Reason);
     }
 
     [Fact]
@@ -71,10 +71,11 @@ public class FlashcardResponseParserTests
     [Fact]
     public async Task Generator_WithoutApiKey_ThrowsAiNotConfigured()
     {
-        using var generator = new ClaudeFlashcardGenerator(
-            Options.Create(new AnthropicOptions { ApiKey = null }),
-            NullLogger<ClaudeFlashcardGenerator>.Instance
-        );
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddStudyHubAi(new ConfigurationBuilder().Build())
+            .BuildServiceProvider();
+        var generator = services.GetRequiredService<IFlashcardGenerator>();
 
         await Assert.ThrowsAsync<AiNotConfiguredException>(() =>
             generator.GenerateAsync(

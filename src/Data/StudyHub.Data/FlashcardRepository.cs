@@ -33,6 +33,22 @@ public sealed class FlashcardRepository(ApplicationDbContext dbContext) : IFlash
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Flashcard>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext
+            .Flashcards.AsNoTracking()
+            .Where(c => ids.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Flashcard>> GetByDeckIdsAsync(
         IReadOnlyCollection<Guid> deckIds,
         CancellationToken cancellationToken = default

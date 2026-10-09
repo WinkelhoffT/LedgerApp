@@ -5,8 +5,8 @@ using StudyHub.Shared.Flashcards;
 namespace StudyHub.Api.Flashcards;
 
 // Note and course lookups (NoteNotFoundException, CourseArchivedException, ...) are handled by the
-// already registered NoteExceptionHandler/CourseExceptionHandler, so this handler only covers
-// flashcard-specific exceptions.
+// already registered NoteExceptionHandler/CourseExceptionHandler, and AI failures by
+// AiExceptionHandler, so this handler only covers flashcard-specific exceptions.
 public sealed class FlashcardExceptionHandler : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
@@ -21,18 +21,6 @@ public sealed class FlashcardExceptionHandler : IExceptionHandler
                 StatusCodes.Status400BadRequest,
                 ex.Message,
                 FlashcardErrorCodes.FlashcardValidationFailed
-            ),
-            FlashcardGenerationFailedException ex => Build(
-                StatusCodes.Status502BadGateway,
-                ex.Message,
-                FlashcardErrorCodes.FlashcardGenerationFailed,
-                "reason",
-                ex.Reason.ToString()
-            ),
-            AiNotConfiguredException ex => Build(
-                StatusCodes.Status503ServiceUnavailable,
-                ex.Message,
-                FlashcardErrorCodes.AiNotConfigured
             ),
             FlashcardDeckNotFoundException ex => Build(
                 StatusCodes.Status404NotFound,

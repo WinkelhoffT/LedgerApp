@@ -4,6 +4,7 @@ using StudyHub.Shared.Courses;
 using StudyHub.Shared.Documents;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
+using StudyHub.Shared.PracticeExams;
 using StudyHub.Shared.Semesters;
 using StudyHub.Shared.StudySessions;
 
@@ -33,6 +34,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<StudySession> StudySessions => Set<StudySession>();
 
     public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
+
+    public DbSet<PracticeExam> PracticeExams => Set<PracticeExam>();
+
+    public DbSet<PracticeExamTask> PracticeExamTasks => Set<PracticeExamTask>();
+
+    public DbSet<PracticeExamOption> PracticeExamOptions => Set<PracticeExamOption>();
+
+    public DbSet<PracticeExamCriterion> PracticeExamCriteria => Set<PracticeExamCriterion>();
+
+    public DbSet<PracticeExamAttempt> PracticeExamAttempts => Set<PracticeExamAttempt>();
+
+    public DbSet<PracticeExamAnswer> PracticeExamAnswers => Set<PracticeExamAnswer>();
+
+    public DbSet<PracticeExamAnswerCriterion> PracticeExamAnswerCriteria =>
+        Set<PracticeExamAnswerCriterion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -468,6 +484,236 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                     "(\"DurationMinutes\" IS NULL OR \"StartTime\" IS NOT NULL)"
                 );
             });
+        });
+
+        modelBuilder.Entity<PracticeExam>(builder =>
+        {
+            builder.ToTable("PracticeExams");
+
+            builder.HasKey(e => e.Id);
+
+            builder.Property(e => e.Title).HasMaxLength(PracticeExam.TitleMaxLength).IsRequired();
+
+            builder.Property(e => e.Level).IsRequired();
+
+            builder.Property(e => e.DurationMinutes).IsRequired();
+
+            builder.Property(e => e.SourceKind).IsRequired();
+
+            builder.Property(e => e.Model).HasMaxLength(PracticeExam.ModelMaxLength).IsRequired();
+
+            builder
+                .Property(e => e.PromptVersion)
+                .HasMaxLength(PracticeExam.PromptVersionMaxLength)
+                .IsRequired();
+
+            builder
+                .Property(e => e.FocusHint)
+                .HasMaxLength(GeneratePracticeExamRequest.FocusHintMaxLength);
+
+            builder.Property(e => e.IsArchived).IsRequired();
+
+            builder.Property(e => e.CreatedAt).IsRequired();
+
+            builder.Property(e => e.UpdatedAt).IsRequired();
+
+            builder.HasIndex(e => e.CourseId);
+
+            builder.HasIndex(e => e.DeckId);
+
+            // Restrict, not Cascade: courses and decks are only ever archived, never hard-deleted.
+            builder
+                .HasOne<Course>()
+                .WithMany()
+                .HasForeignKey(e => e.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .HasOne<FlashcardDeck>()
+                .WithMany()
+                .HasForeignKey(e => e.DeckId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Exactly the column that matches the source kind is set.
+            builder.ToTable(t =>
+                t.HasCheckConstraint(
+                    "CK_PracticeExams_Source",
+                    $"((\"SourceKind\" = {(int)PracticeExamSourceKind.Course} AND \"CourseId\" IS NOT NULL AND \"DeckId\" IS NULL) OR (\"SourceKind\" = {(int)PracticeExamSourceKind.Deck} AND \"DeckId\" IS NOT NULL AND \"CourseId\" IS NULL))"
+                )
+            );
+        });
+
+        modelBuilder.Entity<PracticeExamTask>(builder =>
+        {
+            builder.ToTable("PracticeExamTasks");
+
+            builder.HasKey(t => t.Id);
+
+            builder.Property(t => t.Kind).IsRequired();
+
+            builder.Property(t => t.Text).HasMaxLength(PracticeExamTask.TextMaxLength).IsRequired();
+
+            builder.Property(t => t.Points).IsRequired();
+
+            builder
+                .Property(t => t.Solution)
+                .HasMaxLength(PracticeExamTask.SolutionMaxLength)
+                .IsRequired();
+
+            builder.Property(t => t.IsExcluded).IsRequired();
+
+            builder.Property(t => t.CreatedAt).IsRequired();
+
+            builder.HasIndex(t => new { t.ExamId, t.Position });
+
+            builder
+                .HasOne<PracticeExam>()
+                .WithMany()
+                .HasForeignKey(t => t.ExamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict: notes are only ever archived.
+            builder
+                .HasOne<Note>()
+                .WithMany()
+                .HasForeignKey(t => t.SourceNoteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // SetNull: a card is deleted for real, and the task stays without its source.
+            builder
+                .HasOne<Flashcard>()
+                .WithMany()
+                .HasForeignKey(t => t.SourceFlashcardId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.ToTable(t =>
+                t.HasCheckConstraint(
+                    "CK_PracticeExamTasks_AtMostOneSource",
+                    "(\"SourceNoteId\" IS NULL OR \"SourceFlashcardId\" IS NULL)"
+                )
+            );
+        });
+
+        modelBuilder.Entity<PracticeExamOption>(builder =>
+        {
+            builder.ToTable("PracticeExamOptions");
+
+            builder.HasKey(o => o.Id);
+
+            builder
+                .Property(o => o.Text)
+                .HasMaxLength(PracticeExamOption.TextMaxLength)
+                .IsRequired();
+
+            builder
+                .Property(o => o.Rationale)
+                .HasMaxLength(PracticeExamOption.RationaleMaxLength)
+                .IsRequired();
+
+            builder.Property(o => o.IsCorrect).IsRequired();
+
+            builder.HasIndex(o => new { o.TaskId, o.Position });
+
+            builder
+                .HasOne<PracticeExamTask>()
+                .WithMany()
+                .HasForeignKey(o => o.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PracticeExamCriterion>(builder =>
+        {
+            builder.ToTable("PracticeExamCriteria");
+
+            builder.HasKey(c => c.Id);
+
+            builder
+                .Property(c => c.Description)
+                .HasMaxLength(PracticeExamCriterion.DescriptionMaxLength)
+                .IsRequired();
+
+            builder.Property(c => c.Points).IsRequired();
+
+            builder.HasIndex(c => new { c.TaskId, c.Position });
+
+            builder
+                .HasOne<PracticeExamTask>()
+                .WithMany()
+                .HasForeignKey(c => c.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PracticeExamAttempt>(builder =>
+        {
+            builder.ToTable("PracticeExamAttempts");
+
+            builder.HasKey(a => a.Id);
+
+            builder.Property(a => a.StartedAt).IsRequired();
+
+            builder.Property(a => a.MaxPoints).IsRequired();
+
+            builder.HasIndex(a => new { a.ExamId, a.StartedAt });
+
+            builder
+                .HasOne<PracticeExam>()
+                .WithMany()
+                .HasForeignKey(a => a.ExamId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PracticeExamAnswer>(builder =>
+        {
+            builder.ToTable("PracticeExamAnswers");
+
+            builder.HasKey(a => a.Id);
+
+            builder
+                .Property(a => a.AnswerText)
+                .HasMaxLength(PracticeExamAnswer.AnswerTextMaxLength);
+
+            builder.Property(a => a.UpdatedAt).IsRequired();
+
+            builder.HasIndex(a => new { a.AttemptId, a.TaskId }).IsUnique();
+
+            builder
+                .HasOne<PracticeExamAttempt>()
+                .WithMany()
+                .HasForeignKey(a => a.AttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasOne<PracticeExamTask>()
+                .WithMany()
+                .HasForeignKey(a => a.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .HasOne<PracticeExamOption>()
+                .WithMany()
+                .HasForeignKey(a => a.SelectedOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PracticeExamAnswerCriterion>(builder =>
+        {
+            builder.ToTable("PracticeExamAnswerCriteria");
+
+            builder.HasKey(c => new { c.AnswerId, c.CriterionId });
+
+            builder.HasIndex(c => c.CriterionId);
+
+            builder
+                .HasOne<PracticeExamAnswer>()
+                .WithMany()
+                .HasForeignKey(c => c.AnswerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasOne<PracticeExamCriterion>()
+                .WithMany()
+                .HasForeignKey(c => c.CriterionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

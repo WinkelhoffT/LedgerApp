@@ -59,6 +59,7 @@ else
                     else
                     {
                         <button class="btn btn-outline btn-sm" type="button" @onclick="() => OpenEditDialog(course)">Edit</button>
+                        <a class="btn btn-outline btn-sm" href="@($"practice-exams/new?courseId={course.Id}")">Practice exam</a>
                         <button class="btn btn-danger-outline btn-sm" type="button" @onclick="() => ArchiveAsync(course)">Archive</button>
                     }
                 </div>

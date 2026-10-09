@@ -62,8 +62,8 @@ public sealed class FlashcardOrchestrator(
         var cards = flashcardValidator.FilterGeneratedCards(generatedCards, request.CardCount);
         if (cards.Count == 0)
         {
-            throw new FlashcardGenerationFailedException(
-                FlashcardGenerationFailureReason.InvalidResponse,
+            throw new AiGenerationFailedException(
+                AiGenerationFailureReason.InvalidResponse,
                 "Claude did not return any usable flashcards for this note."
             );
         }

@@ -29,6 +29,7 @@ public partial class NavMenu : ComponentBase, IDisposable
                 new("/documents", "Documents", Icons.Documents),
                 new("/notes", "Notes", Icons.Notes),
                 new("/flashcards", "Flashcards", Icons.Flashcards),
+                new("/practice-exams", "Practice Exams", Icons.PracticeExams),
             ]
         ),
         new(
@@ -78,6 +79,8 @@ public partial class NavMenu : ComponentBase, IDisposable
             "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z\"/>";
         public const string Flashcards =
             "<rect x=\"2\" y=\"6\" width=\"16\" height=\"14\" rx=\"2\"/><path d=\"M6 3h14a2 2 0 0 1 2 2v11\"/>";
+        public const string PracticeExams =
+            "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01\"/>";
         public const string Ai =
             "<path d=\"M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z\"/><path d=\"M9 9h.01M15 9h.01\"/>";
         public const string Analytics = "<path d=\"M3 3v18h18\"/><path d=\"M18 9l-5 5-3-3-4 4\"/>";

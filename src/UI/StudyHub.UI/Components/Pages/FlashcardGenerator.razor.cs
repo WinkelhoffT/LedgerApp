@@ -159,7 +159,7 @@ public partial class FlashcardGenerator
         catch (Exception ex)
             when (ex
                     is FlashcardValidationException
-                        or FlashcardGenerationFailedException
+                        or AiGenerationFailedException
                         or AiNotConfiguredException
                         or NoteNotFoundException
                         or NoteArchivedException

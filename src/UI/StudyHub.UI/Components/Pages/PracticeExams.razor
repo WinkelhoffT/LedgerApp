@@ -1,0 +1,85 @@
+@page "/practice-exams"
+@using StudyHub.UI.PracticeExams
+
+<PageTitle>Practice Exams</PageTitle>
+
+<div class="page-toolbar">
+    <label class="toggle-check">
+        <input type="checkbox" @bind="ShowArchived" @bind:after="LoadAsync" />
+        Show archived
+    </label>
+    <a class="btn btn-primary" href="practice-exams/new">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        New practice exam
+    </a>
+</div>
+
+@if (ErrorMessage is not null)
+{
+    <div class="form-error page-error">@ErrorMessage</div>
+}
+
+@if (Exams is null)
+{
+    <p class="placeholder-hint">Loading practice exams…</p>
+}
+else if (Exams.Count == 0)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">No practice exams yet</div>
+        <div class="empty-state-text">
+            Let Claude write one from a course or a deck. You write it like a real exam and see where your understanding is still missing.
+        </div>
+        <a class="btn btn-primary" href="practice-exams/new">New practice exam</a>
+    </div>
+}
+else
+{
+    <div class="card flashcard-table-card">
+        <table class="table flashcard-table deck-table">
+            <thead>
+                <tr>
+                    <th>Practice exam</th>
+                    <th class="deck-course-col">Source</th>
+                    <th class="exam-level-col">Level</th>
+                    <th class="deck-number-col">Minutes</th>
+                    <th class="deck-number-col">Points</th>
+                    <th class="deck-number-col">Attempts</th>
+                    <th class="exam-result-col">Best result</th>
+                    <th class="deck-actions-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var exam in Exams)
+                {
+                    <tr class="@(exam.IsArchived ? "is-archived" : "")">
+                        <td>
+                            <a class="deck-name" href="@($"practice-exams/{exam.Id}")">@exam.Title</a>
+                            @if (exam.IsArchived)
+                            {
+                                <span class="badge-archived">Archived</span>
+                            }
+                        </td>
+                        <td class="deck-course-col">@exam.SourceName</td>
+                        <td class="exam-level-col">@PracticeExamFormatter.FormatLevel(exam.Level)</td>
+                        <td class="deck-number-col">@exam.DurationMinutes</td>
+                        <td class="deck-number-col">@exam.TotalPoints</td>
+                        <td class="deck-number-col">@exam.AttemptCount</td>
+                        <td class="exam-result-col">@PracticeExamFormatter.FormatResult(exam.BestAttempt)</td>
+                        <td class="deck-actions-col">
+                            @if (exam.OpenAttemptId is { } attemptId)
+                            {
+                                <a class="btn btn-primary btn-sm" href="@($"practice-exams/attempts/{attemptId}")">Continue</a>
+                            }
+                            else if (!exam.IsArchived)
+                            {
+                                <a class="btn btn-primary btn-sm" href="@($"practice-exams/{exam.Id}")">Start</a>
+                            }
+                            <a class="btn btn-outline btn-sm" href="@($"practice-exams/{exam.Id}")">Open</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

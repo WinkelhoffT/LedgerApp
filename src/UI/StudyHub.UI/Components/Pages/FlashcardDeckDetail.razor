@@ -52,6 +52,7 @@ else
                 <a class="btn btn-primary @(Deck.DueCounts.Total == 0 ? "disabled" : "")" href="@($"flashcards/study/{Deck.Id}")"
                    aria-disabled="@(Deck.DueCounts.Total == 0)">Study</a>
                 <a class="btn btn-outline" href="@($"flashcards/generate?deckId={Deck.Id}")">Generate with AI</a>
+                <a class="btn btn-outline" href="@($"practice-exams/new?deckId={Deck.Id}")">Practice exam</a>
                 <button class="btn btn-outline" type="button" @onclick="() => IsSettingsOpen = true">Settings</button>
             }
             <button class="btn btn-outline" type="button" disabled="@IsBusy" @onclick="ExportAsync">Export</button>

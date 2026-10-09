@@ -394,6 +394,266 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("NoteLinks", (string)null);
                 });
 
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExam", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("DeckId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FocusHint")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SourceKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("DeckId");
+
+                    b.ToTable("PracticeExams", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PracticeExams_Source", "((\"SourceKind\" = 0 AND \"CourseId\" IS NOT NULL AND \"DeckId\" IS NULL) OR (\"SourceKind\" = 1 AND \"DeckId\" IS NOT NULL AND \"CourseId\" IS NULL))");
+                        });
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AnswerText")
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AwardedPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SelectedOptionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SelectedOptionId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("AttemptId", "TaskId")
+                        .IsUnique();
+
+                    b.ToTable("PracticeExamAnswers", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAnswerCriterion", b =>
+                {
+                    b.Property<Guid>("AnswerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CriterionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AnswerId", "CriterionId");
+
+                    b.HasIndex("CriterionId");
+
+                    b.ToTable("PracticeExamAnswerCriteria", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AwardedPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("GradedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId", "StartedAt");
+
+                    b.ToTable("PracticeExamAttempts", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamCriterion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId", "Position");
+
+                    b.ToTable("PracticeExamCriteria", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Rationale")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId", "Position");
+
+                    b.ToTable("PracticeExamOptions", (string)null);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsExcluded")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Solution")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SourceFlashcardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SourceNoteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceFlashcardId");
+
+                    b.HasIndex("SourceNoteId");
+
+                    b.HasIndex("ExamId", "Position");
+
+                    b.ToTable("PracticeExamTasks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PracticeExamTasks_AtMostOneSource", "(\"SourceNoteId\" IS NULL OR \"SourceFlashcardId\" IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("StudyHub.Shared.Semesters.Semester", b =>
                 {
                     b.Property<Guid>("Id")
@@ -592,6 +852,100 @@ namespace StudyHub.Data.Migrations
                         .HasForeignKey("TargetNoteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExam", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Shared.Flashcards.FlashcardDeck", null)
+                        .WithMany()
+                        .HasForeignKey("DeckId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAnswer", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamOption", null)
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAnswerCriterion", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamAnswer", null)
+                        .WithMany()
+                        .HasForeignKey("AnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamCriterion", null)
+                        .WithMany()
+                        .HasForeignKey("CriterionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamAttempt", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExam", null)
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamCriterion", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamOption", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExamTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.PracticeExams.PracticeExamTask", b =>
+                {
+                    b.HasOne("StudyHub.Shared.PracticeExams.PracticeExam", null)
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudyHub.Shared.Flashcards.Flashcard", null)
+                        .WithMany()
+                        .HasForeignKey("SourceFlashcardId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("StudyHub.Shared.Notes.Note", null)
+                        .WithMany()
+                        .HasForeignKey("SourceNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("StudyHub.Shared.StudySessions.StudySession", b =>

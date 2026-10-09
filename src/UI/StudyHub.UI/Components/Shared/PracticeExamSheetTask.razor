@@ -1,0 +1,38 @@
+@using StudyHub.Shared.PracticeExams
+@using StudyHub.UI.Flashcards
+@using StudyHub.UI.PracticeExams
+
+<section class="card card-pad exam-task" aria-label="@($"Task {ExamTask.Number}")">
+    <div class="exam-task-head">
+        <span class="exam-task-number">Task @ExamTask.Number</span>
+        <span class="exam-task-points">@PracticeExamFormatter.FormatPoints(ExamTask.Points)</span>
+    </div>
+
+    <div class="exam-task-text exam-rich">@FlashcardHtmlFormatter.ToPreview(ExamTask.Text)</div>
+
+    @if (ExamTask.Kind == PracticeExamTaskKind.SingleChoice)
+    {
+        <div class="exam-options" role="radiogroup">
+            @foreach (var option in ExamTask.Options)
+            {
+                <label class="exam-option @(SelectedOptionId == option.Id ? "selected" : null)">
+                    <input type="radio" name="@($"task-{ExamTask.TaskId}")" checked="@(SelectedOptionId == option.Id)"
+                           disabled="@IsReadOnly" @onchange="() => OnOptionSelected.InvokeAsync(option.Id)" />
+                    <span class="exam-rich">@FlashcardHtmlFormatter.ToPreview(option.Text)</span>
+                </label>
+            }
+        </div>
+    }
+    else
+    {
+        <textarea class="form-control exam-answer @(IsMonospace ? "mono" : null)" rows="8"
+                  maxlength="@PracticeExamAnswer.AnswerTextMaxLength" placeholder="Your answer"
+                  aria-label="@($"Answer to task {ExamTask.Number}")" disabled="@IsReadOnly" value="@AnswerText"
+                  @oninput="e => OnTextInput.InvokeAsync(e.Value?.ToString() ?? string.Empty)"
+                  @onchange="() => OnTextCommitted.InvokeAsync()"></textarea>
+        <label class="toggle-check exam-mono-toggle">
+            <input type="checkbox" @bind="IsMonospace" />
+            Monospace for code
+        </label>
+    }
+</section>

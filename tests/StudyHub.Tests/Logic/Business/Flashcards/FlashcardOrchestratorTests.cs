@@ -4,6 +4,7 @@ using StudyHub.Data.Contract;
 using StudyHub.Logic.Business;
 using StudyHub.Logic.Domain;
 using StudyHub.Logic.Integration.Ai;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Configuration;
 using StudyHub.Shared.Flashcards;
 using StudyHub.Shared.Notes;
@@ -187,17 +188,17 @@ public class FlashcardOrchestratorTests
         _generator
             .Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
             .ThrowsAsync(
-                new FlashcardGenerationFailedException(
-                    FlashcardGenerationFailureReason.RateLimited,
+                new AiGenerationFailedException(
+                    AiGenerationFailureReason.RateLimited,
                     "rate limited"
                 )
             );
 
-        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() =>
+        var ex = await Assert.ThrowsAsync<AiGenerationFailedException>(() =>
             _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
         );
 
-        Assert.Equal(FlashcardGenerationFailureReason.RateLimited, ex.Reason);
+        Assert.Equal(AiGenerationFailureReason.RateLimited, ex.Reason);
     }
 
     [Fact]
@@ -208,11 +209,11 @@ public class FlashcardOrchestratorTests
             .Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), default))
             .ReturnsAsync([new FlashcardDto("", "", [])]);
 
-        var ex = await Assert.ThrowsAsync<FlashcardGenerationFailedException>(() =>
+        var ex = await Assert.ThrowsAsync<AiGenerationFailedException>(() =>
             _sut.GenerateAsync(new GenerateFlashcardsRequest(note.Id, 10, null))
         );
 
-        Assert.Equal(FlashcardGenerationFailureReason.InvalidResponse, ex.Reason);
+        Assert.Equal(AiGenerationFailureReason.InvalidResponse, ex.Reason);
     }
 
     [Fact]

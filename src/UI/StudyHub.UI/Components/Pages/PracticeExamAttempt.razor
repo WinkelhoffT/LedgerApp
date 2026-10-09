@@ -1,0 +1,130 @@
+@page "/practice-exams/attempts/{AttemptId:guid}"
+@using StudyHub.Shared.PracticeExams
+@using StudyHub.UI.PracticeExams
+
+<PageTitle>@(Sheet?.Title ?? Review?.Title ?? "Practice Exam")</PageTitle>
+
+@if (NotFound)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">Attempt not found</div>
+        <div class="empty-state-text">@(ErrorMessage ?? "It may have been removed.")</div>
+        <a class="btn btn-primary" href="practice-exams">Back to practice exams</a>
+    </div>
+}
+else if (Sheet is { } sheet)
+{
+    <div class="card exam-sheet-header">
+        <div class="exam-sheet-title">
+            <div class="deck-title">@sheet.Title</div>
+            <div class="deck-meta">
+                <span>@PracticeExamFormatter.FormatLevel(sheet.Level)</span>
+                <span>@sheet.Tasks.Count task(s)</span>
+                <span>@PracticeExamFormatter.FormatPoints(sheet.MaxPoints)</span>
+            </div>
+        </div>
+        <div class="exam-sheet-status">
+            @if (Remaining is { } remaining)
+            {
+                <span class="exam-countdown @(remaining <= TimeSpan.FromMinutes(5) ? "is-ending" : null)" role="timer" aria-label="Time left">
+                    @PracticeExamFormatter.FormatRemaining(remaining)
+                </span>
+            }
+            <span class="flashcard-hint" aria-live="polite">@SaveStatus</span>
+            <button class="btn btn-primary btn-sm" type="button" disabled="@IsSubmitting" @onclick="() => IsConfirmOpen = true">Submit</button>
+        </div>
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error page-error">@ErrorMessage</div>
+    }
+
+    <div class="exam-tasks">
+        @foreach (var task in sheet.Tasks)
+        {
+            <PracticeExamSheetTask @key="task.TaskId" ExamTask="task" IsReadOnly="IsSubmitting"
+                                   SelectedOptionId="@Selections.GetValueOrDefault(task.TaskId)"
+                                   AnswerText="@Texts.GetValueOrDefault(task.TaskId)"
+                                   OnOptionSelected="optionId => SelectOptionAsync(task.TaskId, optionId)"
+                                   OnTextInput="text => ChangeText(task.TaskId, text)"
+                                   OnTextCommitted="() => SaveIfDirtyAsync(task.TaskId)" />
+        }
+    </div>
+
+    <div class="exam-submit">
+        <button class="btn btn-primary" type="button" disabled="@IsSubmitting" @onclick="() => IsConfirmOpen = true">
+            @(IsSubmitting ? "Submitting…" : "Submit")
+        </button>
+    </div>
+
+    @if (IsConfirmOpen)
+    {
+        <div class="modal-overlay" @onclick="() => IsConfirmOpen = false">
+            <div class="modal-panel" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Submit the practice exam?</div>
+                </div>
+                <div class="modal-body">
+                    <p>Your answers can no longer be changed afterwards. Then you see the solutions and grade your open answers.</p>
+                    @if (UnansweredCount > 0)
+                    {
+                        <p class="form-error">@UnansweredCount task(s) are not answered yet.</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="() => IsConfirmOpen = false">Keep writing</button>
+                    <button class="btn btn-primary" type="button" disabled="@IsSubmitting" @onclick="SubmitAsync">Submit</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+else if (Review is { } review)
+{
+    <div class="page-toolbar">
+        <a class="btn btn-outline btn-sm" href="@($"practice-exams/{review.ExamId}")">← Cover page</a>
+    </div>
+
+    <div class="card card-pad exam-review-header">
+        <div class="exam-sheet-title">
+            <div class="deck-title">@review.Title</div>
+            <div class="deck-meta">
+                <span>@PracticeExamFormatter.FormatLevel(review.Level)</span>
+                <span>Submitted @review.SubmittedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+            </div>
+        </div>
+        <div class="exam-review-result">
+            @if (review is { AwardedPoints: { } awarded, Percent: { } percent })
+            {
+                <span class="exam-total">@awarded of @PracticeExamFormatter.FormatPoints(review.MaxPoints), @percent %</span>
+            }
+            else
+            {
+                <span class="exam-total">Self-grading: @review.GradedOpenTaskCount of @review.OpenTaskCount open task(s) graded</span>
+            }
+            <div class="deck-header-actions">
+                <a class="btn btn-primary btn-sm" href="@($"practice-exams/{review.ExamId}")">Write again</a>
+                <a class="btn btn-outline btn-sm" href="practice-exams">Back to practice exams</a>
+            </div>
+        </div>
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error page-error">@ErrorMessage</div>
+    }
+
+    <div class="exam-tasks">
+        @foreach (var task in review.Tasks)
+        {
+            <PracticeExamReviewTask @key="task.TaskId" ExamTask="task" IsBusy="IsBusy"
+                                    OnGrade="ids => GradeAsync(task.TaskId, ids)"
+                                    OnExclude="() => ExcludeAsync(task.TaskId)" />
+        }
+    </div>
+}
+else
+{
+    <p class="placeholder-hint">Loading practice exam…</p>
+}

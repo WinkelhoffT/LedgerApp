@@ -1,0 +1,138 @@
+@page "/practice-exams/{ExamId:guid}"
+@using StudyHub.Shared.PracticeExams
+@using StudyHub.UI.PracticeExams
+
+<PageTitle>@(Exam?.Title ?? "Practice Exam")</PageTitle>
+
+<div class="page-toolbar">
+    <a class="btn btn-outline btn-sm" href="practice-exams">← All practice exams</a>
+</div>
+
+@if (NotFound)
+{
+    <div class="card empty-state">
+        <div class="empty-state-title">Practice exam not found</div>
+        <div class="empty-state-text">It may have been removed.</div>
+        <a class="btn btn-primary" href="practice-exams">Back to practice exams</a>
+    </div>
+}
+else if (Exam is null)
+{
+    <p class="placeholder-hint">Loading practice exam…</p>
+}
+else
+{
+    @if (ErrorMessage is not null)
+    {
+        <div class="form-error page-error">@ErrorMessage</div>
+    }
+
+    <div class="card card-pad exam-cover @(Exam.IsArchived ? "is-archived" : "")">
+        <div class="deck-title-row">
+            <div class="deck-title">@Exam.Title</div>
+            @if (Exam.IsArchived)
+            {
+                <span class="badge-archived">Archived</span>
+            }
+        </div>
+
+        <dl class="exam-cover-facts">
+            <div><dt>Level</dt><dd>@PracticeExamFormatter.FormatLevel(Exam.Level)</dd></div>
+            <div>
+                <dt>@(Exam.SourceKind == PracticeExamSourceKind.Deck ? "Deck" : "Course")</dt>
+                <dd>
+                    @if (Exam.DeckId is { } deckId)
+                    {
+                        <a href="@($"flashcards/decks/{deckId}")">@Exam.SourceName</a>
+                    }
+                    else
+                    {
+                        @Exam.SourceName
+                    }
+                </dd>
+            </div>
+            <div><dt>Duration</dt><dd>@Exam.DurationMinutes minutes</dd></div>
+            <div><dt>Tasks</dt><dd>@Exam.TaskCount</dd></div>
+            <div><dt>Points</dt><dd>@Exam.TotalPoints</dd></div>
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(Exam.FocusHint))
+        {
+            <div class="flashcard-hint">Focus: @Exam.FocusHint</div>
+        }
+
+        <div class="exam-instructions">
+            Answer in full sentences; code or pseudocode is allowed. Single-choice tasks have exactly one correct option.
+            Your answers are saved as you write. Solutions and points are shown after you submit, and you grade your open answers yourself with the rubric.
+        </div>
+
+        @if (IsShort)
+        {
+            <div class="flashcard-hint">
+                This exam has @PracticeExamFormatter.FormatPoints(Exam.TotalPoints) for @Exam.DurationMinutes minutes —
+                fewer than planned, because Claude returned fewer usable tasks@(Exam.ExcludedTaskCount > 0 ? " or tasks were excluded" : "").
+            </div>
+        }
+        else if (Exam.ExcludedTaskCount > 0)
+        {
+            <div class="flashcard-hint">@Exam.ExcludedTaskCount task(s) excluded as flawed.</div>
+        }
+
+        <div class="deck-header-actions">
+            @if (Exam.OpenAttemptId is { } attemptId)
+            {
+                <a class="btn btn-primary" href="@($"practice-exams/attempts/{attemptId}")">Continue</a>
+            }
+            else if (!Exam.IsArchived && Exam.TaskCount > 0)
+            {
+                <button class="btn btn-primary" type="button" disabled="@IsBusy" @onclick="() => StartAsync(withTimeLimit: true)">Start with time limit</button>
+                <button class="btn btn-secondary" type="button" disabled="@IsBusy" @onclick="() => StartAsync(withTimeLimit: false)">Start without time limit</button>
+            }
+
+            @if (Exam.IsArchived)
+            {
+                <button class="btn btn-secondary" type="button" disabled="@IsBusy" @onclick="RestoreAsync">Restore</button>
+            }
+            else
+            {
+                <button class="btn btn-danger-outline" type="button" disabled="@IsBusy" @onclick="ArchiveAsync">Archive</button>
+            }
+        </div>
+    </div>
+
+    <div class="section-title exam-section-title">Attempts</div>
+    @if (Attempts.Count == 0)
+    {
+        <div class="flashcard-hint">No attempts yet.</div>
+    }
+    else
+    {
+        <div class="card flashcard-table-card">
+            <table class="table flashcard-table">
+                <thead>
+                    <tr>
+                        <th>Started</th>
+                        <th>Status</th>
+                        <th class="exam-result-col">Result</th>
+                        <th class="deck-actions-col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var attempt in Attempts)
+                    {
+                        <tr>
+                            <td>@attempt.StartedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")@(attempt.DueAt is null ? "" : " · timed")</td>
+                            <td>@PracticeExamFormatter.FormatStatus(attempt.Status)</td>
+                            <td class="exam-result-col">@PracticeExamFormatter.FormatResult(attempt)</td>
+                            <td class="deck-actions-col">
+                                <a class="btn btn-outline btn-sm" href="@($"practice-exams/attempts/{attempt.Id}")">
+                                    @(attempt.Status == PracticeExamAttemptStatus.InProgress ? "Continue" : "Review")
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

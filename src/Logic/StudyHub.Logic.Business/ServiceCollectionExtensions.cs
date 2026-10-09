@@ -23,6 +23,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStudySessionOrchestrator, StudySessionOrchestrator>();
         services.AddScoped<ICalendarOrchestrator, CalendarOrchestrator>();
         services.AddScoped<ICalendarEventOrchestrator, CalendarEventOrchestrator>();
+        services.AddScoped<
+            IPracticeExamGenerationOrchestrator,
+            PracticeExamGenerationOrchestrator
+        >();
+        services.AddScoped<IPracticeExamOrchestrator, PracticeExamOrchestrator>();
+        services.AddScoped<IPracticeExamAttemptOrchestrator, PracticeExamAttemptOrchestrator>();
+        services.AddScoped<IPracticeExamMaterialProvider, PracticeExamMaterialProvider>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
@@ -40,6 +47,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStudySessionLifecycle, StudySessionLifecycle>();
         services.AddScoped<ICalendarLaneProcessor, CalendarLaneProcessor>();
         services.AddScoped<ICalendarEventLifecycle, CalendarEventLifecycle>();
+        services.AddScoped<IPracticeExamValidator, PracticeExamValidator>();
+        services.AddScoped<IPracticeExamSourceProcessor, PracticeExamSourceProcessor>();
+        services.AddScoped<IPracticeExamLifecycle, PracticeExamLifecycle>();
+        services.AddScoped<IPracticeExamAttemptProcessor, PracticeExamAttemptProcessor>();
 
         // Needs a FlashcardStudyOptions instance, which the host binds from configuration.
         services.AddSingleton<IStudyDayProvider, StudyDayProvider>();
@@ -47,6 +58,7 @@ public static class ServiceCollectionExtensions
         // Needs a CalendarOptions instance, which the host binds from configuration.
         services.AddSingleton<ICalendarPeriodProvider, CalendarPeriodProvider>();
         services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton(Random.Shared);
 
         return services;
     }
