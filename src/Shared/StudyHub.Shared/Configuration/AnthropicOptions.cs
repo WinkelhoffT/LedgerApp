@@ -25,6 +25,12 @@ public sealed class AnthropicOptions
 
     public int MaxTokens { get; set; } = 16_000;
 
+    /// <summary>
+    /// Output limit for a practice exam, which with model solutions and rubrics is much longer than a
+    /// flashcard set. The call streams, so it is not cut off by <see cref="RequestTimeout"/>.
+    /// </summary>
+    public int PracticeExamMaxTokens { get; set; } = 32_000;
+
     public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(150);
 }
 
