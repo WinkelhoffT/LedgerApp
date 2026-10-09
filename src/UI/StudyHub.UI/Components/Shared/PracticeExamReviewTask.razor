@@ -1,0 +1,118 @@
+@using StudyHub.Shared.PracticeExams
+@using StudyHub.UI.Flashcards
+@using StudyHub.UI.PracticeExams
+
+<section class="card card-pad exam-task @(ExamTask.IsExcluded ? "is-excluded" : null)" aria-label="@($"Task {ExamTask.Number}")">
+    <div class="exam-task-head">
+        <span class="exam-task-number">Task @ExamTask.Number</span>
+        <span class="exam-task-points">@PracticeExamFormatter.FormatPoints(ExamTask.Points)</span>
+        <span class="exam-task-result @ResultClass">@ResultText</span>
+    </div>
+
+    <div class="exam-task-text exam-rich">@FlashcardHtmlFormatter.ToPreview(ExamTask.Text)</div>
+
+    @if (ExamTask.Kind == PracticeExamTaskKind.SingleChoice)
+    {
+        <ul class="exam-options exam-review-options">
+            @foreach (var option in ExamTask.Options)
+            {
+                var isChosen = ExamTask.SelectedOptionId == option.Id;
+                <li class="exam-option @(option.IsCorrect ? "correct" : isChosen ? "wrong" : null)">
+                    <span class="exam-option-mark" aria-hidden="true">@(option.IsCorrect ? "✓" : isChosen ? "✗" : "")</span>
+                    <div>
+                        <div class="exam-rich">
+                            @FlashcardHtmlFormatter.ToPreview(option.Text)
+                            @if (isChosen)
+                            {
+                                <span class="exam-chosen">your answer</span>
+                            }
+                        </div>
+                        <div class="exam-rationale exam-rich">@FlashcardHtmlFormatter.ToPreview(option.Rationale)</div>
+                    </div>
+                </li>
+            }
+        </ul>
+        @if (ExamTask.SelectedOptionId is null)
+        {
+            <div class="flashcard-hint">Not answered.</div>
+        }
+        <div class="exam-solution">
+            <div class="deck-due-label">Explanation</div>
+            <div class="exam-rich">@FlashcardHtmlFormatter.ToPreview(ExamTask.Solution)</div>
+        </div>
+    }
+    else
+    {
+        <div class="exam-compare">
+            <div>
+                <div class="deck-due-label">Your answer</div>
+                @if (IsAnswered)
+                {
+                    <div class="exam-answer-text">@ExamTask.AnswerText</div>
+                }
+                else
+                {
+                    <div class="flashcard-hint">Not answered — 0 points.</div>
+                }
+            </div>
+            <div class="exam-solution">
+                <div class="deck-due-label">Model solution</div>
+                <div class="exam-rich">@FlashcardHtmlFormatter.ToPreview(ExamTask.Solution)</div>
+            </div>
+        </div>
+
+        <div class="exam-rubric">
+            <div class="deck-due-label">Rubric @(IsAnswered ? "— tick what your answer covers" : "")</div>
+            <ul>
+                @foreach (var criterion in ExamTask.Criteria)
+                {
+                    <li>
+                        <label class="toggle-check">
+                            <input type="checkbox" checked="@MetCriterionIds.Contains(criterion.Id)" disabled="@(!IsAnswered || IsBusy)"
+                                   @onchange="e => ToggleCriterion(criterion.Id, e.Value is true)" />
+                            <span>@criterion.Description</span>
+                            <span class="exam-criterion-points">@PracticeExamFormatter.FormatPoints(criterion.Points)</span>
+                        </label>
+                    </li>
+                }
+            </ul>
+            @if (IsAnswered)
+            {
+                <div class="exam-rubric-actions">
+                    <span>@TickedPoints of @PracticeExamFormatter.FormatPoints(ExamTask.Points)</span>
+                    <button class="btn btn-primary btn-sm" type="button" disabled="@(IsBusy || !HasChanges)" @onclick="SaveGradingAsync">
+                        @(ExamTask.AwardedPoints is null ? "Save grading" : "Update grading")
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="exam-task-foot">
+        @if (ExamTask.Source is { } source)
+        {
+            <span class="flashcard-hint">
+                Review:
+                @if (source.NoteId is { } noteId)
+                {
+                    <a href="@($"notes?note={noteId}")">note <i>@source.Title</i></a>
+                }
+                else if (source.DeckId is { } deckId)
+                {
+                    <a href="@($"flashcards/decks/{deckId}")">card <i>@FlashcardHtmlFormatter.ToPreview(source.Title)</i></a>
+                }
+            </span>
+        }
+        @if (ExamTask.IsExcluded)
+        {
+            <span class="flashcard-hint">Excluded from future attempts.</span>
+        }
+        else
+        {
+            <button class="btn btn-outline btn-sm" type="button" disabled="@IsBusy" @onclick="() => OnExclude.InvokeAsync()"
+                    title="This task is wrong or unclear">
+                Exclude task
+            </button>
+        }
+    </div>
+</section>
