@@ -1,4 +1,5 @@
 @page "/"
+@using StudyHub.UI.Analytics
 @using StudyHub.UI.Calendar
 
 <PageTitle>Dashboard</PageTitle>
@@ -89,17 +90,20 @@
 </div>
 
 <div class="grid stat-grid" style="margin-bottom:16px">
-    @foreach (var stat in Stats)
+    @if (StudyTime is null)
     {
-        <div class="card stat placeholder-card">
-            <div class="stat-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@((MarkupString)stat.IconPaths)</svg>
-            </div>
-            <div>
-                <div class="stat-val">@stat.Value</div>
-                <div class="stat-label">@stat.Label</div>
-            </div>
-        </div>
+        <p class="placeholder-hint">Loading study time…</p>
+    }
+    else
+    {
+        <StatTile Icon="StatIconKind.StudyTime" Value="@AnalyticsFormatter.FormatHours(StudyTime.ThisWeekMinutes)" Label="Study time this week"
+                  Delta="@AnalyticsFormatter.FormatHoursDifference(StudyTime.ThisWeekMinutes, StudyTime.LastWeekToDateMinutes)"
+                  DeltaClass="@AnalyticsFormatter.GetTrendClass(StudyTime.ThisWeekMinutes, StudyTime.LastWeekToDateMinutes)" />
+        <StatTile Icon="StatIconKind.Streak" Value="@StudyTime.CurrentStreakDays.ToString()" Label="Day learning streak"
+                  Delta="@($"Best: {StudyTime.LongestStreakDays}")" />
+        <StatTile Icon="StatIconKind.Flashcards" Value="@StudyTime.ReviewsThisWeek.ToString()" Label="Flashcards reviewed this week"
+                  Delta="@AnalyticsFormatter.FormatCountDifference(StudyTime.ReviewsThisWeek, StudyTime.ReviewsLastWeekToDate)"
+                  DeltaClass="@AnalyticsFormatter.GetTrendClass(StudyTime.ReviewsThisWeek, StudyTime.ReviewsLastWeekToDate)" />
     }
 </div>
 
@@ -129,37 +133,55 @@
         }
     </div>
 
-    <div class="card card-pad">
-        <div class="section-title">Upcoming Exams &amp; Deadlines</div>
-        @if (UpcomingEvents is null)
-        {
-            <p class="placeholder-hint">Loading exams and deadlines…</p>
-        }
-        else if (UpcomingEvents.Count == 0)
-        {
-            <div class="sessions-today-empty">
-                <span>No exams or deadlines ahead</span>
-                <a href="calendar">Add one in the calendar</a>
+    <div class="grid">
+        <div class="card card-pad">
+            <div class="section-title">Upcoming Exams &amp; Deadlines</div>
+            @if (UpcomingEvents is null)
+            {
+                <p class="placeholder-hint">Loading exams and deadlines…</p>
+            }
+            else if (UpcomingEvents.Count == 0)
+            {
+                <div class="sessions-today-empty">
+                    <span>No exams or deadlines ahead</span>
+                    <a href="calendar">Add one in the calendar</a>
+                </div>
+            }
+            else
+            {
+                <ul class="upcoming-list">
+                    @foreach (var item in UpcomingEvents)
+                    {
+                        <li class="upcoming-row" style="--session-color:@CalendarFormatter.GetColor(item.Event)">
+                            <span class="upcoming-icon" title="@CalendarFormatter.FormatKind(item.Event.Kind)">
+                                <CalendarEventIcon Kind="item.Event.Kind" Size="15" />
+                            </span>
+                            <div class="upcoming-main">
+                                <a class="upcoming-title" href="@CalendarFormatter.GetWeekUrl(item.Event.Date)"
+                                   aria-label="@CalendarFormatter.FormatEventLabel(item.Event)">@item.Event.Title</a>
+                                <div class="upcoming-sub">@CalendarFormatter.FormatUpcomingDetails(item.Event)</div>
+                            </div>
+                            <span class="upcoming-countdown @(item.DaysUntil <= SoonDays ? "is-soon" : null)">@CalendarFormatter.FormatCountdown(item.DaysUntil)</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card card-pad">
+            <div class="sessions-today-head">
+                <div class="section-title">This week</div>
+                <a class="btn btn-outline btn-sm" href="analytics">View analytics</a>
             </div>
-        }
-        else
-        {
-            <ul class="upcoming-list">
-                @foreach (var item in UpcomingEvents)
-                {
-                    <li class="upcoming-row" style="--session-color:@CalendarFormatter.GetColor(item.Event)">
-                        <span class="upcoming-icon" title="@CalendarFormatter.FormatKind(item.Event.Kind)">
-                            <CalendarEventIcon Kind="item.Event.Kind" Size="15" />
-                        </span>
-                        <div class="upcoming-main">
-                            <a class="upcoming-title" href="@CalendarFormatter.GetWeekUrl(item.Event.Date)"
-                               aria-label="@CalendarFormatter.FormatEventLabel(item.Event)">@item.Event.Title</a>
-                            <div class="upcoming-sub">@CalendarFormatter.FormatUpcomingDetails(item.Event)</div>
-                        </div>
-                        <span class="upcoming-countdown @(item.DaysUntil <= SoonDays ? "is-soon" : null)">@CalendarFormatter.FormatCountdown(item.DaysUntil)</span>
-                    </li>
-                }
-            </ul>
-        }
+            @if (StudyTime is null)
+            {
+                <p class="placeholder-hint">Loading study time…</p>
+            }
+            else
+            {
+                <div class="section-sub">Hours per day</div>
+                <StudyTimeBarChart Days="StudyTime.Days" />
+            }
+        </div>
     </div>
 </div>
