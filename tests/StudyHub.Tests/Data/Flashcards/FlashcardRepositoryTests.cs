@@ -224,4 +224,18 @@ public class FlashcardRepositoryTests
 
         Assert.Null(await repository.GetByIdAsync(card.Id));
     }
+
+    [Fact]
+    public async Task GetByIdsAsync_ReturnsOnlyTheRequestedCards()
+    {
+        await using var dbContext = CreateDbContext();
+        var wanted = Card(FlashcardState.New, Now);
+        var other = Card(FlashcardState.New, Now, OtherDeckId);
+        var repository = await SeedAsync(dbContext, wanted, Card(FlashcardState.New, Now), other);
+
+        var cards = await repository.GetByIdsAsync([wanted.Id, other.Id]);
+
+        Assert.Equal([wanted.Id, other.Id], cards.Select(c => c.Id).OrderBy(id => id == other.Id));
+        Assert.Empty(await repository.GetByIdsAsync([]));
+    }
 }

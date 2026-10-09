@@ -73,10 +73,7 @@ public sealed class PracticeExamAttemptProcessor(TimeProvider timeProvider)
         string? answerText
     )
     {
-        if (attempt.Attempt.SubmittedAt is not null)
-        {
-            throw new PracticeExamAttemptSubmittedException(attempt.Attempt.Id);
-        }
+        EnsureInProgress(attempt.Attempt);
 
         var now = Now();
         if (attempt.Attempt.DueAt is { } dueAt && now > dueAt + SaveGracePeriod)
@@ -167,10 +164,7 @@ public sealed class PracticeExamAttemptProcessor(TimeProvider timeProvider)
         IReadOnlyCollection<Guid> metCriterionIds
     )
     {
-        if (attempt.Attempt.SubmittedAt is null)
-        {
-            throw new PracticeExamAttemptNotSubmittedException(attempt.Attempt.Id);
-        }
+        EnsureSubmitted(attempt.Attempt);
 
         var answer = GetAnswer(attempt, taskId);
         var task = GetTask(exam, taskId);
@@ -213,6 +207,22 @@ public sealed class PracticeExamAttemptProcessor(TimeProvider timeProvider)
             },
             now
         );
+    }
+
+    public void EnsureInProgress(PracticeExamAttempt attempt)
+    {
+        if (attempt.SubmittedAt is not null)
+        {
+            throw new PracticeExamAttemptSubmittedException(attempt.Id);
+        }
+    }
+
+    public void EnsureSubmitted(PracticeExamAttempt attempt)
+    {
+        if (attempt.SubmittedAt is null)
+        {
+            throw new PracticeExamAttemptNotSubmittedException(attempt.Id);
+        }
     }
 
     public PracticeExamAttemptStatus GetStatus(PracticeExamAttempt attempt) =>

@@ -50,6 +50,14 @@ public interface IPracticeExamAttemptProcessor
         IReadOnlyCollection<Guid> metCriterionIds
     );
 
+    /// <summary>The exam sheet is only shown while the attempt is in progress.</summary>
+    /// <exception cref="PracticeExamAttemptSubmittedException">The attempt was submitted.</exception>
+    void EnsureInProgress(PracticeExamAttempt attempt);
+
+    /// <summary>Solutions, rationales and rubrics are only shown after submission.</summary>
+    /// <exception cref="PracticeExamAttemptNotSubmittedException">The attempt was not submitted yet.</exception>
+    void EnsureSubmitted(PracticeExamAttempt attempt);
+
     PracticeExamAttemptStatus GetStatus(PracticeExamAttempt attempt);
 
     /// <summary>Rounded percentage of the maximum points; <c>null</c> until the attempt is graded.</summary>

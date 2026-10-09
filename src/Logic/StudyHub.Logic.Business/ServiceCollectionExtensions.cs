@@ -23,6 +23,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStudySessionOrchestrator, StudySessionOrchestrator>();
         services.AddScoped<ICalendarOrchestrator, CalendarOrchestrator>();
         services.AddScoped<ICalendarEventOrchestrator, CalendarEventOrchestrator>();
+        services.AddScoped<
+            IPracticeExamGenerationOrchestrator,
+            PracticeExamGenerationOrchestrator
+        >();
+        services.AddScoped<IPracticeExamOrchestrator, PracticeExamOrchestrator>();
+        services.AddScoped<IPracticeExamAttemptOrchestrator, PracticeExamAttemptOrchestrator>();
+        services.AddScoped<IPracticeExamMaterialProvider, PracticeExamMaterialProvider>();
         services.AddScoped<ISemesterProgressCalculator, SemesterProgressCalculator>();
         services.AddScoped<IActiveSemesterProvider, ActiveSemesterProvider>();
         services.AddScoped<ISemesterLifecycle, SemesterLifecycle>();
