@@ -67,6 +67,15 @@ implemented versus planned.
 - Exams and deadlines in the calendar: an exam is all-day or has a start time and a duration, a
   deadline has an optional due time. They stand out in the month and week views and the day
   panel, and the Dashboard lists the next ones with a countdown.
+- Study time tracking and learning analytics: a study session of today or earlier is marked as
+  done with its actual duration (one click on the session card, or in the session dialog). Study
+  time is built from completed sessions, flashcard answers (the time between two answers, at most a
+  minute, as Anki's "time taken") and submitted practice exams, with overlapping time counted
+  once. The Analytics page shows this week's study time per day, the last 8 weeks, the learning
+  streak with a five-week heatmap, and per course of the active semester the flashcards in Anki's
+  buckets (new, learning, young, mature), the latest and best practice exam result and the study
+  time; the Dashboard shows study time, streak and flashcards reviewed this week (see
+  [Study time](#study-time)).
 
 No user-facing product features (authentication, course management, study planning, etc.) have
 been implemented yet.
@@ -75,7 +84,7 @@ been implemented yet.
 
 - ASP.NET Core Identity–based authentication and user accounts.
 - Semester and course management.
-- Study planning and study session tracking.
+- A live timer for study sessions and weekly study goals.
 - Document management and a document library.
 - Markdown-based notes.
 - Recurring study sessions in the calendar.
@@ -85,7 +94,6 @@ been implemented yet.
 - AI-assisted learning: summaries, explanations, and review questions generated from study
   material.
 - Flashcard generation with Anki export.
-- Learning analytics dashboard.
 - Chat-based, document-grounded learning assistant (RAG).
 - Handwritten note import and OCR.
 - Local LLM support and cloud synchronization.
@@ -290,6 +298,16 @@ for 09:00 stays at 09:00 across daylight-saving changes. The time zone only deci
 "today"; it is set in the `Calendar` section of `src/UI/StudyHub.Api/appsettings.json`
 (`TimeZone`: `Europe/Berlin`) and validated at Api startup like the flashcard time zone.
 
+### Study time
+
+Study time is counted per study day, which starts at the hour of the [flashcard study
+day](#flashcard-study-day) (04:00 Europe/Berlin by default): studying until 01:00 counts for the
+evening before. Weeks run from Monday to Sunday, and the statistics cover the last 365 study days.
+Only sessions marked as done count, with their actual duration; the start of a session is read in
+the [calendar time zone](#calendar-time-zone). Everything is computed per request from the stored
+sessions, flashcard answers and practice exam attempts, so deleting a card or a done session also
+removes its study time.
+
 ### Run the application (locally, without Docker)
 
 The UI calls the Api over HTTP, so both processes need to run at the same time (in separate
@@ -441,7 +459,8 @@ Planned development phases, roughly in order:
 9. **AI Features** — summaries, explanations, review questions and practice exams generated from
    study material.
 10. **Flashcards** — decks with spaced repetition, AI generation from notes, Anki import/export.
-11. **Analytics** — learning analytics and progress dashboards.
+11. **Analytics** — learning analytics and progress dashboards. *(study time, streak, course
+    progress and charts implemented)*
 
 This roadmap describes intent and ordering, not committed dates.
 

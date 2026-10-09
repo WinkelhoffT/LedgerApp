@@ -1,7 +1,7 @@
 # Feature Plan: Analytics – Dashboard Statistics (Epic 12)
 
-Status: Draft. Waiting for confirmation of the decisions in section 4 and the open questions in
-section 10 before implementation starts.
+Status: Implemented on `feature-analytics`. Section 12 lists how the open questions were decided
+and where the implementation differs from this plan.
 Classification (per `CLAUDE.md`): **Medium**. It adds a new page, a new business workflow
 (statistics over study sessions, flashcard reviews and practice exam attempts) and extends an
 existing domain object (`StudySession` gets completion tracking). Per the Medium workflow this
@@ -11,9 +11,9 @@ definitions in section 4 are listed for confirmation (GOV-003).
 
 Epic items:
 
-- [ ] Study time (Lernzeit)
-- [ ] Progress (Fortschritt)
-- [ ] Charts
+- [x] Study time (Lernzeit)
+- [x] Progress (Fortschritt)
+- [x] Charts
 
 Section 8 maps each item to its implementation steps.
 
@@ -468,3 +468,71 @@ Reported per `CLAUDE.md`, not resolved by guessing:
 - Date range selection and semester comparison.
 - `DashboardOrchestrator` "today" via the configured time zone (inconsistency 5).
 - One shared time zone setting for flashcards and calendar.
+
+## 12. Implementation Notes
+
+### Open questions (section 10)
+
+The plan was confirmed for implementation without separate answers, so every open question was
+decided as recommended:
+
+1. Only sessions explicitly marked as done count as study time.
+2. Flashcard time is estimated from the review log (gap to the previous answer, at most 60 s).
+3. Course progress shows separate indicators: flashcard buckets, practice exam results, study time.
+4. The day boundary is the study day start (04:00 Europe/Berlin).
+5. The fourth KPI tile is "Sessions done · this week".
+6. The Dashboard's "Tasks completed" tile became "Flashcards reviewed this week".
+
+### Differences from the plan
+
+- **Commit split:** the completion fields of `StudySession` and `StudySessionDto` went into the
+  Data commit (step 3) together with the migration, not into the Shared commit. The SQLite tests
+  run the real migrations, and EF Core refuses to migrate a model with pending changes, so the
+  fields and the migration have to arrive together. The Shared commit holds the new analytics
+  types and `CompleteStudySessionRequest`.
+- **Completing a session that is already done** changes its actual duration and keeps the instant
+  it was first marked as done (`CompletedAt`).
+- **Actual duration on update:** the same-day rule is checked for the actual duration on every
+  change, so moving a done session to a start where its actual duration would pass midnight is
+  rejected, like moving it to a future date.
+- **Calendar date vs. study day:** between 00:00 and 04:00 the calendar date is one day ahead of
+  the study day, so the orchestrators read sessions up to the calendar date after today. Answers
+  and attempts are read by the instants of the study days. The first answer of the 365-day window
+  counts 60 s even if an earlier answer lies just before the window (at most one minute once).
+- **"Sessions done this week"** counts the sessions dated from Monday to today (study day); a
+  session planned for later today is already part of "planned".
+- **Additional DTO fields and constants:** `StudyTimeStatisticsDto.HasStudyTime` (drives the empty
+  state), `StudyTimeStatisticsDto.WindowDays`/`WeekCount`/`HeatmapWeekCount`,
+  `StudyHeatmapDayDto.MaxLevel` and `CourseProgressOverviewDto.Empty`.
+- **Additional types:** `CourseExamResults` (Domain.Contract, result of
+  `ICourseProgressProcessor.GetExamResults`); `GetFlashcardProgress` returns the Shared
+  `FlashcardProgressDto` directly, as `IStudyQueueProvider.GetCounts` does. `StudyInterval`
+  (internal record of `StudyTimeProcessor`). In the UI: `DoneIcon` (check mark of a done session),
+  `StatIcon` with `StatIconKind` (replaces the Dashboard's inline icon markup), and `ChartPoint`.
+- **Rounding:** whole minutes per day and per course and day (`MidpointRounding.AwayFromZero`);
+  course totals are sums of the daily minutes. Percentages are rounded the same way, so 199 of
+  200 learned cards show as 100 %.
+- **Session dialog:** "Done" and "Actual duration" are also offered for a new session dated today
+  or earlier; the session is created and then completed, and deleted again if completing fails,
+  so a retry does not add it twice. Unticking "Done" undoes it before the update, so the session
+  can then move to the future. A done session keeps the controls when its date moves to the
+  future, and the Api rejects the change until "Done" is unticked. The delete button of a done
+  session asks "Delete with its study time?".
+- **Session card:** "Mark as done" is shown only where the page handles the result (day panel and
+  Dashboard), and the card holds the main content and the button side by side, since a button
+  cannot contain another button.
+- **Analytics empty state:** without any study time the page shows the empty state and the course
+  progress card (flashcards and exam results can exist without study time), not the charts.
+- **Responsive layout:** the four KPI tiles use two columns below 1100 px and one below 640 px, as
+  in the mockup; the chart rows use one column below the `lg` breakpoint.
+- **Tests:** the analytics repository tests run against SQLite in memory with the real migrations
+  (as `PracticeExamRepositoryTests` do) instead of the InMemory provider, so the joins, the
+  grouping and the new check constraints are checked as in production. The Api tests use the
+  real clock and complete a session dated yesterday in the calendar time zone, which lies in the
+  statistics at any time of day.
+
+### Found while implementing
+
+- The Blazor error banner (`#blazor-error-ui`) is visible on every page, because no stylesheet
+  hides it (`lib/bootstrap/dist/css/bootstrap.min.css` returns 404, see `calendar-plan.md`,
+  section 12, and `app.css` has no rule for it). Not changed here (GOV-005).
