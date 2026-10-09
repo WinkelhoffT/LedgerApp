@@ -16,7 +16,7 @@
         }
         @foreach (var item in Sessions)
         {
-            <StudySessionCard Session="item.Session" Today="Today" OnSelected="OnSessionSelected" />
+            <StudySessionCard Session="item.Session" Today="Today" OnSelected="OnSessionSelected" OnCompleted="OnSessionCompleted" />
         }
     }
 

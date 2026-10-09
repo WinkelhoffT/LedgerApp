@@ -124,7 +124,7 @@
         {
             @foreach (var item in SessionsToday.Sessions)
             {
-                <StudySessionCard Session="item.Session" />
+                <StudySessionCard Session="item.Session" Today="SessionsToday.Date" OnCompleted="HandleSessionCompletedAsync" />
             }
         }
     </div>

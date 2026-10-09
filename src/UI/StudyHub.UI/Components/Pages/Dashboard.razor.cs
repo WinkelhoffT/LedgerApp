@@ -36,6 +36,9 @@ public partial class Dashboard
         UpcomingEvents = await DashboardAccessor.GetUpcomingEventsAsync();
     }
 
+    private async Task HandleSessionCompletedAsync() =>
+        SessionsToday = await DashboardAccessor.GetSessionsTodayAsync();
+
     private static string FormatPercent(double? percentComplete) => $"{percentComplete:0}%";
 
     private readonly record struct DashboardStat(string IconPaths, string Value, string Label);

@@ -19,16 +19,36 @@
         </text>;
 }
 
-@if (OnSelected.HasDelegate)
-{
-    <button class="session-card session-card-button @PastClass" type="button" style="--session-color:@CalendarFormatter.GetColor(Session)"
-            aria-label="@($"Edit {CalendarFormatter.FormatSessionLabel(Session)}")" @onclick="() => OnSelected.InvokeAsync(Session)">
-        @content
-    </button>
-}
-else
-{
-    <div class="session-card @PastClass" style="--session-color:@CalendarFormatter.GetColor(Session)">
-        @content
-    </div>
-}
+<div class="session-card @PastClass @(Session.IsCompleted ? "is-done" : null)" style="--session-color:@CalendarFormatter.GetColor(Session)">
+    @if (OnSelected.HasDelegate)
+    {
+        <button class="session-card-main session-card-button" type="button"
+                aria-label="@($"Edit {CalendarFormatter.FormatSessionLabel(Session)}")" @onclick="() => OnSelected.InvokeAsync(Session)">
+            @content
+        </button>
+    }
+    else
+    {
+        <div class="session-card-main">
+            @content
+        </div>
+    }
+
+    @if (Session.IsCompleted)
+    {
+        <span class="sc-done"><DoneIcon Size="13" /> @CalendarFormatter.FormatDone(Session)</span>
+    }
+    else if (CanComplete)
+    {
+        <button class="btn btn-outline btn-sm sc-complete" type="button" disabled="@IsCompleting"
+                aria-label="@($"Mark {Session.Title} as done")" @onclick="CompleteAsync">
+            <DoneIcon Size="13" />
+            Mark as done
+        </button>
+    }
+
+    @if (ErrorMessage is not null)
+    {
+        <span class="sc-error" role="alert">@ErrorMessage</span>
+    }
+</div>

@@ -70,6 +70,23 @@
                             <input id="session-location" class="form-control" maxlength="@StudySession.LocationMaxLength" @bind="Location" />
                         </div>
                     </div>
+
+                    @if (ShowsCompletion)
+                    {
+                        <div class="form-row session-completion">
+                            <div class="form-group">
+                                <label class="toggle-check session-done-check">
+                                    <input type="checkbox" @bind="IsDone" @bind:after="HandleDoneChanged" />
+                                    Done
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="session-actual-duration">Actual duration (min)</label>
+                                <input id="session-actual-duration" class="form-control" type="number" step="5" disabled="@(!IsDone)"
+                                       min="@StudySession.MinDurationMinutes" max="@StudySession.MaxDurationMinutes" @bind="ActualDurationMinutes" />
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 <div class="modal-footer">
@@ -78,7 +95,10 @@
                         <div class="modal-footer-start">
                             @if (IsConfirmingDelete)
                             {
-                                <button class="btn btn-danger-outline" type="button" disabled="@IsSaving" @onclick="DeleteAsync">Delete?</button>
+                                <button class="btn btn-danger-outline" type="button" disabled="@IsSaving" @onclick="DeleteAsync"
+                                        title="@(EditingSession.IsCompleted ? "Its study time is removed as well." : null)">
+                                    @(EditingSession.IsCompleted ? "Delete with its study time?" : "Delete?")
+                                </button>
                                 <button class="btn btn-secondary" type="button" disabled="@IsSaving" @onclick="() => IsConfirmingDelete = false">Keep</button>
                             }
                             else

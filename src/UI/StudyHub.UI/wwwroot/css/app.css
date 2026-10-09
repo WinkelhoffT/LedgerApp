@@ -711,7 +711,9 @@ label.exam-option { cursor: pointer; }
   background: color-mix(in srgb, var(--session-color) 14%, var(--surface));
   border-left: 2px solid var(--session-color);
 }
-.cal-ev.is-past, .session-card.is-past { opacity: .6; }
+.cal-ev.is-past, .session-card.is-past .session-card-main { opacity: .6; }
+/* Icons are blocks by default; the check mark of a done session sits inline with its text. */
+.done-icon { display: inline-block; flex-shrink: 0; vertical-align: -1px; margin-right: 2px; }
 
 /* Exams and deadlines: a stronger tint, a thicker edge and the kind's icon set them apart from sessions. */
 /* Icons are blocks by default (see the svg rule above); the kind icon sits inline with its text. */
@@ -737,11 +739,17 @@ label.exam-option { cursor: pointer; }
 .cal-side-actions .btn { width: 100%; }
 
 .session-card {
-  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; margin-bottom: 10px; padding: 12px 13px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; margin-bottom: 10px; padding: 12px 13px;
   border-radius: var(--radius-sm); border: 1px solid var(--border); border-left: 3px solid var(--session-color);
   background: var(--surface); color: var(--text); transition: box-shadow .15s var(--motion-standard);
 }
-.session-card-button:hover { box-shadow: var(--shadow); }
+.session-card-main { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; }
+.session-card:has(> .session-card-button:hover) { box-shadow: var(--shadow); }
+.sc-done { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--success); }
+.sc-complete { gap: 6px; }
+.sc-error { font-size: 12px; color: var(--danger); }
+.session-completion { align-items: flex-end; }
+.session-done-check { min-height: 38px; }
 .sc-time { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--text-2); }
 .sc-title { font-size: 13.5px; font-weight: 600; word-break: break-word; }
 .sc-sub { font-size: 12px; color: var(--text-3); }
