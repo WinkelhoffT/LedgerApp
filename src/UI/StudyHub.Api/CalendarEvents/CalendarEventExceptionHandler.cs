@@ -9,14 +9,26 @@ namespace StudyHub.Api.CalendarEvents;
 // covers event-specific exceptions.
 public sealed class CalendarEventExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         var problemDetails = exception switch
         {
             CalendarEventValidationException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, CalendarEventErrorCodes.CalendarEventValidationFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                CalendarEventErrorCodes.CalendarEventValidationFailed
+            ),
             CalendarEventNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, CalendarEventErrorCodes.CalendarEventNotFound, "calendarEventId", ex.CalendarEventId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                CalendarEventErrorCodes.CalendarEventNotFound,
+                "calendarEventId",
+                ex.CalendarEventId
+            ),
             _ => null,
         };
 
@@ -30,13 +42,15 @@ public sealed class CalendarEventExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static ProblemDetails Build(int status, string detail, string errorCode, string? extraKey = null, object? extraValue = null)
+    private static ProblemDetails Build(
+        int status,
+        string detail,
+        string errorCode,
+        string? extraKey = null,
+        object? extraValue = null
+    )
     {
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Detail = detail,
-        };
+        var problemDetails = new ProblemDetails { Status = status, Detail = detail };
 
         problemDetails.Extensions["errorCode"] = errorCode;
 

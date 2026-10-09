@@ -29,6 +29,7 @@ public sealed class DashboardController(
         calendarOrchestrator.GetTodayAsync(cancellationToken);
 
     [HttpGet("upcoming-events")]
-    public Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingEventsAsync(CancellationToken cancellationToken) =>
-        eventOrchestrator.GetUpcomingAsync(cancellationToken);
+    public Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingEventsAsync(
+        CancellationToken cancellationToken
+    ) => eventOrchestrator.GetUpcomingAsync(cancellationToken);
 }

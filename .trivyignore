@@ -1,0 +1,7 @@
+# Findings accepted for the Trivy scans in .github/workflows/ci.yml. Every entry needs a reason.
+
+# DS-0002 (image runs as root): docker-compose.yml bind-mounts ./data into /app/data for the
+# SQLite database, and a non-root user ($APP_UID) cannot write to that directory when Docker
+# creates it as root on a Linux host. Remove this entry once the Dockerfile sets
+# `USER $APP_UID` and the data directory ownership is handled.
+DS-0002

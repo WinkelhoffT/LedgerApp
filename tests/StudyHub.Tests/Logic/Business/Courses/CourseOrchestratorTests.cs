@@ -21,19 +21,33 @@ public class CourseOrchestratorTests
 
     public CourseOrchestratorTests()
     {
-        _sut = new CourseOrchestrator(_courseRepository.Object, _semesterRepository.Object, CourseLifecycle);
+        _sut = new CourseOrchestrator(
+            _courseRepository.Object,
+            _semesterRepository.Object,
+            CourseLifecycle
+        );
 
-        _semesterRepository.Setup(r => r.GetByIdAsync(SemesterId, default))
-            .ReturnsAsync(SemesterLifecycle.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(SemesterId, default))
+            .ReturnsAsync(
+                SemesterLifecycle.Create(
+                    "Winter 2025/26",
+                    new DateOnly(2025, 10, 1),
+                    new DateOnly(2026, 3, 31)
+                )
+            );
     }
 
     [Fact]
     public async Task CreateAsync_WithUniqueName_AddsCourseAndReturnsDto()
     {
-        _courseRepository.Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
             .ReturnsAsync(false);
 
-        var result = await _sut.CreateAsync(new CreateCourseRequest("Algorithms", "Description", "#2563eb", SemesterId));
+        var result = await _sut.CreateAsync(
+            new CreateCourseRequest("Algorithms", "Description", "#2563eb", SemesterId)
+        );
 
         Assert.Equal("Algorithms", result.Name);
         Assert.Equal(SemesterId, result.SemesterId);
@@ -44,11 +58,13 @@ public class CourseOrchestratorTests
     [Fact]
     public async Task CreateAsync_WithDuplicateName_ThrowsDuplicateCourseNameException()
     {
-        _courseRepository.Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
             .ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<DuplicateCourseNameException>(
-            () => _sut.CreateAsync(new CreateCourseRequest("Algorithms", null, "#2563eb", SemesterId)));
+        await Assert.ThrowsAsync<DuplicateCourseNameException>(() =>
+            _sut.CreateAsync(new CreateCourseRequest("Algorithms", null, "#2563eb", SemesterId))
+        );
 
         _courseRepository.Verify(r => r.AddAsync(It.IsAny<Course>(), default), Times.Never);
     }
@@ -57,13 +73,18 @@ public class CourseOrchestratorTests
     public async Task CreateAsync_WhenSemesterNotFound_ThrowsSemesterNotFoundException()
     {
         var unknownSemesterId = Guid.NewGuid();
-        _courseRepository.Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
             .ReturnsAsync(false);
-        _semesterRepository.Setup(r => r.GetByIdAsync(unknownSemesterId, default))
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(unknownSemesterId, default))
             .ReturnsAsync((Semester?)null);
 
-        await Assert.ThrowsAsync<SemesterNotFoundException>(
-            () => _sut.CreateAsync(new CreateCourseRequest("Algorithms", null, "#2563eb", unknownSemesterId)));
+        await Assert.ThrowsAsync<SemesterNotFoundException>(() =>
+            _sut.CreateAsync(
+                new CreateCourseRequest("Algorithms", null, "#2563eb", unknownSemesterId)
+            )
+        );
 
         _courseRepository.Verify(r => r.AddAsync(It.IsAny<Course>(), default), Times.Never);
     }
@@ -71,16 +92,25 @@ public class CourseOrchestratorTests
     [Fact]
     public async Task CreateAsync_WhenSemesterArchived_ThrowsSemesterArchivedException()
     {
-        var archivedSemester = SemesterLifecycle.Create("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31));
+        var archivedSemester = SemesterLifecycle.Create(
+            "Winter 2025/26",
+            new DateOnly(2025, 10, 1),
+            new DateOnly(2026, 3, 31)
+        );
         archivedSemester = SemesterLifecycle.Archive(archivedSemester);
 
-        _courseRepository.Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("Algorithms", null, default))
             .ReturnsAsync(false);
-        _semesterRepository.Setup(r => r.GetByIdAsync(archivedSemester.Id, default))
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(archivedSemester.Id, default))
             .ReturnsAsync(archivedSemester);
 
-        await Assert.ThrowsAsync<SemesterArchivedException>(
-            () => _sut.CreateAsync(new CreateCourseRequest("Algorithms", null, "#2563eb", archivedSemester.Id)));
+        await Assert.ThrowsAsync<SemesterArchivedException>(() =>
+            _sut.CreateAsync(
+                new CreateCourseRequest("Algorithms", null, "#2563eb", archivedSemester.Id)
+            )
+        );
 
         _courseRepository.Verify(r => r.AddAsync(It.IsAny<Course>(), default), Times.Never);
     }
@@ -91,8 +121,9 @@ public class CourseOrchestratorTests
         var id = Guid.NewGuid();
         _courseRepository.Setup(r => r.GetByIdAsync(id, default)).ReturnsAsync((Course?)null);
 
-        await Assert.ThrowsAsync<CourseNotFoundException>(
-            () => _sut.UpdateAsync(new UpdateCourseRequest(id, "New Name", null, "#2563eb", SemesterId)));
+        await Assert.ThrowsAsync<CourseNotFoundException>(() =>
+            _sut.UpdateAsync(new UpdateCourseRequest(id, "New Name", null, "#2563eb", SemesterId))
+        );
     }
 
     [Fact]
@@ -102,25 +133,47 @@ public class CourseOrchestratorTests
         course = CourseLifecycle.Archive(course);
 
         _courseRepository.Setup(r => r.GetByIdAsync(course.Id, default)).ReturnsAsync(course);
-        _courseRepository.Setup(r => r.ExistsByNameAsync("New Name", course.Id, default)).ReturnsAsync(false);
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("New Name", course.Id, default))
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<CourseArchivedException>(
-            () => _sut.UpdateAsync(new UpdateCourseRequest(course.Id, "New Name", null, "#2563eb", SemesterId)));
+        await Assert.ThrowsAsync<CourseArchivedException>(() =>
+            _sut.UpdateAsync(
+                new UpdateCourseRequest(course.Id, "New Name", null, "#2563eb", SemesterId)
+            )
+        );
     }
 
     [Fact]
     public async Task UpdateAsync_WhenSemesterArchived_ThrowsSemesterArchivedException()
     {
         var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
-        var archivedSemester = SemesterLifecycle.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30));
+        var archivedSemester = SemesterLifecycle.Create(
+            "Summer 2026",
+            new DateOnly(2026, 4, 1),
+            new DateOnly(2026, 9, 30)
+        );
         archivedSemester = SemesterLifecycle.Archive(archivedSemester);
 
         _courseRepository.Setup(r => r.GetByIdAsync(course.Id, default)).ReturnsAsync(course);
-        _courseRepository.Setup(r => r.ExistsByNameAsync("Algorithms", course.Id, default)).ReturnsAsync(false);
-        _semesterRepository.Setup(r => r.GetByIdAsync(archivedSemester.Id, default)).ReturnsAsync(archivedSemester);
+        _courseRepository
+            .Setup(r => r.ExistsByNameAsync("Algorithms", course.Id, default))
+            .ReturnsAsync(false);
+        _semesterRepository
+            .Setup(r => r.GetByIdAsync(archivedSemester.Id, default))
+            .ReturnsAsync(archivedSemester);
 
-        await Assert.ThrowsAsync<SemesterArchivedException>(
-            () => _sut.UpdateAsync(new UpdateCourseRequest(course.Id, "Algorithms", null, "#2563eb", archivedSemester.Id)));
+        await Assert.ThrowsAsync<SemesterArchivedException>(() =>
+            _sut.UpdateAsync(
+                new UpdateCourseRequest(
+                    course.Id,
+                    "Algorithms",
+                    null,
+                    "#2563eb",
+                    archivedSemester.Id
+                )
+            )
+        );
     }
 
     [Fact]

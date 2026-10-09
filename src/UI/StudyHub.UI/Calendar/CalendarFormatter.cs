@@ -16,7 +16,10 @@ public static class CalendarFormatter
     /// <summary><c>Week 41 · 5 – 11 Oct 2026</c>, <c>Week 44 · 26 Oct – 1 Nov 2026</c> or <c>Week 53 · 28 Dec 2026 – 3 Jan 2027</c>.</summary>
     public static string FormatWeek(int isoWeek, DateOnly start, DateOnly end)
     {
-        var startFormat = start.Year != end.Year ? "d MMM yyyy" : start.Month != end.Month ? "d MMM" : "%d";
+        var startFormat =
+            start.Year != end.Year ? "d MMM yyyy"
+            : start.Month != end.Month ? "d MMM"
+            : "%d";
         return $"Week {isoWeek} · {start.ToString(startFormat, Culture)} – {end.ToString("d MMM yyyy", Culture)}";
     }
 
@@ -44,30 +47,38 @@ public static class CalendarFormatter
 
     /// <summary>Screen-reader label of a chip or block: <c>Graph review, 09:00 – 10:30, Algorithms</c>.</summary>
     public static string FormatSessionLabel(StudySessionDto session) =>
-        string.Join(", ", new[] { session.Title, FormatTimeRange(session), session.OwnerName }.Where(part => !string.IsNullOrEmpty(part)));
+        string.Join(
+            ", ",
+            new[] { session.Title, FormatTimeRange(session), session.OwnerName }.Where(part =>
+                !string.IsNullOrEmpty(part)
+            )
+        );
 
     /// <summary>The CSS color of a session: its course color, otherwise the accent color.</summary>
     public static string GetColor(StudySessionDto session) => session.Color ?? "var(--accent)";
 
     /// <summary>The CSS color of an exam or deadline: its course color, otherwise the accent color.</summary>
-    public static string GetColor(CalendarEventDto calendarEvent) => calendarEvent.Color ?? "var(--accent)";
+    public static string GetColor(CalendarEventDto calendarEvent) =>
+        calendarEvent.Color ?? "var(--accent)";
 
     /// <summary><c>Exam</c> or <c>Deadline</c>.</summary>
-    public static string FormatKind(CalendarEventKind kind) => kind switch
-    {
-        CalendarEventKind.Exam => "Exam",
-        CalendarEventKind.Deadline => "Deadline",
-        _ => kind.ToString(),
-    };
+    public static string FormatKind(CalendarEventKind kind) =>
+        kind switch
+        {
+            CalendarEventKind.Exam => "Exam",
+            CalendarEventKind.Deadline => "Deadline",
+            _ => kind.ToString(),
+        };
 
     /// <summary><c>10:00 – 12:00 · 120 min</c> for a timed exam, <c>Due 23:59</c> for a deadline with a due time, otherwise <c>All day</c>.</summary>
-    public static string FormatEventTime(CalendarEventDto calendarEvent) => calendarEvent switch
-    {
-        { StartTime: { } start, EndTime: { } end, DurationMinutes: { } duration } =>
-            $"{FormatTime(start)} – {FormatTime(end)} · {FormatDuration(duration)}",
-        { Kind: CalendarEventKind.Deadline, StartTime: { } due } => $"Due {FormatTime(due)}",
-        _ => "All day",
-    };
+    public static string FormatEventTime(CalendarEventDto calendarEvent) =>
+        calendarEvent switch
+        {
+            { StartTime: { } start, EndTime: { } end, DurationMinutes: { } duration } =>
+                $"{FormatTime(start)} – {FormatTime(end)} · {FormatDuration(duration)}",
+            { Kind: CalendarEventKind.Deadline, StartTime: { } due } => $"Due {FormatTime(due)}",
+            _ => "All day",
+        };
 
     /// <summary>The time in front of a chip: the start or due time, nothing for all-day events.</summary>
     public static string? FormatEventChipTime(CalendarEventDto calendarEvent) =>
@@ -75,20 +86,24 @@ public static class CalendarFormatter
 
     /// <summary>Screen-reader label: <c>Exam: Algorithms exam, 10:00 – 12:00 · 120 min, Algorithms</c>.</summary>
     public static string FormatEventLabel(CalendarEventDto calendarEvent) =>
-        string.Join(", ", new[]
-        {
-            $"{FormatKind(calendarEvent.Kind)}: {calendarEvent.Title}",
-            FormatEventTime(calendarEvent),
-            calendarEvent.OwnerName,
-        }.Where(part => !string.IsNullOrEmpty(part)));
+        string.Join(
+            ", ",
+            new[]
+            {
+                $"{FormatKind(calendarEvent.Kind)}: {calendarEvent.Title}",
+                FormatEventTime(calendarEvent),
+                calendarEvent.OwnerName,
+            }.Where(part => !string.IsNullOrEmpty(part))
+        );
 
     /// <summary><c>Today</c>, <c>Tomorrow</c> or <c>in 12 days</c>.</summary>
-    public static string FormatCountdown(int daysUntil) => daysUntil switch
-    {
-        0 => "Today",
-        1 => "Tomorrow",
-        _ => $"in {daysUntil} days",
-    };
+    public static string FormatCountdown(int daysUntil) =>
+        daysUntil switch
+        {
+            0 => "Today",
+            1 => "Tomorrow",
+            _ => $"in {daysUntil} days",
+        };
 
     /// <summary><c>Tue 20 Oct</c>.</summary>
     public static string FormatShortDate(DateOnly date) => date.ToString("ddd d MMM", Culture);
@@ -98,14 +113,21 @@ public static class CalendarFormatter
     {
         var time = calendarEvent switch
         {
-            { StartTime: { } start, EndTime: { } end } => $"{FormatTime(start)} – {FormatTime(end)}",
+            { StartTime: { } start, EndTime: { } end } =>
+                $"{FormatTime(start)} – {FormatTime(end)}",
             { StartTime: { } due } => $"Due {FormatTime(due)}",
             _ => null,
         };
 
-        return string.Join(" · ", new[] { FormatShortDate(calendarEvent.Date), time, calendarEvent.OwnerName }.Where(part => !string.IsNullOrEmpty(part)));
+        return string.Join(
+            " · ",
+            new[] { FormatShortDate(calendarEvent.Date), time, calendarEvent.OwnerName }.Where(
+                part => !string.IsNullOrEmpty(part)
+            )
+        );
     }
 
     /// <summary>The calendar's week view with <paramref name="date"/> selected.</summary>
-    public static string GetWeekUrl(DateOnly date) => $"calendar?view=week&date={date.ToString("yyyy-MM-dd", Culture)}";
+    public static string GetWeekUrl(DateOnly date) =>
+        $"calendar?view=week&date={date.ToString("yyyy-MM-dd", Culture)}";
 }

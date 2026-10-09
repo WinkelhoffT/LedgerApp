@@ -48,26 +48,44 @@ public sealed class DashboardOrchestrator(
         );
     }
 
-    public async Task<FlashcardsDueDto> GetFlashcardsDueAsync(CancellationToken cancellationToken = default)
+    public async Task<FlashcardsDueDto> GetFlashcardsDueAsync(
+        CancellationToken cancellationToken = default
+    )
     {
-        var decks = (await deckRepository.GetAllAsync(cancellationToken)).Where(d => !d.IsArchived).ToList();
+        var decks = (await deckRepository.GetAllAsync(cancellationToken))
+            .Where(d => !d.IsArchived)
+            .ToList();
         var studyDay = studyDayProvider.GetCurrent();
-        var cardCounts = (await flashcardRepository.GetCardCountsAsync(studyDay.NextStart, cancellationToken: cancellationToken))
-            .ToDictionary(c => c.DeckId);
-        var reviewCounts = (await flashcardRepository.GetReviewCountsAsync(studyDay.Start, cancellationToken: cancellationToken))
-            .ToDictionary(c => c.DeckId);
+        var cardCounts = (
+            await flashcardRepository.GetCardCountsAsync(
+                studyDay.NextStart,
+                cancellationToken: cancellationToken
+            )
+        ).ToDictionary(c => c.DeckId);
+        var reviewCounts = (
+            await flashcardRepository.GetReviewCountsAsync(
+                studyDay.Start,
+                cancellationToken: cancellationToken
+            )
+        ).ToDictionary(c => c.DeckId);
 
         var deckCounts = decks
             .Select(deck => new FlashcardDeckDueDto(
                 deck.Id,
                 deck.Name,
-                studyQueueProvider.GetCounts(deck, cardCounts.GetValueOrDefault(deck.Id), reviewCounts.GetValueOrDefault(deck.Id))))
+                studyQueueProvider.GetCounts(
+                    deck,
+                    cardCounts.GetValueOrDefault(deck.Id),
+                    reviewCounts.GetValueOrDefault(deck.Id)
+                )
+            ))
             .ToList();
 
         var total = new FlashcardStudyCountsDto(
             deckCounts.Sum(d => d.Counts.New),
             deckCounts.Sum(d => d.Counts.Learning),
-            deckCounts.Sum(d => d.Counts.Review));
+            deckCounts.Sum(d => d.Counts.Review)
+        );
 
         var topDecks = deckCounts
             .Where(d => d.Counts.Total > 0)

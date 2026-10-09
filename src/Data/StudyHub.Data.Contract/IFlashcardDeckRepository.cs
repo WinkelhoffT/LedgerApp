@@ -8,7 +8,11 @@ public interface IFlashcardDeckRepository
 
     Task<FlashcardDeck?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsByNameAsync(string name, Guid? excludingId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByNameAsync(
+        string name,
+        Guid? excludingId,
+        CancellationToken cancellationToken = default
+    );
 
     Task AddAsync(FlashcardDeck deck, CancellationToken cancellationToken = default);
 

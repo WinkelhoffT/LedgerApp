@@ -10,7 +10,11 @@ public class CalendarLaneProcessorTests
 
     private CalendarTimeSlot Slot(string name, int hour, int minute, int durationMinutes)
     {
-        var slot = new CalendarTimeSlot(Guid.NewGuid(), new TimeOnly(hour, minute), durationMinutes);
+        var slot = new CalendarTimeSlot(
+            Guid.NewGuid(),
+            new TimeOnly(hour, minute),
+            durationMinutes
+        );
         _names[slot.Id] = name;
         return slot;
     }
@@ -71,7 +75,8 @@ public class CalendarLaneProcessorTests
             Slot("A", 9, 0, 120),
             Slot("B", 9, 30, 30),
             Slot("C", 10, 0, 30),
-            Slot("D", 14, 0, 60));
+            Slot("D", 14, 0, 60)
+        );
 
         Assert.Equal([("A", 0, 2), ("B", 1, 2), ("C", 1, 2), ("D", 0, 1)], result);
     }

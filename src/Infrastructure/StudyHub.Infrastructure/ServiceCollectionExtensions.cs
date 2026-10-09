@@ -7,5 +7,6 @@ namespace StudyHub.Infrastructure;
 // email, AI provider adapters, etc.) that don't exist yet.
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddStudyHubInfrastructure(this IServiceCollection services) => services;
+    public static IServiceCollection AddStudyHubInfrastructure(this IServiceCollection services) =>
+        services;
 }

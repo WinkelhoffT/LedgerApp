@@ -32,7 +32,8 @@ public partial class Flashcards
 
     private IReadOnlyList<FlashcardDeckDto>? Decks { get; set; }
 
-    private IReadOnlyList<FlashcardDeckDto> ActiveDecks => Decks?.Where(d => !d.IsArchived).ToList() ?? [];
+    private IReadOnlyList<FlashcardDeckDto> ActiveDecks =>
+        Decks?.Where(d => !d.IsArchived).ToList() ?? [];
 
     private Dictionary<Guid, string> CourseNamesById { get; set; } = [];
 
@@ -64,12 +65,19 @@ public partial class Flashcards
         Decks = await DeckAccessor.GetAllAsync(ShowArchived);
     }
 
-    private string? GetOwnerName(FlashcardDeckDto deck) => deck switch
-    {
-        { CourseId: { } courseId } => CourseNamesById.GetValueOrDefault(courseId, "Unknown course"),
-        { SemesterId: { } semesterId } => SemesterNamesById.GetValueOrDefault(semesterId, "Unknown semester"),
-        _ => null,
-    };
+    private string? GetOwnerName(FlashcardDeckDto deck) =>
+        deck switch
+        {
+            { CourseId: { } courseId } => CourseNamesById.GetValueOrDefault(
+                courseId,
+                "Unknown course"
+            ),
+            { SemesterId: { } semesterId } => SemesterNamesById.GetValueOrDefault(
+                semesterId,
+                "Unknown semester"
+            ),
+            _ => null,
+        };
 
     private void HandleDeckCreated(FlashcardDeckDto deck) =>
         NavigationManager.NavigateTo($"flashcards/decks/{deck.Id}");
@@ -82,7 +90,11 @@ public partial class Flashcards
         try
         {
             var export = await TransferAccessor.ExportAsync(deck.Id);
-            await FileDownloadAccessor.DownloadAsync(export.FileName, export.ContentType, export.Content);
+            await FileDownloadAccessor.DownloadAsync(
+                export.FileName,
+                export.ContentType,
+                export.Content
+            );
         }
         catch (FlashcardDeckNotFoundException ex)
         {

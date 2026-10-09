@@ -17,7 +17,8 @@ public interface IStudySessionLifecycle
         DateOnly date,
         TimeOnly startTime,
         int durationMinutes,
-        string? location);
+        string? location
+    );
 
     /// <exception cref="StudySessionValidationException">Title, owner, duration or location breaks a session rule.</exception>
     StudySession Update(
@@ -28,5 +29,6 @@ public interface IStudySessionLifecycle
         DateOnly date,
         TimeOnly startTime,
         int durationMinutes,
-        string? location);
+        string? location
+    );
 }

@@ -78,8 +78,12 @@ public partial class CourseFormDialog
         try
         {
             var saved = EditingCourse is null
-                ? await CourseAccessor.CreateAsync(new CreateCourseRequest(Name, Description, Color, SemesterId))
-                : await CourseAccessor.UpdateAsync(new UpdateCourseRequest(EditingCourse.Id, Name, Description, Color, SemesterId));
+                ? await CourseAccessor.CreateAsync(
+                    new CreateCourseRequest(Name, Description, Color, SemesterId)
+                )
+                : await CourseAccessor.UpdateAsync(
+                    new UpdateCourseRequest(EditingCourse.Id, Name, Description, Color, SemesterId)
+                );
 
             await OnSaved.InvokeAsync(saved);
             await Close();

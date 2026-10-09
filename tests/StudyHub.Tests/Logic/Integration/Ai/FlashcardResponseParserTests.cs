@@ -27,7 +27,9 @@ public class FlashcardResponseParserTests
     [Fact]
     public void Parse_WithRefusal_ThrowsRefused()
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() => FlashcardResponseParser.Parse("refusal", null));
+        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+            FlashcardResponseParser.Parse("refusal", null)
+        );
 
         Assert.Equal(FlashcardGenerationFailureReason.Refused, ex.Reason);
     }
@@ -35,7 +37,9 @@ public class FlashcardResponseParserTests
     [Fact]
     public void Parse_WithMaxTokens_ThrowsTruncated()
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() => FlashcardResponseParser.Parse("max_tokens", "{\"cards\":[{\"fr"));
+        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+            FlashcardResponseParser.Parse("max_tokens", "{\"cards\":[{\"fr")
+        );
 
         Assert.Equal(FlashcardGenerationFailureReason.Truncated, ex.Reason);
     }
@@ -47,7 +51,9 @@ public class FlashcardResponseParserTests
     [InlineData("{\"something\":1}")]
     public void Parse_WithUnusableText_ThrowsInvalidResponse(string? text)
     {
-        var ex = Assert.Throws<FlashcardGenerationFailedException>(() => FlashcardResponseParser.Parse("end_turn", text));
+        var ex = Assert.Throws<FlashcardGenerationFailedException>(() =>
+            FlashcardResponseParser.Parse("end_turn", text)
+        );
 
         Assert.Equal(FlashcardGenerationFailureReason.InvalidResponse, ex.Reason);
     }
@@ -67,9 +73,13 @@ public class FlashcardResponseParserTests
     {
         using var generator = new ClaudeFlashcardGenerator(
             Options.Create(new AnthropicOptions { ApiKey = null }),
-            NullLogger<ClaudeFlashcardGenerator>.Instance);
+            NullLogger<ClaudeFlashcardGenerator>.Instance
+        );
 
-        await Assert.ThrowsAsync<AiNotConfiguredException>(
-            () => generator.GenerateAsync(new FlashcardGenerationInput("claude-sonnet-5-5", "Title", "Content", 5, null)));
+        await Assert.ThrowsAsync<AiNotConfiguredException>(() =>
+            generator.GenerateAsync(
+                new FlashcardGenerationInput("claude-sonnet-5-5", "Title", "Content", 5, null)
+            )
+        );
     }
 }

@@ -41,7 +41,9 @@ public class FlashcardDeckLifecycleTests
     [Fact]
     public void Create_WithTooLongName_Throws()
     {
-        Assert.Throws<FlashcardValidationException>(() => _sut.Create(new string('d', FlashcardDeck.NameMaxLength + 1), null, null, 20, 200));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.Create(new string('d', FlashcardDeck.NameMaxLength + 1), null, null, 20, 200)
+        );
     }
 
     [Theory]
@@ -49,7 +51,9 @@ public class FlashcardDeckLifecycleTests
     [InlineData(20, FlashcardDeck.MaxCardsPerDay + 1)]
     public void Create_WithLimitOutOfRange_Throws(int newCardsPerDay, int reviewsPerDay)
     {
-        Assert.Throws<FlashcardValidationException>(() => _sut.Create("Deck", null, null, newCardsPerDay, reviewsPerDay));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.Create("Deck", null, null, newCardsPerDay, reviewsPerDay)
+        );
     }
 
     [Fact]
@@ -72,7 +76,9 @@ public class FlashcardDeckLifecycleTests
     {
         var deck = _sut.Archive(_sut.Create("Deck", null, null, 20, 200));
 
-        Assert.Throws<FlashcardDeckArchivedException>(() => _sut.Update(deck, "Deck", null, null, 20, 200));
+        Assert.Throws<FlashcardDeckArchivedException>(() =>
+            _sut.Update(deck, "Deck", null, null, 20, 200)
+        );
     }
 
     [Fact]
@@ -101,7 +107,9 @@ public class FlashcardDeckLifecycleTests
     [Fact]
     public void Create_WithCourseAndSemester_Throws()
     {
-        Assert.Throws<FlashcardValidationException>(() => _sut.Create("Workshop", CourseId, Guid.NewGuid(), 20, 200));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.Create("Workshop", CourseId, Guid.NewGuid(), 20, 200)
+        );
     }
 
     [Fact]
@@ -109,6 +117,8 @@ public class FlashcardDeckLifecycleTests
     {
         var deck = _sut.Create("Workshop", CourseId, null, 20, 200);
 
-        Assert.Throws<FlashcardValidationException>(() => _sut.Update(deck, "Workshop", CourseId, Guid.NewGuid(), 20, 200));
+        Assert.Throws<FlashcardValidationException>(() =>
+            _sut.Update(deck, "Workshop", CourseId, Guid.NewGuid(), 20, 200)
+        );
     }
 }

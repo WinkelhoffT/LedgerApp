@@ -55,15 +55,20 @@ public partial class FlashcardImportDialog
 
         try
         {
-            await using var stream = SelectedFile.OpenReadStream(ImportFlashcardsRequest.MaxFileSizeBytes);
+            await using var stream = SelectedFile.OpenReadStream(
+                ImportFlashcardsRequest.MaxFileSizeBytes
+            );
             using var buffer = new MemoryStream();
             await stream.CopyToAsync(buffer);
 
-            Result = await TransferAccessor.ImportAsync(new ImportFlashcardsRequest(
-                SelectedFile.Name,
-                buffer.ToArray(),
-                TargetDeckId == Guid.Empty ? null : TargetDeckId,
-                DuplicateMode));
+            Result = await TransferAccessor.ImportAsync(
+                new ImportFlashcardsRequest(
+                    SelectedFile.Name,
+                    buffer.ToArray(),
+                    TargetDeckId == Guid.Empty ? null : TargetDeckId,
+                    DuplicateMode
+                )
+            );
 
             await OnImported.InvokeAsync();
         }
@@ -71,7 +76,12 @@ public partial class FlashcardImportDialog
         {
             ErrorMessage = "The file is larger than 5 MB.";
         }
-        catch (Exception ex) when (ex is FlashcardImportException or FlashcardDeckNotFoundException or FlashcardDeckArchivedException)
+        catch (Exception ex)
+            when (ex
+                    is FlashcardImportException
+                        or FlashcardDeckNotFoundException
+                        or FlashcardDeckArchivedException
+            )
         {
             ErrorMessage = ex.Message;
         }

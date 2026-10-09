@@ -10,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using StudyHub.Api;
 using StudyHub.Data;
-using StudyHub.Shared.Ai;
 using StudyHub.Logic.Integration.Ai;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Configuration;
 using StudyHub.Shared.Courses;
 using StudyHub.Shared.Flashcards;
@@ -22,7 +22,9 @@ namespace StudyHub.Tests.Api.Flashcards;
 
 public class FlashcardEndpointsTests
 {
-    private static WebApplicationFactory<Program> CreateFactory(IFlashcardGenerator? generator = null)
+    private static WebApplicationFactory<Program> CreateFactory(
+        IFlashcardGenerator? generator = null
+    )
     {
         var databaseName = Guid.NewGuid().ToString();
 
@@ -39,7 +41,9 @@ public class FlashcardEndpointsTests
                 // both registrations must go before switching to the InMemory provider.
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
-                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(databaseName));
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseInMemoryDatabase(databaseName)
+                );
 
                 // Never call the real Anthropic API from tests.
                 services.PostConfigure<AnthropicOptions>(options => options.ApiKey = null);
@@ -55,34 +59,52 @@ public class FlashcardEndpointsTests
     private static IFlashcardGenerator FakeGenerator(params FlashcardDto[] cards)
     {
         var generator = new Mock<IFlashcardGenerator>();
-        generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), It.IsAny<CancellationToken>()))
+        generator
+            .Setup(g =>
+                g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), It.IsAny<CancellationToken>())
+            )
             .ReturnsAsync(cards);
         return generator.Object;
     }
 
-    private static async Task<NoteDto> CreateNoteAsync(HttpClient client, string content = "# Dijkstra\nNur nicht-negative Kanten.")
+    private static async Task<NoteDto> CreateNoteAsync(
+        HttpClient client,
+        string content = "# Dijkstra\nNur nicht-negative Kanten."
+    )
     {
         var semesterResponse = await client.PostAsJsonAsync(
             "api/semesters",
-            new CreateSemesterRequest("Winter 2025/26", new DateOnly(2025, 10, 1), new DateOnly(2026, 3, 31)));
+            new CreateSemesterRequest(
+                "Winter 2025/26",
+                new DateOnly(2025, 10, 1),
+                new DateOnly(2026, 3, 31)
+            )
+        );
         var semester = await semesterResponse.Content.ReadFromJsonAsync<SemesterDto>();
 
         var courseResponse = await client.PostAsJsonAsync(
             "api/courses",
-            new CreateCourseRequest("Algorithms", null, "#2563eb", semester!.Id));
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semester!.Id)
+        );
         var course = await courseResponse.Content.ReadFromJsonAsync<CourseDto>();
 
         var noteResponse = await client.PostAsJsonAsync(
             "api/notes",
-            new CreateNoteRequest("Dijkstra", content, null, course!.Id, null));
+            new CreateNoteRequest("Dijkstra", content, null, course!.Id, null)
+        );
         noteResponse.EnsureSuccessStatusCode();
         return (await noteResponse.Content.ReadFromJsonAsync<NoteDto>())!;
     }
 
-    private static async Task<string?> GetProblemValueAsync(HttpResponseMessage response, string key)
+    private static async Task<string?> GetProblemValueAsync(
+        HttpResponseMessage response,
+        string key
+    )
     {
         var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        return problemDetails!.Extensions.TryGetValue(key, out var value) && value is JsonElement element
+        return
+            problemDetails!.Extensions.TryGetValue(key, out var value)
+            && value is JsonElement element
             ? element.GetString()
             : null;
     }
@@ -90,11 +112,16 @@ public class FlashcardEndpointsTests
     [Fact]
     public async Task Generate_ReturnsCardsAndModel()
     {
-        using var factory = CreateFactory(FakeGenerator(new FlashcardDto("Frage", "Antwort", ["graphen"])));
+        using var factory = CreateFactory(
+            FakeGenerator(new FlashcardDto("Frage", "Antwort", ["graphen"]))
+        );
         using var client = factory.CreateClient();
         var note = await CreateNoteAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 5, null));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(note.Id, 5, null)
+        );
 
         response.EnsureSuccessStatusCode();
         var set = await response.Content.ReadFromJsonAsync<FlashcardSetDto>();
@@ -122,10 +149,16 @@ public class FlashcardEndpointsTests
         using var client = factory.CreateClient();
         var note = await CreateNoteAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 5, null, "not-a-model"));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(note.Id, 5, null, "not-a-model")
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(FlashcardErrorCodes.FlashcardValidationFailed, await GetProblemValueAsync(response, "errorCode"));
+        Assert.Equal(
+            FlashcardErrorCodes.FlashcardValidationFailed,
+            await GetProblemValueAsync(response, "errorCode")
+        );
     }
 
     [Fact]
@@ -134,10 +167,16 @@ public class FlashcardEndpointsTests
         using var factory = CreateFactory(FakeGenerator());
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(Guid.NewGuid(), 5, null));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(Guid.NewGuid(), 5, null)
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal(NoteErrorCodes.NoteNotFound, await GetProblemValueAsync(response, "errorCode"));
+        Assert.Equal(
+            NoteErrorCodes.NoteNotFound,
+            await GetProblemValueAsync(response, "errorCode")
+        );
     }
 
     [Fact]
@@ -147,26 +186,46 @@ public class FlashcardEndpointsTests
         using var client = factory.CreateClient();
         var note = await CreateNoteAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 500, null));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(note.Id, 500, null)
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(FlashcardErrorCodes.FlashcardValidationFailed, await GetProblemValueAsync(response, "errorCode"));
+        Assert.Equal(
+            FlashcardErrorCodes.FlashcardValidationFailed,
+            await GetProblemValueAsync(response, "errorCode")
+        );
     }
 
     [Fact]
     public async Task Generate_WhenGenerationFails_Returns502WithReason()
     {
         var generator = new Mock<IFlashcardGenerator>();
-        generator.Setup(g => g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new FlashcardGenerationFailedException(FlashcardGenerationFailureReason.Refused, "declined"));
+        generator
+            .Setup(g =>
+                g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), It.IsAny<CancellationToken>())
+            )
+            .ThrowsAsync(
+                new FlashcardGenerationFailedException(
+                    FlashcardGenerationFailureReason.Refused,
+                    "declined"
+                )
+            );
         using var factory = CreateFactory(generator.Object);
         using var client = factory.CreateClient();
         var note = await CreateNoteAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 5, null));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(note.Id, 5, null)
+        );
 
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
-        Assert.Equal(nameof(FlashcardGenerationFailureReason.Refused), await GetProblemValueAsync(response, "reason"));
+        Assert.Equal(
+            nameof(FlashcardGenerationFailureReason.Refused),
+            await GetProblemValueAsync(response, "reason")
+        );
     }
 
     [Fact]
@@ -176,9 +235,15 @@ public class FlashcardEndpointsTests
         using var client = factory.CreateClient();
         var note = await CreateNoteAsync(client);
 
-        var response = await client.PostAsJsonAsync("api/flashcards/generate", new GenerateFlashcardsRequest(note.Id, 5, null));
+        var response = await client.PostAsJsonAsync(
+            "api/flashcards/generate",
+            new GenerateFlashcardsRequest(note.Id, 5, null)
+        );
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        Assert.Equal(FlashcardErrorCodes.AiNotConfigured, await GetProblemValueAsync(response, "errorCode"));
+        Assert.Equal(
+            FlashcardErrorCodes.AiNotConfigured,
+            await GetProblemValueAsync(response, "errorCode")
+        );
     }
 }

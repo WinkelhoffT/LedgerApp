@@ -17,7 +17,8 @@ public sealed record CalendarEvent(
     int? DurationMinutes,
     string? Location,
     DateTime CreatedAt,
-    DateTime UpdatedAt)
+    DateTime UpdatedAt
+)
 {
     public const int TitleMaxLength = 200;
     public const int LocationMaxLength = 200;

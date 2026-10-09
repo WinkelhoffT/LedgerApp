@@ -23,5 +23,6 @@ internal static class StudySessionMapper
             course?.Name ?? semester?.Name,
             course?.Color,
             session.CreatedAt,
-            session.UpdatedAt);
+            session.UpdatedAt
+        );
 }

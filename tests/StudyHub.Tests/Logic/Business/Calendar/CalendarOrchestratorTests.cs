@@ -30,18 +30,46 @@ public class CalendarOrchestratorTests
             _eventRepository.Object,
             _courseRepository.Object,
             _semesterRepository.Object,
-            new CalendarPeriodProvider(new CalendarOptions { TimeZone = "Europe/Berlin" }, new FixedTimeProvider(Now)),
-            new CalendarLaneProcessor());
+            new CalendarPeriodProvider(
+                new CalendarOptions { TimeZone = "Europe/Berlin" },
+                new FixedTimeProvider(Now)
+            ),
+            new CalendarLaneProcessor()
+        );
 
-        _sessionRepository.Setup(r => r.GetByDateRangeAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), default)).ReturnsAsync([]);
-        _eventRepository.Setup(r => r.GetByDateRangeAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), default)).ReturnsAsync([]);
+        _sessionRepository
+            .Setup(r => r.GetByDateRangeAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), default))
+            .ReturnsAsync([]);
+        _eventRepository
+            .Setup(r => r.GetByDateRangeAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), default))
+            .ReturnsAsync([]);
     }
 
-    private static StudySession Session(string title, DateOnly date, int hour, int durationMinutes = 60, Guid? courseId = null, Guid? semesterId = null) =>
-        new(Guid.NewGuid(), title, courseId, semesterId, date, new TimeOnly(hour, 0), durationMinutes, null, Now, Now);
+    private static StudySession Session(
+        string title,
+        DateOnly date,
+        int hour,
+        int durationMinutes = 60,
+        Guid? courseId = null,
+        Guid? semesterId = null
+    ) =>
+        new(
+            Guid.NewGuid(),
+            title,
+            courseId,
+            semesterId,
+            date,
+            new TimeOnly(hour, 0),
+            durationMinutes,
+            null,
+            Now,
+            Now
+        );
 
     private void SetupSessions(DateOnly from, DateOnly to, params StudySession[] sessions) =>
-        _sessionRepository.Setup(r => r.GetByDateRangeAsync(from, to, default)).ReturnsAsync(sessions);
+        _sessionRepository
+            .Setup(r => r.GetByDateRangeAsync(from, to, default))
+            .ReturnsAsync(sessions);
 
     private static CalendarEvent Event(
         string title,
@@ -49,8 +77,21 @@ public class CalendarOrchestratorTests
         CalendarEventKind kind = CalendarEventKind.Exam,
         int? hour = null,
         int? durationMinutes = null,
-        Guid? courseId = null) =>
-        new(Guid.NewGuid(), kind, title, courseId, null, date, hour is { } h ? new TimeOnly(h, 0) : null, durationMinutes, null, Now, Now);
+        Guid? courseId = null
+    ) =>
+        new(
+            Guid.NewGuid(),
+            kind,
+            title,
+            courseId,
+            null,
+            date,
+            hour is { } h ? new TimeOnly(h, 0) : null,
+            durationMinutes,
+            null,
+            Now,
+            Now
+        );
 
     private void SetupEvents(DateOnly from, DateOnly to, params CalendarEvent[] events) =>
         _eventRepository.Setup(r => r.GetByDateRangeAsync(from, to, default)).ReturnsAsync(events);
@@ -66,7 +107,8 @@ public class CalendarOrchestratorTests
             to,
             Session("Late", Today, 14),
             Session("Early", Today, 9),
-            Session("Neighbour month", from, 10));
+            Session("Neighbour month", from, 10)
+        );
 
         var month = await _sut.GetMonthAsync(2026, 10);
 
@@ -77,13 +119,20 @@ public class CalendarOrchestratorTests
         Assert.Equal(from, month.Days[0].Date);
         Assert.Equal(to, month.Days[^1].Date);
         Assert.Equal(["Neighbour month"], month.Days[0].Sessions.Select(s => s.Session.Title));
-        Assert.Equal(["Early", "Late"], month.Days.Single(d => d.Date == Today).Sessions.Select(s => s.Session.Title));
+        Assert.Equal(
+            ["Early", "Late"],
+            month.Days.Single(d => d.Date == Today).Sessions.Select(s => s.Session.Title)
+        );
     }
 
     [Fact]
     public async Task GetMonthAsync_IgnoresSessionsOutsideThePeriod()
     {
-        SetupSessions(new DateOnly(2026, 9, 28), new DateOnly(2026, 11, 1), Session("Elsewhere", new DateOnly(2026, 12, 24), 9));
+        SetupSessions(
+            new DateOnly(2026, 9, 28),
+            new DateOnly(2026, 11, 1),
+            Session("Elsewhere", new DateOnly(2026, 12, 24), 9)
+        );
 
         var month = await _sut.GetMonthAsync(2026, 10);
 
@@ -93,9 +142,35 @@ public class CalendarOrchestratorTests
     [Fact]
     public async Task GetMonthAsync_ResolvesCourseAndSemesterOwners()
     {
-        var course = new Course(Guid.NewGuid(), "Algorithms", null, "#2563eb", Guid.NewGuid(), IsArchived: false, Now, Now);
-        var archivedCourse = new Course(Guid.NewGuid(), "Old course", null, "#16a34a", Guid.NewGuid(), IsArchived: true, Now, Now);
-        var semester = new Semester(Guid.NewGuid(), "Winter 2026/27", new DateOnly(2026, 10, 1), new DateOnly(2027, 3, 31), false, Now, Now);
+        var course = new Course(
+            Guid.NewGuid(),
+            "Algorithms",
+            null,
+            "#2563eb",
+            Guid.NewGuid(),
+            IsArchived: false,
+            Now,
+            Now
+        );
+        var archivedCourse = new Course(
+            Guid.NewGuid(),
+            "Old course",
+            null,
+            "#16a34a",
+            Guid.NewGuid(),
+            IsArchived: true,
+            Now,
+            Now
+        );
+        var semester = new Semester(
+            Guid.NewGuid(),
+            "Winter 2026/27",
+            new DateOnly(2026, 10, 1),
+            new DateOnly(2027, 3, 31),
+            false,
+            Now,
+            Now
+        );
         _courseRepository.Setup(r => r.GetAllAsync(default)).ReturnsAsync([course, archivedCourse]);
         _semesterRepository.Setup(r => r.GetAllAsync(default)).ReturnsAsync([semester]);
         SetupSessions(
@@ -104,20 +179,34 @@ public class CalendarOrchestratorTests
             Session("Course session", Today, 8, courseId: course.Id),
             Session("Archived course session", Today, 10, courseId: archivedCourse.Id),
             Session("Semester session", Today, 12, semesterId: semester.Id),
-            Session("Free session", Today, 14));
+            Session("Free session", Today, 14)
+        );
 
         var month = await _sut.GetMonthAsync(2026, 10);
 
-        var sessions = month.Days.Single(d => d.Date == Today).Sessions.Select(s => s.Session).ToList();
+        var sessions = month
+            .Days.Single(d => d.Date == Today)
+            .Sessions.Select(s => s.Session)
+            .ToList();
         Assert.Equal(
-            [("Algorithms", "#2563eb"), ("Old course", "#16a34a"), ("Winter 2026/27", null), (null, null)],
-            sessions.Select(s => (s.OwnerName, s.Color)));
+            [
+                ("Algorithms", "#2563eb"),
+                ("Old course", "#16a34a"),
+                ("Winter 2026/27", null),
+                (null, null),
+            ],
+            sessions.Select(s => (s.OwnerName, s.Color))
+        );
     }
 
     [Fact]
     public async Task GetMonthAsync_WithoutLinkedSessions_DoesNotLoadCoursesOrSemesters()
     {
-        SetupSessions(new DateOnly(2026, 9, 28), new DateOnly(2026, 11, 1), Session("Free session", Today, 9));
+        SetupSessions(
+            new DateOnly(2026, 9, 28),
+            new DateOnly(2026, 11, 1),
+            Session("Free session", Today, 9)
+        );
 
         await _sut.GetMonthAsync(2026, 10);
 
@@ -135,7 +224,8 @@ public class CalendarOrchestratorTests
             to,
             Session("A", Today, 6, durationMinutes: 120),
             Session("B", Today, 7),
-            Session("Sunday", to, 21, durationMinutes: 90));
+            Session("Sunday", to, 21, durationMinutes: 90)
+        );
 
         var week = await _sut.GetWeekAsync(to);
 
@@ -148,7 +238,9 @@ public class CalendarOrchestratorTests
         Assert.Equal(7, week.Days.Count);
         Assert.Equal(
             [("A", 0, 2), ("B", 1, 2)],
-            week.Days.Single(d => d.Date == Today).Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount)));
+            week.Days.Single(d => d.Date == Today)
+                .Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount))
+        );
     }
 
     [Fact]
@@ -165,20 +257,33 @@ public class CalendarOrchestratorTests
     [Fact]
     public async Task GetMonthAsync_ListsEventsPerDayWithAllDayEventsFirst()
     {
-        var course = new Course(Guid.NewGuid(), "Algorithms", null, "#2563eb", Guid.NewGuid(), IsArchived: false, Now, Now);
+        var course = new Course(
+            Guid.NewGuid(),
+            "Algorithms",
+            null,
+            "#2563eb",
+            Guid.NewGuid(),
+            IsArchived: false,
+            Now,
+            Now
+        );
         _courseRepository.Setup(r => r.GetAllAsync(default)).ReturnsAsync([course]);
         SetupEvents(
             new DateOnly(2026, 9, 28),
             new DateOnly(2026, 11, 1),
             Event("Sheet 3", Today, CalendarEventKind.Deadline, hour: 23),
             Event("Algorithms exam", Today, hour: 10, durationMinutes: 120, courseId: course.Id),
-            Event("Project report", Today, CalendarEventKind.Deadline));
+            Event("Project report", Today, CalendarEventKind.Deadline)
+        );
 
         var month = await _sut.GetMonthAsync(2026, 10);
 
         var events = month.Days.Single(d => d.Date == Today).Events.Select(e => e.Event).ToList();
         Assert.Equal(["Project report", "Algorithms exam", "Sheet 3"], events.Select(e => e.Title));
-        Assert.Equal(("Algorithms", "#2563eb", new TimeOnly(12, 0)), (events[1].OwnerName, events[1].Color, events[1].EndTime));
+        Assert.Equal(
+            ("Algorithms", "#2563eb", new TimeOnly(12, 0)),
+            (events[1].OwnerName, events[1].Color, events[1].EndTime)
+        );
         Assert.Null(events[2].EndTime);
     }
 
@@ -193,13 +298,20 @@ public class CalendarOrchestratorTests
             to,
             Event("Exam", Today, hour: 10, durationMinutes: 60),
             Event("All-day exam", Today),
-            Event("Early exam", to, hour: 6, durationMinutes: 90));
+            Event("Early exam", to, hour: 6, durationMinutes: 90)
+        );
 
         var week = await _sut.GetWeekAsync(Today);
 
         var day = week.Days.Single(d => d.Date == Today);
-        Assert.Equal(("Review", 0, 2), day.Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount)).Single());
-        Assert.Equal([("All-day exam", 0, 1), ("Exam", 1, 2)], day.Events.Select(e => (e.Event.Title, e.Lane, e.LaneCount)));
+        Assert.Equal(
+            ("Review", 0, 2),
+            day.Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount)).Single()
+        );
+        Assert.Equal(
+            [("All-day exam", 0, 1), ("Exam", 1, 2)],
+            day.Events.Select(e => (e.Event.Title, e.Lane, e.LaneCount))
+        );
         Assert.Equal(6, week.StartHour);
     }
 

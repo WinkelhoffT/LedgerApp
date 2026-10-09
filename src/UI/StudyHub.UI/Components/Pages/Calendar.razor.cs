@@ -68,9 +68,14 @@ public partial class Calendar
     /// <summary>Today as reported with the period on screen; <c>null</c> until that period has loaded.</summary>
     private DateOnly? Today => IsWeek ? Week?.Today : Month?.Today;
 
-    private string PeriodTitle => IsWeek
-        ? Week is null ? string.Empty : CalendarFormatter.FormatWeek(Week.IsoWeek, Week.Start, Week.End)
-        : Month is null ? string.Empty : CalendarFormatter.FormatMonth(Month.Year, Month.Month);
+    private string PeriodTitle =>
+        IsWeek
+            ? Week is null
+                ? string.Empty
+                : CalendarFormatter.FormatWeek(Week.IsoWeek, Week.Start, Week.End)
+            : Month is null
+                ? string.Empty
+                : CalendarFormatter.FormatMonth(Month.Year, Month.Month);
 
     private IReadOnlyList<CalendarDayDto> VisibleDays => (IsWeek ? Week?.Days : Month?.Days) ?? [];
 
@@ -78,9 +83,12 @@ public partial class Calendar
 
     private IReadOnlyList<(string Name, string Color)> LegendCourses =>
         VisibleDays
-            .SelectMany(d => d.Sessions
-                .Select(s => (s.Session.CourseId, s.Session.OwnerName, s.Session.Color))
-                .Concat(d.Events.Select(e => (e.Event.CourseId, e.Event.OwnerName, e.Event.Color))))
+            .SelectMany(d =>
+                d.Sessions.Select(s => (s.Session.CourseId, s.Session.OwnerName, s.Session.Color))
+                    .Concat(
+                        d.Events.Select(e => (e.Event.CourseId, e.Event.OwnerName, e.Event.Color))
+                    )
+            )
             .Where(c => c.CourseId is not null && c.Color is not null)
             .DistinctBy(c => c.CourseId)
             .Select(c => (c.OwnerName ?? string.Empty, c.Color!))
@@ -90,7 +98,13 @@ public partial class Calendar
     protected override async Task OnParametersSetAsync()
     {
         IsWeek = string.Equals(View, WeekView, StringComparison.OrdinalIgnoreCase);
-        var requestedDate = DateOnly.TryParseExact(Date, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+        var requestedDate = DateOnly.TryParseExact(
+            Date,
+            DateFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed
+        )
             ? parsed
             : (DateOnly?)null;
 
@@ -101,7 +115,12 @@ public partial class Calendar
         }
 
         // Without a date in the URL, this host's clock only gave a first guess; follow the Api's today.
-        if (requestedDate is null && _today is { } today && !IsLoaded(today) && !await LoadAsync(today))
+        if (
+            requestedDate is null
+            && _today is { } today
+            && !IsLoaded(today)
+            && !await LoadAsync(today)
+        )
         {
             return;
         }
@@ -110,9 +129,10 @@ public partial class Calendar
         PageHeader.SetHeader("Calendar", PeriodTitle);
     }
 
-    private bool IsLoaded(DateOnly date) => IsWeek
-        ? Week is not null && Week.Start <= date && date <= Week.End
-        : Month is not null && Month.Year == date.Year && Month.Month == date.Month;
+    private bool IsLoaded(DateOnly date) =>
+        IsWeek
+            ? Week is not null && Week.Start <= date && date <= Week.End
+            : Month is not null && Month.Year == date.Year && Month.Month == date.Month;
 
     private async Task<bool> LoadAsync(DateOnly date)
     {
@@ -185,7 +205,8 @@ public partial class Calendar
     // Lands on today when the target period contains it, otherwise on its first day.
     private void ShowPeriod(int offset)
     {
-        DateOnly first, last;
+        DateOnly first,
+            last;
         if (IsWeek && Week is not null)
         {
             first = Week.Start.AddDays(offset * DaysPerWeek);
@@ -264,5 +285,6 @@ public partial class Calendar
     private void Navigate(bool week, DateOnly date, bool replace = false) =>
         NavigationManager.NavigateTo(
             $"calendar?view={(week ? WeekView : MonthView)}&date={date.ToString(DateFormat, CultureInfo.InvariantCulture)}",
-            replace: replace);
+            replace: replace
+        );
 }

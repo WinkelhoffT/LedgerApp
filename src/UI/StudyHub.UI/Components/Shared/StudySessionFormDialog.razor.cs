@@ -76,7 +76,9 @@ public partial class StudySessionFormDialog
         Courses.Where(c => !c.IsArchived || c.Id == EditingSession?.CourseId).OrderBy(c => c.Name);
 
     private IEnumerable<SemesterDto> SelectableSemesters =>
-        Semesters.Where(s => !s.IsArchived || s.Id == EditingSession?.SemesterId).OrderByDescending(s => s.StartDate);
+        Semesters
+            .Where(s => !s.IsArchived || s.Id == EditingSession?.SemesterId)
+            .OrderByDescending(s => s.StartDate);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -111,23 +113,46 @@ public partial class StudySessionFormDialog
         Semesters = await SemesterAccessor.GetAllAsync();
     }
 
-    private Task SubmitAsync() => RunAsync(async () =>
-    {
-        var courseId = GetOwnerId(CoursePrefix);
-        var semesterId = GetOwnerId(SemesterPrefix);
-        var saved = EditingSession is null
-            ? await SessionAccessor.CreateAsync(new CreateStudySessionRequest(Title, courseId, semesterId, Date, StartTime, DurationMinutes, Location))
-            : await SessionAccessor.UpdateAsync(new UpdateStudySessionRequest(EditingSession.Id, Title, courseId, semesterId, Date, StartTime, DurationMinutes, Location));
+    private Task SubmitAsync() =>
+        RunAsync(async () =>
+        {
+            var courseId = GetOwnerId(CoursePrefix);
+            var semesterId = GetOwnerId(SemesterPrefix);
+            var saved = EditingSession is null
+                ? await SessionAccessor.CreateAsync(
+                    new CreateStudySessionRequest(
+                        Title,
+                        courseId,
+                        semesterId,
+                        Date,
+                        StartTime,
+                        DurationMinutes,
+                        Location
+                    )
+                )
+                : await SessionAccessor.UpdateAsync(
+                    new UpdateStudySessionRequest(
+                        EditingSession.Id,
+                        Title,
+                        courseId,
+                        semesterId,
+                        Date,
+                        StartTime,
+                        DurationMinutes,
+                        Location
+                    )
+                );
 
-        await OnSaved.InvokeAsync(saved);
-    });
+            await OnSaved.InvokeAsync(saved);
+        });
 
-    private Task DeleteAsync() => RunAsync(async () =>
-    {
-        var session = EditingSession!;
-        await SessionAccessor.DeleteAsync(session.Id);
-        await OnDeleted.InvokeAsync(session);
-    });
+    private Task DeleteAsync() =>
+        RunAsync(async () =>
+        {
+            var session = EditingSession!;
+            await SessionAccessor.DeleteAsync(session.Id);
+            await OnDeleted.InvokeAsync(session);
+        });
 
     // Runs a save or delete, closing the dialog on success and showing the Api's message otherwise.
     private async Task RunAsync(Func<Task> action)
@@ -140,7 +165,8 @@ public partial class StudySessionFormDialog
             await action();
             await Close();
         }
-        catch (Exception ex) when (ex is StudySessionValidationException or StudySessionNotFoundException)
+        catch (Exception ex)
+            when (ex is StudySessionValidationException or StudySessionNotFoundException)
         {
             ErrorMessage = ex.Message;
         }
@@ -172,7 +198,8 @@ public partial class StudySessionFormDialog
     }
 
     private Guid? GetOwnerId(string prefix) =>
-        OwnerKey.StartsWith(prefix, StringComparison.Ordinal) && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
+        OwnerKey.StartsWith(prefix, StringComparison.Ordinal)
+        && Guid.TryParse(OwnerKey[prefix.Length..], out var id)
             ? id
             : null;
 

@@ -10,4 +10,5 @@ internal sealed record ScheduledAnswer(
     int EaseFactor,
     int Lapses,
     DateTime DueAt,
-    TimeSpan Interval);
+    TimeSpan Interval
+);

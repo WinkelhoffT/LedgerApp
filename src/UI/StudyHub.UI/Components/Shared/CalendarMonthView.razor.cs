@@ -20,22 +20,34 @@ public partial class CalendarMonthView
     [Parameter]
     public EventCallback<DateOnly> OnDaySelected { get; set; }
 
-    private string GetCellClass(CalendarDayDto day) => string.Join(' ', new[]
-    {
-        day.Date.Month != Month.Month ? "other" : null,
-        day.Date == Month.Today ? "today" : null,
-        day.Date == SelectedDate ? "sel" : null,
-        day.Events.Count + day.Sessions.Count > 0 ? "has-entries" : null,
-        day.Events.Count > 0 ? "has-events" : null,
-    }.Where(c => c is not null));
+    private string GetCellClass(CalendarDayDto day) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                day.Date.Month != Month.Month ? "other" : null,
+                day.Date == Month.Today ? "today" : null,
+                day.Date == SelectedDate ? "sel" : null,
+                day.Events.Count + day.Sessions.Count > 0 ? "has-entries" : null,
+                day.Events.Count > 0 ? "has-events" : null,
+            }.Where(c => c is not null)
+        );
 
     private static DayChips GetChips(CalendarDayDto day)
     {
         var events = day.Events.Take(MaxChips).ToList();
         var sessions = day.Sessions.Take(MaxChips - events.Count).ToList();
 
-        return new DayChips(events, sessions, day.Events.Count + day.Sessions.Count - events.Count - sessions.Count);
+        return new DayChips(
+            events,
+            sessions,
+            day.Events.Count + day.Sessions.Count - events.Count - sessions.Count
+        );
     }
 
-    private sealed record DayChips(IReadOnlyList<CalendarEventEntryDto> Events, IReadOnlyList<CalendarSessionDto> Sessions, int Hidden);
+    private sealed record DayChips(
+        IReadOnlyList<CalendarEventEntryDto> Events,
+        IReadOnlyList<CalendarSessionDto> Sessions,
+        int Hidden
+    );
 }

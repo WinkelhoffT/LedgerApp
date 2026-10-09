@@ -16,14 +16,34 @@ public class CalendarEndpointsTests
     private static readonly DateOnly Today = new(2026, 10, 8);
 
     private static WebApplicationFactory<Program> CreateFactory() =>
-        InMemoryApiFactory.Create().WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services => services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))));
+        InMemoryApiFactory
+            .Create()
+            .WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))
+                )
+            );
 
-    private static async Task CreateSessionAsync(HttpClient client, string title, DateOnly date, int hour, int durationMinutes = 60)
+    private static async Task CreateSessionAsync(
+        HttpClient client,
+        string title,
+        DateOnly date,
+        int hour,
+        int durationMinutes = 60
+    )
     {
         var response = await client.PostAsJsonAsync(
             "api/study-sessions",
-            new CreateStudySessionRequest(title, null, null, date, new TimeOnly(hour, 0), durationMinutes, null));
+            new CreateStudySessionRequest(
+                title,
+                null,
+                null,
+                date,
+                new TimeOnly(hour, 0),
+                durationMinutes,
+                null
+            )
+        );
         response.EnsureSuccessStatusCode();
     }
 
@@ -34,11 +54,16 @@ public class CalendarEndpointsTests
         using var client = factory.CreateClient();
         await CreateSessionAsync(client, "Graph review", Today, 9);
 
-        var month = await client.GetFromJsonAsync<CalendarMonthDto>("api/calendar/month?year=2026&month=10");
+        var month = await client.GetFromJsonAsync<CalendarMonthDto>(
+            "api/calendar/month?year=2026&month=10"
+        );
 
         Assert.Equal(Today, month!.Today);
         Assert.Equal(35, month.Days.Count);
-        Assert.Equal("Graph review", Assert.Single(month.Days.Single(d => d.Date == Today).Sessions).Session.Title);
+        Assert.Equal(
+            "Graph review",
+            Assert.Single(month.Days.Single(d => d.Date == Today).Sessions).Session.Title
+        );
     }
 
     [Theory]
@@ -66,7 +91,9 @@ public class CalendarEndpointsTests
         await CreateSessionAsync(client, "A", Today, 9, durationMinutes: 90);
         await CreateSessionAsync(client, "B", Today, 10);
 
-        var week = await client.GetFromJsonAsync<CalendarWeekDto>("api/calendar/week?date=2026-10-11");
+        var week = await client.GetFromJsonAsync<CalendarWeekDto>(
+            "api/calendar/week?date=2026-10-11"
+        );
 
         Assert.Equal(new DateOnly(2026, 10, 5), week!.Start);
         Assert.Equal(new DateOnly(2026, 10, 11), week.End);
@@ -76,7 +103,9 @@ public class CalendarEndpointsTests
         Assert.Equal(7, week.Days.Count);
         Assert.Equal(
             [("A", 0, 2), ("B", 1, 2)],
-            week.Days.Single(d => d.Date == Today).Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount)));
+            week.Days.Single(d => d.Date == Today)
+                .Sessions.Select(s => (s.Session.Title, s.Lane, s.LaneCount))
+        );
     }
 
     [Fact]

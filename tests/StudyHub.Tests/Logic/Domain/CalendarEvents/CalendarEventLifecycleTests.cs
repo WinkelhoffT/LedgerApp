@@ -20,15 +20,42 @@ public class CalendarEventLifecycleTests
     }
 
     private CalendarEvent Exam(TimeOnly? startTime, int? durationMinutes) =>
-        _sut.Create(CalendarEventKind.Exam, "Algorithms exam", CourseId, null, Date, startTime, durationMinutes, null);
+        _sut.Create(
+            CalendarEventKind.Exam,
+            "Algorithms exam",
+            CourseId,
+            null,
+            Date,
+            startTime,
+            durationMinutes,
+            null
+        );
 
     private CalendarEvent Deadline(TimeOnly? startTime, int? durationMinutes = null) =>
-        _sut.Create(CalendarEventKind.Deadline, "Exercise sheet 3", CourseId, null, Date, startTime, durationMinutes, null);
+        _sut.Create(
+            CalendarEventKind.Deadline,
+            "Exercise sheet 3",
+            CourseId,
+            null,
+            Date,
+            startTime,
+            durationMinutes,
+            null
+        );
 
     [Fact]
     public void Create_TimedExam_ReturnsEventWithTrimmedTitleAndLocation()
     {
-        var exam = _sut.Create(CalendarEventKind.Exam, "  Algorithms exam ", CourseId, null, Date, Ten, 120, " Audimax ");
+        var exam = _sut.Create(
+            CalendarEventKind.Exam,
+            "  Algorithms exam ",
+            CourseId,
+            null,
+            Date,
+            Ten,
+            120,
+            " Audimax "
+        );
 
         Assert.Equal(CalendarEventKind.Exam, exam.Kind);
         Assert.Equal("Algorithms exam", exam.Title);
@@ -103,8 +130,9 @@ public class CalendarEventLifecycleTests
     [Fact]
     public void Create_WithUnknownKind_Throws()
     {
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Create((CalendarEventKind)0, "Exam", null, null, Date, null, null, null));
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Create((CalendarEventKind)0, "Exam", null, null, Date, null, null, null)
+        );
     }
 
     [Theory]
@@ -112,24 +140,55 @@ public class CalendarEventLifecycleTests
     [InlineData(null)]
     public void Create_WithoutTitle_Throws(string? title)
     {
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Create(CalendarEventKind.Exam, title!, null, null, Date, null, null, null));
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Create(CalendarEventKind.Exam, title!, null, null, Date, null, null, null)
+        );
     }
 
     [Fact]
     public void Create_WithTooLongTitleOrLocation_Throws()
     {
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Create(CalendarEventKind.Exam, new string('t', CalendarEvent.TitleMaxLength + 1), null, null, Date, null, null, null));
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Create(CalendarEventKind.Exam, "Exam", null, null, Date, null, null, new string('l', CalendarEvent.LocationMaxLength + 1)));
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Create(
+                CalendarEventKind.Exam,
+                new string('t', CalendarEvent.TitleMaxLength + 1),
+                null,
+                null,
+                Date,
+                null,
+                null,
+                null
+            )
+        );
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Create(
+                CalendarEventKind.Exam,
+                "Exam",
+                null,
+                null,
+                Date,
+                null,
+                null,
+                new string('l', CalendarEvent.LocationMaxLength + 1)
+            )
+        );
     }
 
     [Fact]
     public void Create_WithCourseAndSemester_Throws()
     {
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Create(CalendarEventKind.Exam, "Exam", CourseId, Guid.NewGuid(), Date, null, null, null));
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Create(
+                CalendarEventKind.Exam,
+                "Exam",
+                CourseId,
+                Guid.NewGuid(),
+                Date,
+                null,
+                null,
+                null
+            )
+        );
     }
 
     [Fact]
@@ -138,7 +197,17 @@ public class CalendarEventLifecycleTests
         var exam = Exam(Ten, 120);
         _timeProvider.UtcNow = Now.AddHours(1);
 
-        var deadline = _sut.Update(exam, CalendarEventKind.Deadline, "Project report", null, null, Date.AddDays(3), new TimeOnly(23, 59), null, "");
+        var deadline = _sut.Update(
+            exam,
+            CalendarEventKind.Deadline,
+            "Project report",
+            null,
+            null,
+            Date.AddDays(3),
+            new TimeOnly(23, 59),
+            null,
+            ""
+        );
 
         Assert.Equal(exam.Id, deadline.Id);
         Assert.Equal(CalendarEventKind.Deadline, deadline.Kind);
@@ -156,7 +225,18 @@ public class CalendarEventLifecycleTests
     {
         var exam = Exam(Ten, 120);
 
-        Assert.Throws<CalendarEventValidationException>(
-            () => _sut.Update(exam, CalendarEventKind.Deadline, exam.Title, null, null, Date, Ten, 120, null));
+        Assert.Throws<CalendarEventValidationException>(() =>
+            _sut.Update(
+                exam,
+                CalendarEventKind.Deadline,
+                exam.Title,
+                null,
+                null,
+                Date,
+                Ten,
+                120,
+                null
+            )
+        );
     }
 }

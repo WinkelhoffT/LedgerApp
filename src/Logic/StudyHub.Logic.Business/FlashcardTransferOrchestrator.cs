@@ -29,7 +29,8 @@ public sealed class FlashcardTransferOrchestrator(
         var decks = await deckRepository.GetAllAsync(cancellationToken);
         var existingCards = await flashcardRepository.GetByDeckIdsAsync(
             importProcessor.GetTargetDeckIds(file, target, decks),
-            cancellationToken);
+            cancellationToken
+        );
 
         var outcome = importProcessor.Process(file, target, decks, existingCards);
 
@@ -52,22 +53,39 @@ public sealed class FlashcardTransferOrchestrator(
             outcome.UpdatedCards.Count,
             outcome.SkippedDuplicates,
             outcome.Failures,
-            outcome.Decks);
+            outcome.Decks
+        );
     }
 
-    public async Task<FlashcardExportDto> ExportAsync(Guid deckId, CancellationToken cancellationToken = default)
+    public async Task<FlashcardExportDto> ExportAsync(
+        Guid deckId,
+        CancellationToken cancellationToken = default
+    )
     {
         var deck =
             await deckRepository.GetByIdAsync(deckId, cancellationToken)
             ?? throw new FlashcardDeckNotFoundException(deckId);
-        var cards = await flashcardRepository.GetByDeckIdAsync(deckId, cancellationToken: cancellationToken);
+        var cards = await flashcardRepository.GetByDeckIdAsync(
+            deckId,
+            cancellationToken: cancellationToken
+        );
 
-        var content = ankiCsvSerializer.Serialize(deck.Name, cards.Select(FlashcardMapper.ToContent).ToList());
+        var content = ankiCsvSerializer.Serialize(
+            deck.Name,
+            cards.Select(FlashcardMapper.ToContent).ToList()
+        );
 
-        return new FlashcardExportDto(ankiCsvSerializer.CreateFileName(deck.Name), CsvContentType, content);
+        return new FlashcardExportDto(
+            ankiCsvSerializer.CreateFileName(deck.Name),
+            CsvContentType,
+            content
+        );
     }
 
-    private async Task<FlashcardDeck> GetActiveDeckAsync(Guid deckId, CancellationToken cancellationToken)
+    private async Task<FlashcardDeck> GetActiveDeckAsync(
+        Guid deckId,
+        CancellationToken cancellationToken
+    )
     {
         var deck =
             await deckRepository.GetByIdAsync(deckId, cancellationToken)

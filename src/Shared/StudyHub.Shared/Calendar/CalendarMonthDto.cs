@@ -5,7 +5,12 @@ namespace StudyHub.Shared.Calendar;
 /// last day of the month, so <see cref="Days"/> also contains days of the neighbouring months.
 /// </summary>
 /// <param name="Today">The current date in the configured calendar time zone.</param>
-public sealed record CalendarMonthDto(int Year, int Month, DateOnly Today, IReadOnlyList<CalendarDayDto> Days)
+public sealed record CalendarMonthDto(
+    int Year,
+    int Month,
+    DateOnly Today,
+    IReadOnlyList<CalendarDayDto> Days
+)
 {
     public const int MinYear = 1;
 

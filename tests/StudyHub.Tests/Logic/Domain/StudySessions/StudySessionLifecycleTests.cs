@@ -46,7 +46,18 @@ public class StudySessionLifecycleTests
     [Fact]
     public void Create_DropsSecondsOfTheStartTime()
     {
-        Assert.Equal(new TimeOnly(9, 15), _sut.Create("Graph review", null, null, Date, new TimeOnly(9, 15, 42), 60, null).StartTime);
+        Assert.Equal(
+            new TimeOnly(9, 15),
+            _sut.Create(
+                "Graph review",
+                null,
+                null,
+                Date,
+                new TimeOnly(9, 15, 42),
+                60,
+                null
+            ).StartTime
+        );
     }
 
     [Theory]
@@ -54,21 +65,41 @@ public class StudySessionLifecycleTests
     [InlineData(null)]
     public void Create_WithoutTitle_Throws(string? title)
     {
-        Assert.Throws<StudySessionValidationException>(() => _sut.Create(title!, null, null, Date, Nine, 60, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create(title!, null, null, Date, Nine, 60, null)
+        );
     }
 
     [Fact]
     public void Create_WithTooLongTitle_Throws()
     {
-        Assert.Throws<StudySessionValidationException>(
-            () => _sut.Create(new string('t', StudySession.TitleMaxLength + 1), null, null, Date, Nine, 60, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create(
+                new string('t', StudySession.TitleMaxLength + 1),
+                null,
+                null,
+                Date,
+                Nine,
+                60,
+                null
+            )
+        );
     }
 
     [Fact]
     public void Create_WithTooLongLocation_Throws()
     {
-        Assert.Throws<StudySessionValidationException>(
-            () => _sut.Create("Graph review", null, null, Date, Nine, 60, new string('l', StudySession.LocationMaxLength + 1)));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create(
+                "Graph review",
+                null,
+                null,
+                Date,
+                Nine,
+                60,
+                new string('l', StudySession.LocationMaxLength + 1)
+            )
+        );
     }
 
     [Theory]
@@ -76,7 +107,18 @@ public class StudySessionLifecycleTests
     [InlineData(720)]
     public void Create_WithDurationAtTheLimits_Succeeds(int durationMinutes)
     {
-        Assert.Equal(durationMinutes, _sut.Create("Graph review", null, null, Date, Nine, durationMinutes, null).DurationMinutes);
+        Assert.Equal(
+            durationMinutes,
+            _sut.Create(
+                "Graph review",
+                null,
+                null,
+                Date,
+                Nine,
+                durationMinutes,
+                null
+            ).DurationMinutes
+        );
     }
 
     [Theory]
@@ -84,7 +126,9 @@ public class StudySessionLifecycleTests
     [InlineData(721)]
     public void Create_WithDurationOutOfRange_Throws(int durationMinutes)
     {
-        Assert.Throws<StudySessionValidationException>(() => _sut.Create("Graph review", null, null, Date, Nine, durationMinutes, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create("Graph review", null, null, Date, Nine, durationMinutes, null)
+        );
     }
 
     [Fact]
@@ -98,13 +142,17 @@ public class StudySessionLifecycleTests
     [Fact]
     public void Create_EndingAfterMidnight_Throws()
     {
-        Assert.Throws<StudySessionValidationException>(() => _sut.Create("Late review", null, null, Date, new TimeOnly(23, 30), 60, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create("Late review", null, null, Date, new TimeOnly(23, 30), 60, null)
+        );
     }
 
     [Fact]
     public void Create_WithCourseAndSemester_Throws()
     {
-        Assert.Throws<StudySessionValidationException>(() => _sut.Create("Graph review", CourseId, Guid.NewGuid(), Date, Nine, 60, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Create("Graph review", CourseId, Guid.NewGuid(), Date, Nine, 60, null)
+        );
     }
 
     [Fact]
@@ -114,7 +162,16 @@ public class StudySessionLifecycleTests
         var semesterId = Guid.NewGuid();
         _timeProvider.UtcNow = Now.AddHours(1);
 
-        var updated = _sut.Update(session, "Exam planning", null, semesterId, Date.AddDays(1), new TimeOnly(14, 30), 45, "Room 101");
+        var updated = _sut.Update(
+            session,
+            "Exam planning",
+            null,
+            semesterId,
+            Date.AddDays(1),
+            new TimeOnly(14, 30),
+            45,
+            "Room 101"
+        );
 
         Assert.Equal(session.Id, updated.Id);
         Assert.Equal("Exam planning", updated.Title);
@@ -133,6 +190,8 @@ public class StudySessionLifecycleTests
     {
         var session = _sut.Create("Graph review", null, null, Date, Nine, 60, null);
 
-        Assert.Throws<StudySessionValidationException>(() => _sut.Update(session, "Graph review", null, null, Date, new TimeOnly(23, 30), 60, null));
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Update(session, "Graph review", null, null, Date, new TimeOnly(23, 30), 60, null)
+        );
     }
 }

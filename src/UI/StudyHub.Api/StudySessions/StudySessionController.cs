@@ -6,7 +6,8 @@ namespace StudyHub.Api.StudySessions;
 
 [ApiController]
 [Route("api/study-sessions")]
-public sealed class StudySessionController(IStudySessionOrchestrator sessionOrchestrator) : ControllerBase
+public sealed class StudySessionController(IStudySessionOrchestrator sessionOrchestrator)
+    : ControllerBase
 {
     [HttpPost]
     public Task<StudySessionDto> CreateAsync(

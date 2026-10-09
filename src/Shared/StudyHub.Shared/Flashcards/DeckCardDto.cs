@@ -15,4 +15,5 @@ public sealed record DeckCardDto(
     int Lapses,
     Guid? SourceNoteId,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

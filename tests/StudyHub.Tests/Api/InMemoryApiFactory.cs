@@ -21,7 +21,8 @@ internal static class InMemoryApiFactory
             // AddStudyHubData creates the SQLite file's directory before the InMemory override applies.
             builder.UseSetting(
                 "ConnectionStrings:DefaultConnection",
-                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}");
+                $"Data Source={Path.Combine(Path.GetTempPath(), $"studyhub-tests-{databaseName}.db")}"
+            );
 
             builder.ConfigureServices(services =>
             {
@@ -29,7 +30,9 @@ internal static class InMemoryApiFactory
                 // both registrations must go before switching to the InMemory provider.
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
-                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(databaseName));
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseInMemoryDatabase(databaseName)
+                );
 
                 services.PostConfigure<AnthropicOptions>(options => options.ApiKey = null);
             });

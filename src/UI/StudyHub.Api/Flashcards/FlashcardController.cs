@@ -7,7 +7,8 @@ namespace StudyHub.Api.Flashcards;
 
 [ApiController]
 [Route("api/flashcards")]
-public sealed class FlashcardController(IFlashcardOrchestrator flashcardOrchestrator) : ControllerBase
+public sealed class FlashcardController(IFlashcardOrchestrator flashcardOrchestrator)
+    : ControllerBase
 {
     [HttpGet("models")]
     public IReadOnlyList<AiModelDto> GetModels() => flashcardOrchestrator.GetAvailableModels();

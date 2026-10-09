@@ -16,13 +16,20 @@ public static partial class FlashcardHtmlFormatter
     {
         var encoded = WebUtility.HtmlEncode(value ?? string.Empty);
         encoded = ImageTag().Replace(encoded, string.Empty);
-        encoded = AllowedTag().Replace(encoded, match => $"<{match.Groups[1].Value}{match.Groups[2].Value.ToLowerInvariant()}>");
+        encoded = AllowedTag()
+            .Replace(
+                encoded,
+                match => $"<{match.Groups[1].Value}{match.Groups[2].Value.ToLowerInvariant()}>"
+            );
         encoded = EncodedEntity().Replace(encoded, match => $"&{match.Groups[1].Value};");
         encoded = LineBreaks().Replace(encoded, "<br>");
         return new MarkupString(encoded);
     }
 
-    [GeneratedRegex(@"&lt;(/?)(br|b|i|u|code|div|p|span|sub|sup|pre|ul|ol|li)(?:\s(?:(?!&gt;).)*?)?\s*/?&gt;", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(
+        @"&lt;(/?)(br|b|i|u|code|div|p|span|sub|sup|pre|ul|ol|li)(?:\s(?:(?!&gt;).)*?)?\s*/?&gt;",
+        RegexOptions.IgnoreCase
+    )]
     private static partial Regex AllowedTag();
 
     [GeneratedRegex(@"&lt;img\b(?:(?!&gt;).)*&gt;", RegexOptions.IgnoreCase)]

@@ -14,7 +14,8 @@ public class FlashcardReviewProcessorTests
 
     private readonly StudyDayProvider _studyDayProvider = new(
         new FlashcardStudyOptions { TimeZone = "Europe/Berlin", DayStartHour = 4 },
-        new FixedTimeProvider(Now));
+        new FixedTimeProvider(Now)
+    );
 
     private readonly FlashcardReviewProcessor _sut;
     private readonly StudyDay _today;
@@ -31,16 +32,39 @@ public class FlashcardReviewProcessorTests
         int intervalDays = 0,
         int easeFactor = 2500,
         DateTime? dueAt = null,
-        int lapses = 0) =>
-        new(Guid.NewGuid(), Guid.NewGuid(), "Q", "A", null, null, state, step, dueAt ?? Now, intervalDays, easeFactor, 3, lapses, null, Now, Now);
+        int lapses = 0
+    ) =>
+        new(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Q",
+            "A",
+            null,
+            null,
+            state,
+            step,
+            dueAt ?? Now,
+            intervalDays,
+            easeFactor,
+            3,
+            lapses,
+            null,
+            Now,
+            Now
+        );
 
-    private DateTime DayStart(int daysFromToday) => _studyDayProvider.GetStart(_today.Date.AddDays(daysFromToday));
+    private DateTime DayStart(int daysFromToday) =>
+        _studyDayProvider.GetStart(_today.Date.AddDays(daysFromToday));
 
     [Theory]
     [InlineData(FlashcardRating.Again, 0, 60)]
     [InlineData(FlashcardRating.Hard, 0, 330)]
     [InlineData(FlashcardRating.Good, 1, 600)]
-    public void Answer_NewCard_MovesIntoLearningSteps(FlashcardRating rating, int expectedStep, int expectedDelaySeconds)
+    public void Answer_NewCard_MovesIntoLearningSteps(
+        FlashcardRating rating,
+        int expectedStep,
+        int expectedDelaySeconds
+    )
     {
         var result = _sut.Answer(Card(FlashcardState.New), rating, _today).Card;
 
@@ -63,7 +87,11 @@ public class FlashcardReviewProcessorTests
     [Theory]
     [InlineData(FlashcardRating.Again, 0, 60)]
     [InlineData(FlashcardRating.Hard, 1, 600)]
-    public void Answer_LearningCardOnLastStep_RepeatsOrRestartsSteps(FlashcardRating rating, int expectedStep, int expectedDelaySeconds)
+    public void Answer_LearningCardOnLastStep_RepeatsOrRestartsSteps(
+        FlashcardRating rating,
+        int expectedStep,
+        int expectedDelaySeconds
+    )
     {
         var result = _sut.Answer(Card(FlashcardState.Learning, step: 1), rating, _today).Card;
 
@@ -88,7 +116,11 @@ public class FlashcardReviewProcessorTests
     [Fact]
     public void Answer_ReviewCardAgain_LapsesIntoRelearning()
     {
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart, lapses: 1), FlashcardRating.Again, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart, lapses: 1),
+            FlashcardRating.Again,
+            _today
+        ).Card;
 
         Assert.Equal(FlashcardState.Relearning, result.State);
         Assert.Equal(0, result.Step);
@@ -102,9 +134,17 @@ public class FlashcardReviewProcessorTests
     [InlineData(FlashcardRating.Hard, 12, 2350)]
     [InlineData(FlashcardRating.Good, 25, 2500)]
     [InlineData(FlashcardRating.Easy, 33, 2650)]
-    public void Answer_ReviewCardDueToday_UsesSm2Intervals(FlashcardRating rating, int expectedDays, int expectedEase)
+    public void Answer_ReviewCardDueToday_UsesSm2Intervals(
+        FlashcardRating rating,
+        int expectedDays,
+        int expectedEase
+    )
     {
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(FlashcardState.Review, result.State);
         Assert.Equal(expectedDays, result.IntervalDays);
@@ -116,11 +156,18 @@ public class FlashcardReviewProcessorTests
     [InlineData(FlashcardRating.Hard, 12)]
     [InlineData(FlashcardRating.Good, 30)]
     [InlineData(FlashcardRating.Easy, 46)]
-    public void Answer_OverdueReviewCard_AddsDaysLateToGoodAndEasy(FlashcardRating rating, int expectedDays)
+    public void Answer_OverdueReviewCard_AddsDaysLateToGoodAndEasy(
+        FlashcardRating rating,
+        int expectedDays
+    )
     {
         var dueFourDaysAgo = DayStart(-4);
 
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 10, dueAt: dueFourDaysAgo), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 10, dueAt: dueFourDaysAgo),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(expectedDays, result.IntervalDays);
     }
@@ -130,7 +177,11 @@ public class FlashcardReviewProcessorTests
     [InlineData(FlashcardRating.Hard)]
     public void Answer_ReviewCardAtMinimumEase_KeepsEaseAt130Percent(FlashcardRating rating)
     {
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 10, easeFactor: 1300, dueAt: TodayStart), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 10, easeFactor: 1300, dueAt: TodayStart),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(1300, result.EaseFactor);
     }
@@ -138,10 +189,19 @@ public class FlashcardReviewProcessorTests
     [Fact]
     public void Answer_ReviewCardWithShortIntervalAndLowEase_KeepsEachButtonAtLeastOneDayApart()
     {
-        var card = Card(FlashcardState.Review, intervalDays: 1, easeFactor: 1300, dueAt: TodayStart);
+        var card = Card(
+            FlashcardState.Review,
+            intervalDays: 1,
+            easeFactor: 1300,
+            dueAt: TodayStart
+        );
 
-        var intervals = new[] { FlashcardRating.Hard, FlashcardRating.Good, FlashcardRating.Easy }
-            .Select(rating => _sut.Answer(card, rating, _today).Card.IntervalDays);
+        var intervals = new[]
+        {
+            FlashcardRating.Hard,
+            FlashcardRating.Good,
+            FlashcardRating.Easy,
+        }.Select(rating => _sut.Answer(card, rating, _today).Card.IntervalDays);
 
         Assert.Equal([2, 3, 4], intervals);
     }
@@ -151,7 +211,11 @@ public class FlashcardReviewProcessorTests
     [InlineData(FlashcardRating.Easy)]
     public void Answer_ReviewCardWithHugeInterval_CapsAt36500Days(FlashcardRating rating)
     {
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 30_000, dueAt: TodayStart), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 30_000, dueAt: TodayStart),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(36_500, result.IntervalDays);
     }
@@ -159,9 +223,16 @@ public class FlashcardReviewProcessorTests
     [Theory]
     [InlineData(FlashcardRating.Again, 600)]
     [InlineData(FlashcardRating.Hard, 900)]
-    public void Answer_RelearningCard_StaysInRelearning(FlashcardRating rating, int expectedDelaySeconds)
+    public void Answer_RelearningCard_StaysInRelearning(
+        FlashcardRating rating,
+        int expectedDelaySeconds
+    )
     {
-        var result = _sut.Answer(Card(FlashcardState.Relearning, intervalDays: 3), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Relearning, intervalDays: 3),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(FlashcardState.Relearning, result.State);
         Assert.Equal(Now.AddSeconds(expectedDelaySeconds), result.DueAt);
@@ -173,7 +244,11 @@ public class FlashcardReviewProcessorTests
     [InlineData(FlashcardRating.Easy)]
     public void Answer_RelearningCard_ReturnsToReviewWithLapseInterval(FlashcardRating rating)
     {
-        var result = _sut.Answer(Card(FlashcardState.Relearning, intervalDays: 3, easeFactor: 2300), rating, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Relearning, intervalDays: 3, easeFactor: 2300),
+            rating,
+            _today
+        ).Card;
 
         Assert.Equal(FlashcardState.Review, result.State);
         Assert.Equal(3, result.IntervalDays);
@@ -184,7 +259,11 @@ public class FlashcardReviewProcessorTests
     [Fact]
     public void Answer_AcrossTheAutumnClockChange_IsDueAtTheStartOfThatDay()
     {
-        var result = _sut.Answer(Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart), FlashcardRating.Good, _today).Card;
+        var result = _sut.Answer(
+            Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart),
+            FlashcardRating.Good,
+            _today
+        ).Card;
 
         // 25 days later is 2026-11-02, in winter time: 04:00 CET is 03:00 UTC.
         Assert.Equal(new DateTime(2026, 11, 2, 3, 0, 0, DateTimeKind.Utc), result.DueAt);
@@ -220,16 +299,26 @@ public class FlashcardReviewProcessorTests
                 new FlashcardIntervalPreviewDto(FlashcardRating.Good, TimeSpan.FromMinutes(10)),
                 new FlashcardIntervalPreviewDto(FlashcardRating.Easy, TimeSpan.FromDays(4)),
             ],
-            previews);
+            previews
+        );
     }
 
     [Fact]
     public void PreviewIntervals_ReviewCard_ShowsDays()
     {
-        var previews = _sut.PreviewIntervals(Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart), _today);
+        var previews = _sut.PreviewIntervals(
+            Card(FlashcardState.Review, intervalDays: 10, dueAt: TodayStart),
+            _today
+        );
 
         Assert.Equal(
-            [TimeSpan.FromMinutes(10), TimeSpan.FromDays(12), TimeSpan.FromDays(25), TimeSpan.FromDays(33)],
-            previews.Select(p => p.Interval));
+            [
+                TimeSpan.FromMinutes(10),
+                TimeSpan.FromDays(12),
+                TimeSpan.FromDays(25),
+                TimeSpan.FromDays(33),
+            ],
+            previews.Select(p => p.Interval)
+        );
     }
 }

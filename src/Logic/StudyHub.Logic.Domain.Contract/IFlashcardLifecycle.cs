@@ -9,7 +9,11 @@ public interface IFlashcardLifecycle
     /// Creates new cards in the given order, which becomes their order in the deck's new-card queue.
     /// </summary>
     /// <exception cref="FlashcardValidationException">A card breaks a card rule.</exception>
-    IReadOnlyList<Flashcard> Create(Guid deckId, IReadOnlyList<FlashcardDto> cards, Guid? sourceNoteId);
+    IReadOnlyList<Flashcard> Create(
+        Guid deckId,
+        IReadOnlyList<FlashcardDto> cards,
+        Guid? sourceNoteId
+    );
 
     /// <summary>Replaces front, back and tags; the learning progress stays.</summary>
     /// <exception cref="FlashcardValidationException">The new content breaks a card rule.</exception>

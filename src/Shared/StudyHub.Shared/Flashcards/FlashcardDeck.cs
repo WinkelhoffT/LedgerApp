@@ -13,7 +13,8 @@ public sealed record FlashcardDeck(
     int ReviewsPerDay,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt)
+    DateTime UpdatedAt
+)
 {
     public const int NameMaxLength = 200;
     public const int DefaultNewCardsPerDay = 20;

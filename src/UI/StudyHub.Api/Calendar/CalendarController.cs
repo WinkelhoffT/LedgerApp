@@ -12,7 +12,8 @@ public sealed class CalendarController(ICalendarOrchestrator calendarOrchestrato
 {
     [HttpGet("month")]
     public Task<CalendarMonthDto> GetMonthAsync(
-        [FromQuery, BindRequired, Range(CalendarMonthDto.MinYear, CalendarMonthDto.MaxYear)] int year,
+        [FromQuery, BindRequired, Range(CalendarMonthDto.MinYear, CalendarMonthDto.MaxYear)]
+            int year,
         [FromQuery, BindRequired, Range(1, 12)] int month,
         CancellationToken cancellationToken
     ) => calendarOrchestrator.GetMonthAsync(year, month, cancellationToken);
@@ -20,7 +21,18 @@ public sealed class CalendarController(ICalendarOrchestrator calendarOrchestrato
     // The upper bound keeps the week's Sunday inside the range DateOnly can represent.
     [HttpGet("week")]
     public Task<CalendarWeekDto> GetWeekAsync(
-        [FromQuery, BindRequired, Range(typeof(DateOnly), "0001-01-01", "9998-12-31", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)] DateOnly date,
+        [
+            FromQuery,
+            BindRequired,
+            Range(
+                typeof(DateOnly),
+                "0001-01-01",
+                "9998-12-31",
+                ParseLimitsInInvariantCulture = true,
+                ConvertValueInInvariantCulture = true
+            )
+        ]
+            DateOnly date,
         CancellationToken cancellationToken
     ) => calendarOrchestrator.GetWeekAsync(date, cancellationToken);
 }

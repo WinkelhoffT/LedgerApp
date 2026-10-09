@@ -8,6 +8,11 @@ public sealed class FileDownloadAccessor(IJSRuntime jsRuntime) : IFileDownloadAc
     {
         using var stream = new MemoryStream(content);
         using var streamReference = new DotNetStreamReference(stream);
-        await jsRuntime.InvokeVoidAsync("studyHubDownload.save", fileName, contentType, streamReference);
+        await jsRuntime.InvokeVoidAsync(
+            "studyHubDownload.save",
+            fileName,
+            contentType,
+            streamReference
+        );
     }
 }

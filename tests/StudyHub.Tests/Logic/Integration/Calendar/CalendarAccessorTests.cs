@@ -21,14 +21,26 @@ public class CalendarAccessorTests
     private static readonly DateOnly Today = new(2026, 10, 8);
 
     private static WebApplicationFactory<Program> CreateFactory() =>
-        InMemoryApiFactory.Create().WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services => services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))));
+        InMemoryApiFactory
+            .Create()
+            .WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now))
+                )
+            );
 
     private static async Task<CourseDto> CreateCourseAsync(HttpClient client)
     {
         var semester = await new SemesterAccessor(client).CreateAsync(
-            new CreateSemesterRequest("Winter 2026/27", new DateOnly(2026, 10, 1), new DateOnly(2027, 3, 31)));
-        return await new CourseAccessor(client).CreateAsync(new CreateCourseRequest("Algorithms", null, "#2563eb", semester.Id));
+            new CreateSemesterRequest(
+                "Winter 2026/27",
+                new DateOnly(2026, 10, 1),
+                new DateOnly(2027, 3, 31)
+            )
+        );
+        return await new CourseAccessor(client).CreateAsync(
+            new CreateCourseRequest("Algorithms", null, "#2563eb", semester.Id)
+        );
     }
 
     [Fact]
@@ -41,17 +53,39 @@ public class CalendarAccessorTests
         var calendar = new CalendarAccessor(client);
 
         var created = await sessions.CreateAsync(
-            new CreateStudySessionRequest("Graph review", course.Id, null, Today, new TimeOnly(9, 0), 90, "Library"));
+            new CreateStudySessionRequest(
+                "Graph review",
+                course.Id,
+                null,
+                Today,
+                new TimeOnly(9, 0),
+                90,
+                "Library"
+            )
+        );
         var month = await calendar.GetMonthAsync(2026, 10);
         var updated = await sessions.UpdateAsync(
-            new UpdateStudySessionRequest(created.Id, "Graph review", course.Id, null, Today, new TimeOnly(21, 30), 60, null));
+            new UpdateStudySessionRequest(
+                created.Id,
+                "Graph review",
+                course.Id,
+                null,
+                Today,
+                new TimeOnly(21, 30),
+                60,
+                null
+            )
+        );
         var week = await calendar.GetWeekAsync(Today);
         var today = await new DashboardAccessor(client).GetSessionsTodayAsync();
         await sessions.DeleteAsync(created.Id);
         var afterDelete = await calendar.GetWeekAsync(Today);
 
         var monthSession = Assert.Single(month.Days.Single(d => d.Date == Today).Sessions).Session;
-        Assert.Equal(("Algorithms", "#2563eb", new TimeOnly(10, 30)), (monthSession.OwnerName, monthSession.Color, monthSession.EndTime));
+        Assert.Equal(
+            ("Algorithms", "#2563eb", new TimeOnly(10, 30)),
+            (monthSession.OwnerName, monthSession.Color, monthSession.EndTime)
+        );
         Assert.Equal(new TimeOnly(22, 30), updated.EndTime);
         Assert.Equal(41, week.IsoWeek);
         Assert.Equal(23, week.EndHour);
@@ -69,13 +103,48 @@ public class CalendarAccessorTests
         var sessions = new StudySessionAccessor(client);
         var unknownId = Guid.NewGuid();
 
-        var validation = await Assert.ThrowsAsync<StudySessionValidationException>(
-            () => sessions.CreateAsync(new CreateStudySessionRequest("Late review", null, null, Today, new TimeOnly(23, 30), 60, null)));
-        var notFound = await Assert.ThrowsAsync<StudySessionNotFoundException>(() => sessions.DeleteAsync(unknownId));
-        var archived = await Assert.ThrowsAsync<CourseArchivedException>(
-            () => sessions.CreateAsync(new CreateStudySessionRequest("Graph review", course.Id, null, Today, new TimeOnly(9, 0), 60, null)));
-        await Assert.ThrowsAsync<SemesterNotFoundException>(
-            () => sessions.CreateAsync(new CreateStudySessionRequest("Workshop", null, Guid.NewGuid(), Today, new TimeOnly(9, 0), 60, null)));
+        var validation = await Assert.ThrowsAsync<StudySessionValidationException>(() =>
+            sessions.CreateAsync(
+                new CreateStudySessionRequest(
+                    "Late review",
+                    null,
+                    null,
+                    Today,
+                    new TimeOnly(23, 30),
+                    60,
+                    null
+                )
+            )
+        );
+        var notFound = await Assert.ThrowsAsync<StudySessionNotFoundException>(() =>
+            sessions.DeleteAsync(unknownId)
+        );
+        var archived = await Assert.ThrowsAsync<CourseArchivedException>(() =>
+            sessions.CreateAsync(
+                new CreateStudySessionRequest(
+                    "Graph review",
+                    course.Id,
+                    null,
+                    Today,
+                    new TimeOnly(9, 0),
+                    60,
+                    null
+                )
+            )
+        );
+        await Assert.ThrowsAsync<SemesterNotFoundException>(() =>
+            sessions.CreateAsync(
+                new CreateStudySessionRequest(
+                    "Workshop",
+                    null,
+                    Guid.NewGuid(),
+                    Today,
+                    new TimeOnly(9, 0),
+                    60,
+                    null
+                )
+            )
+        );
 
         Assert.Equal("A session must end by midnight of the day it starts.", validation.Message);
         Assert.Equal(unknownId, notFound.StudySessionId);

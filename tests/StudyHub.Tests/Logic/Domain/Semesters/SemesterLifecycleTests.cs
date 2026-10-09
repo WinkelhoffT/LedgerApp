@@ -28,7 +28,9 @@ public class SemesterLifecycleTests
     [InlineData(null)]
     public void Create_WithoutName_ThrowsValidationException(string? name)
     {
-        Assert.Throws<SemesterValidationException>(() => SemesterLifecycle.Create(name!, StartDate, EndDate));
+        Assert.Throws<SemesterValidationException>(() =>
+            SemesterLifecycle.Create(name!, StartDate, EndDate)
+        );
     }
 
     [Fact]
@@ -36,13 +38,17 @@ public class SemesterLifecycleTests
     {
         var name = new string('a', CreateSemesterRequest.NameMaxLength + 1);
 
-        Assert.Throws<SemesterValidationException>(() => SemesterLifecycle.Create(name, StartDate, EndDate));
+        Assert.Throws<SemesterValidationException>(() =>
+            SemesterLifecycle.Create(name, StartDate, EndDate)
+        );
     }
 
     [Fact]
     public void Create_WithEndDateBeforeStartDate_ThrowsValidationException()
     {
-        Assert.Throws<SemesterValidationException>(() => SemesterLifecycle.Create("Winter 2025/26", EndDate, StartDate));
+        Assert.Throws<SemesterValidationException>(() =>
+            SemesterLifecycle.Create("Winter 2025/26", EndDate, StartDate)
+        );
     }
 
     [Fact]
@@ -65,7 +71,9 @@ public class SemesterLifecycleTests
         var semester = SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate);
         semester = SemesterLifecycle.Archive(semester);
 
-        Assert.Throws<SemesterArchivedException>(() => SemesterLifecycle.Update(semester, "Summer 2026", StartDate, EndDate));
+        Assert.Throws<SemesterArchivedException>(() =>
+            SemesterLifecycle.Update(semester, "Summer 2026", StartDate, EndDate)
+        );
     }
 
     [Fact]

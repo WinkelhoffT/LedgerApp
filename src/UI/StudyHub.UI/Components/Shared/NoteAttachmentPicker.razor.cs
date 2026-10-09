@@ -35,7 +35,8 @@ public partial class NoteAttachmentPicker
     private IReadOnlyList<DocumentDto> AvailableDocuments =>
         AllDocuments.Where(d => !d.IsArchived && !AttachedDocumentIds.Contains(d.Id)).ToList();
 
-    protected override async Task OnInitializedAsync() => AllDocuments = await DocumentAccessor.GetAllAsync();
+    protected override async Task OnInitializedAsync() =>
+        AllDocuments = await DocumentAccessor.GetAllAsync();
 
     private async Task AttachAsync()
     {

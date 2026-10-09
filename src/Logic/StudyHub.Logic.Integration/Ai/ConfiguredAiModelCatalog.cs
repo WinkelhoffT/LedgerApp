@@ -16,9 +16,16 @@ public sealed class ConfiguredAiModelCatalog(IOptions<AnthropicOptions> options)
     {
         var defaultModelId = DefaultModelId;
 
-        var models = options.Value.Models
-            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
-            .Select(m => (Id: m.Id.Trim(), DisplayName: string.IsNullOrWhiteSpace(m.DisplayName) ? m.Id.Trim() : m.DisplayName.Trim()))
+        var models = options
+            .Value.Models.Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .Select(m =>
+                (
+                    Id: m.Id.Trim(),
+                    DisplayName: string.IsNullOrWhiteSpace(m.DisplayName)
+                        ? m.Id.Trim()
+                        : m.DisplayName.Trim()
+                )
+            )
             .DistinctBy(m => m.Id, StringComparer.Ordinal)
             .ToList();
 
@@ -27,7 +34,9 @@ public sealed class ConfiguredAiModelCatalog(IOptions<AnthropicOptions> options)
             models.Insert(0, (defaultModelId, defaultModelId));
         }
 
-        return models.Select(m => new AiModelDto(m.Id, m.DisplayName, m.Id == defaultModelId)).ToList();
+        return models
+            .Select(m => new AiModelDto(m.Id, m.DisplayName, m.Id == defaultModelId))
+            .ToList();
     }
 
     public bool IsAvailable(string modelId) => GetModels().Any(m => m.Id == modelId);

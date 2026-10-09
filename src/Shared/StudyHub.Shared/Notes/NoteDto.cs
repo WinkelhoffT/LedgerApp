@@ -11,4 +11,5 @@ public sealed record NoteDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<Guid> AttachedDocumentIds,
-    IReadOnlyList<Guid> LinkedNoteIds);
+    IReadOnlyList<Guid> LinkedNoteIds
+);

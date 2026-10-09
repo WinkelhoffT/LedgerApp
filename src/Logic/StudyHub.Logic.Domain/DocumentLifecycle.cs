@@ -5,7 +5,13 @@ namespace StudyHub.Logic.Domain;
 
 public sealed class DocumentLifecycle : IDocumentLifecycle
 {
-    public Document Create(string fileName, string contentType, byte[] content, Guid? courseId, Guid? semesterId)
+    public Document Create(
+        string fileName,
+        string contentType,
+        byte[] content,
+        Guid? courseId,
+        Guid? semesterId
+    )
     {
         var trimmedFileName = fileName?.Trim() ?? string.Empty;
         if (trimmedFileName.Length == 0)
@@ -15,7 +21,9 @@ public sealed class DocumentLifecycle : IDocumentLifecycle
 
         if (trimmedFileName.Length > UploadDocumentRequest.FileNameMaxLength)
         {
-            throw new DocumentValidationException($"Document file name must not exceed {UploadDocumentRequest.FileNameMaxLength} characters.");
+            throw new DocumentValidationException(
+                $"Document file name must not exceed {UploadDocumentRequest.FileNameMaxLength} characters."
+            );
         }
 
         var trimmedContentType = contentType?.Trim() ?? string.Empty;
@@ -31,7 +39,9 @@ public sealed class DocumentLifecycle : IDocumentLifecycle
 
         if (courseId is null == semesterId is null)
         {
-            throw new DocumentValidationException("A document must be assigned to exactly one of a course or a semester.");
+            throw new DocumentValidationException(
+                "A document must be assigned to exactly one of a course or a semester."
+            );
         }
 
         var now = DateTime.UtcNow;
@@ -46,16 +56,25 @@ public sealed class DocumentLifecycle : IDocumentLifecycle
             SemesterId: semesterId,
             IsArchived: false,
             CreatedAt: now,
-            UpdatedAt: now);
+            UpdatedAt: now
+        );
     }
 
     public Document Archive(Document document) =>
         document.IsArchived
             ? document
-            : document with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
+            : document with
+            {
+                IsArchived = true,
+                UpdatedAt = DateTime.UtcNow,
+            };
 
     public Document Restore(Document document) =>
         !document.IsArchived
             ? document
-            : document with { IsArchived = false, UpdatedAt = DateTime.UtcNow };
+            : document with
+            {
+                IsArchived = false,
+                UpdatedAt = DateTime.UtcNow,
+            };
 }

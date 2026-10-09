@@ -8,25 +8,29 @@ public sealed class FlashcardValidator : IFlashcardValidator
 {
     public void ValidateGenerationOptions(int cardCount, string? focusHint)
     {
-        if (cardCount is < GenerateFlashcardsRequest.MinCardCount or > GenerateFlashcardsRequest.MaxCardCount)
+        if (
+            cardCount
+            is < GenerateFlashcardsRequest.MinCardCount
+                or > GenerateFlashcardsRequest.MaxCardCount
+        )
         {
             throw new FlashcardValidationException(
-                $"Card count must be between {GenerateFlashcardsRequest.MinCardCount} and {GenerateFlashcardsRequest.MaxCardCount}.");
+                $"Card count must be between {GenerateFlashcardsRequest.MinCardCount} and {GenerateFlashcardsRequest.MaxCardCount}."
+            );
         }
 
         if (focusHint is { Length: > GenerateFlashcardsRequest.FocusHintMaxLength })
         {
             throw new FlashcardValidationException(
-                $"Focus hint must not exceed {GenerateFlashcardsRequest.FocusHintMaxLength} characters.");
+                $"Focus hint must not exceed {GenerateFlashcardsRequest.FocusHintMaxLength} characters."
+            );
         }
     }
 
-    public IReadOnlyList<FlashcardDto> FilterGeneratedCards(IReadOnlyList<FlashcardDto> cards, int maxCount) =>
-        cards
-            .Select(Normalize)
-            .Where(card => GetError(card) is null)
-            .Take(maxCount)
-            .ToList();
+    public IReadOnlyList<FlashcardDto> FilterGeneratedCards(
+        IReadOnlyList<FlashcardDto> cards,
+        int maxCount
+    ) => cards.Select(Normalize).Where(card => GetError(card) is null).Take(maxCount).ToList();
 
     public IReadOnlyList<FlashcardDto> ValidateCards(IReadOnlyList<FlashcardDto> cards)
     {
@@ -38,7 +42,8 @@ public sealed class FlashcardValidator : IFlashcardValidator
         if (cards.Count > AddFlashcardsRequest.MaxCardCount)
         {
             throw new FlashcardValidationException(
-                $"At most {AddFlashcardsRequest.MaxCardCount} cards can be saved at once.");
+                $"At most {AddFlashcardsRequest.MaxCardCount} cards can be saved at once."
+            );
         }
 
         var normalized = new List<FlashcardDto>(cards.Count);
@@ -56,7 +61,11 @@ public sealed class FlashcardValidator : IFlashcardValidator
         return normalized;
     }
 
-    public bool TryNormalize(FlashcardDto card, out FlashcardDto normalized, [NotNullWhen(false)] out string? error)
+    public bool TryNormalize(
+        FlashcardDto card,
+        out FlashcardDto normalized,
+        [NotNullWhen(false)] out string? error
+    )
     {
         normalized = Normalize(card);
         error = GetError(normalized);
@@ -71,7 +80,8 @@ public sealed class FlashcardValidator : IFlashcardValidator
                 .Where(tag => !string.IsNullOrWhiteSpace(tag))
                 .Select(tag => tag.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList());
+                .ToList()
+        );
 
     private static string? GetError(FlashcardDto card)
     {

@@ -9,28 +9,71 @@ namespace StudyHub.Api.Flashcards;
 // flashcard-specific exceptions.
 public sealed class FlashcardExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken
+    )
     {
         var problemDetails = exception switch
         {
             FlashcardValidationException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, FlashcardErrorCodes.FlashcardValidationFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardValidationFailed
+            ),
             FlashcardGenerationFailedException ex => Build(
-                StatusCodes.Status502BadGateway, ex.Message, FlashcardErrorCodes.FlashcardGenerationFailed, "reason", ex.Reason.ToString()),
+                StatusCodes.Status502BadGateway,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardGenerationFailed,
+                "reason",
+                ex.Reason.ToString()
+            ),
             AiNotConfiguredException ex => Build(
-                StatusCodes.Status503ServiceUnavailable, ex.Message, FlashcardErrorCodes.AiNotConfigured),
+                StatusCodes.Status503ServiceUnavailable,
+                ex.Message,
+                FlashcardErrorCodes.AiNotConfigured
+            ),
             FlashcardDeckNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, FlashcardErrorCodes.FlashcardDeckNotFound, "deckId", ex.DeckId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardDeckNotFound,
+                "deckId",
+                ex.DeckId
+            ),
             FlashcardDeckArchivedException ex => Build(
-                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.FlashcardDeckArchived, "deckId", ex.DeckId),
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardDeckArchived,
+                "deckId",
+                ex.DeckId
+            ),
             DuplicateFlashcardDeckNameException ex => Build(
-                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.DuplicateFlashcardDeckName, "deckName", ex.Name),
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                FlashcardErrorCodes.DuplicateFlashcardDeckName,
+                "deckName",
+                ex.Name
+            ),
             FlashcardNotFoundException ex => Build(
-                StatusCodes.Status404NotFound, ex.Message, FlashcardErrorCodes.FlashcardNotFound, "flashcardId", ex.FlashcardId),
+                StatusCodes.Status404NotFound,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardNotFound,
+                "flashcardId",
+                ex.FlashcardId
+            ),
             FlashcardNotDueException ex => Build(
-                StatusCodes.Status409Conflict, ex.Message, FlashcardErrorCodes.FlashcardNotDue, "flashcardId", ex.FlashcardId),
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardNotDue,
+                "flashcardId",
+                ex.FlashcardId
+            ),
             FlashcardImportException ex => Build(
-                StatusCodes.Status400BadRequest, ex.Message, FlashcardErrorCodes.FlashcardImportFailed),
+                StatusCodes.Status400BadRequest,
+                ex.Message,
+                FlashcardErrorCodes.FlashcardImportFailed
+            ),
             _ => null,
         };
 
@@ -44,13 +87,15 @@ public sealed class FlashcardExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static ProblemDetails Build(int status, string detail, string errorCode, string? extraKey = null, object? extraValue = null)
+    private static ProblemDetails Build(
+        int status,
+        string detail,
+        string errorCode,
+        string? extraKey = null,
+        object? extraValue = null
+    )
     {
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Detail = detail,
-        };
+        var problemDetails = new ProblemDetails { Status = status, Detail = detail };
 
         problemDetails.Extensions["errorCode"] = errorCode;
 

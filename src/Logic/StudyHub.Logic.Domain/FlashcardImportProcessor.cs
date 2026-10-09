@@ -6,11 +6,16 @@ namespace StudyHub.Logic.Domain;
 public sealed class FlashcardImportProcessor(
     IFlashcardValidator flashcardValidator,
     IFlashcardDeckLifecycle deckLifecycle,
-    IFlashcardLifecycle flashcardLifecycle) : IFlashcardImportProcessor
+    IFlashcardLifecycle flashcardLifecycle
+) : IFlashcardImportProcessor
 {
     private const string FallbackDeckName = "Imported cards";
 
-    public IReadOnlyList<Guid> GetTargetDeckIds(AnkiCsvParseResult file, FlashcardImportTarget target, IReadOnlyList<FlashcardDeck> decks)
+    public IReadOnlyList<Guid> GetTargetDeckIds(
+        AnkiCsvParseResult file,
+        FlashcardImportTarget target,
+        IReadOnlyList<FlashcardDeck> decks
+    )
     {
         var decksByName = ToNameLookup(decks);
         var deckIds = new HashSet<Guid>();
@@ -35,7 +40,8 @@ public sealed class FlashcardImportProcessor(
         AnkiCsvParseResult file,
         FlashcardImportTarget target,
         IReadOnlyList<FlashcardDeck> decks,
-        IReadOnlyList<Flashcard> existingCards)
+        IReadOnlyList<Flashcard> existingCards
+    )
     {
         if (file.Rows.Count == 0)
         {
@@ -49,7 +55,10 @@ public sealed class FlashcardImportProcessor(
         // The first card per front decides how a later row with the same front is treated, as in Anki.
         var existingByDeck = existingCards
             .GroupBy(card => card.DeckId)
-            .ToDictionary(group => group.Key, group => group.GroupBy(card => card.Front).ToDictionary(g => g.Key, g => g.First()));
+            .ToDictionary(
+                group => group.Key,
+                group => group.GroupBy(card => card.Front).ToDictionary(g => g.Key, g => g.First())
+            );
         var pendingByDeck = new Dictionary<Guid, List<FlashcardDto>>();
         var pendingIndexByDeck = new Dictionary<Guid, Dictionary<string, int>>();
         var updated = new Dictionary<Guid, Flashcard>();
@@ -61,11 +70,22 @@ public sealed class FlashcardImportProcessor(
         {
             if (row.NoteType?.Contains("cloze", StringComparison.OrdinalIgnoreCase) == true)
             {
-                failures.Add(new FlashcardImportFailureDto(row.LineNumber, "Cloze notes are not supported yet."));
+                failures.Add(
+                    new FlashcardImportFailureDto(
+                        row.LineNumber,
+                        "Cloze notes are not supported yet."
+                    )
+                );
                 continue;
             }
 
-            if (!flashcardValidator.TryNormalize(new FlashcardDto(row.Front, row.Back, row.Tags), out var content, out var error))
+            if (
+                !flashcardValidator.TryNormalize(
+                    new FlashcardDto(row.Front, row.Back, row.Tags),
+                    out var content,
+                    out var error
+                )
+            )
             {
                 failures.Add(new FlashcardImportFailureDto(row.LineNumber, error));
                 continue;
@@ -73,7 +93,12 @@ public sealed class FlashcardImportProcessor(
 
             if (ResolveDeck(row, target, decksByName, createdDecks) is not { } deck)
             {
-                failures.Add(new FlashcardImportFailureDto(row.LineNumber, DeckFailure(row, target, decksByName)));
+                failures.Add(
+                    new FlashcardImportFailureDto(
+                        row.LineNumber,
+                        DeckFailure(row, target, decksByName)
+                    )
+                );
                 continue;
             }
 
@@ -82,12 +107,21 @@ public sealed class FlashcardImportProcessor(
                 touchedDeckIds.Add(deck.Id);
             }
 
-            var existingCard = existingByDeck.GetValueOrDefault(deck.Id)?.GetValueOrDefault(content.Front);
-            var pending = pendingByDeck.TryGetValue(deck.Id, out var list) ? list : pendingByDeck[deck.Id] = [];
-            var pendingIndexes = pendingIndexByDeck.TryGetValue(deck.Id, out var indexes) ? indexes : pendingIndexByDeck[deck.Id] = [];
+            var existingCard = existingByDeck
+                .GetValueOrDefault(deck.Id)
+                ?.GetValueOrDefault(content.Front);
+            var pending = pendingByDeck.TryGetValue(deck.Id, out var list)
+                ? list
+                : pendingByDeck[deck.Id] = [];
+            var pendingIndexes = pendingIndexByDeck.TryGetValue(deck.Id, out var indexes)
+                ? indexes
+                : pendingIndexByDeck[deck.Id] = [];
             var hasPending = pendingIndexes.TryGetValue(content.Front, out var pendingIndex);
 
-            if (duplicateMode != ImportDuplicateMode.KeepBoth && (existingCard is not null || hasPending))
+            if (
+                duplicateMode != ImportDuplicateMode.KeepBoth
+                && (existingCard is not null || hasPending)
+            )
             {
                 if (duplicateMode == ImportDuplicateMode.KeepCurrent)
                 {
@@ -112,25 +146,41 @@ public sealed class FlashcardImportProcessor(
 
         var added = pendingByDeck
             .Where(entry => entry.Value.Count > 0)
-            .SelectMany(entry => flashcardLifecycle.Create(entry.Key, entry.Value, sourceNoteId: null))
+            .SelectMany(entry =>
+                flashcardLifecycle.Create(entry.Key, entry.Value, sourceNoteId: null)
+            )
             .ToList();
 
         if (added.Count == 0 && updated.Count == 0 && skipped == 0)
         {
             throw new FlashcardImportException(
-                $"No card in the file could be imported. Line {failures[0].LineNumber}: {failures[0].Reason}");
+                $"No card in the file could be imported. Line {failures[0].LineNumber}: {failures[0].Reason}"
+            );
         }
 
         var createdDeckIds = createdDecks.Select(d => d.Id).ToHashSet();
         var allDecks = decks.Concat(createdDecks).ToDictionary(d => d.Id);
         var affectedDecks = touchedDeckIds
-            .Select(id => new ImportedFlashcardDeckDto(id, allDecks[id].Name, createdDeckIds.Contains(id)))
+            .Select(id => new ImportedFlashcardDeckDto(
+                id,
+                allDecks[id].Name,
+                createdDeckIds.Contains(id)
+            ))
             .ToList();
 
-        return new FlashcardImportOutcome(createdDecks, added, updated.Values.ToList(), skipped, failures, affectedDecks);
+        return new FlashcardImportOutcome(
+            createdDecks,
+            added,
+            updated.Values.ToList(),
+            skipped,
+            failures,
+            affectedDecks
+        );
     }
 
-    private static Dictionary<string, FlashcardDeck> ToNameLookup(IReadOnlyList<FlashcardDeck> decks) =>
+    private static Dictionary<string, FlashcardDeck> ToNameLookup(
+        IReadOnlyList<FlashcardDeck> decks
+    ) =>
         decks
             .GroupBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
@@ -140,7 +190,8 @@ public sealed class FlashcardImportProcessor(
         AnkiCsvRow row,
         FlashcardImportTarget target,
         Dictionary<string, FlashcardDeck> decksByName,
-        List<FlashcardDeck> createdDecks)
+        List<FlashcardDeck> createdDecks
+    )
     {
         if (!TryGetDeckName(row, target, out var name))
         {
@@ -157,15 +208,29 @@ public sealed class FlashcardImportProcessor(
             return deck.IsArchived ? null : deck;
         }
 
-        deck = deckLifecycle.Create(name, courseId: null, semesterId: null, FlashcardDeck.DefaultNewCardsPerDay, FlashcardDeck.DefaultReviewsPerDay);
+        deck = deckLifecycle.Create(
+            name,
+            courseId: null,
+            semesterId: null,
+            FlashcardDeck.DefaultNewCardsPerDay,
+            FlashcardDeck.DefaultReviewsPerDay
+        );
         decksByName[deck.Name] = deck;
         createdDecks.Add(deck);
         return deck;
     }
 
-    private string DeckFailure(AnkiCsvRow row, FlashcardImportTarget target, Dictionary<string, FlashcardDeck> decksByName)
+    private string DeckFailure(
+        AnkiCsvRow row,
+        FlashcardImportTarget target,
+        Dictionary<string, FlashcardDeck> decksByName
+    )
     {
-        if (TryGetDeckName(row, target, out var name) && name is not null && decksByName.TryGetValue(name, out var deck))
+        if (
+            TryGetDeckName(row, target, out var name)
+            && name is not null
+            && decksByName.TryGetValue(name, out var deck)
+        )
         {
             return $"The deck '{deck.Name}' is archived.";
         }

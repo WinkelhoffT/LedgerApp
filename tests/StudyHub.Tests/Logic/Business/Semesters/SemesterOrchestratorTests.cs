@@ -22,19 +22,28 @@ public class SemesterOrchestratorTests
 
     public SemesterOrchestratorTests()
     {
-        _sut = new SemesterOrchestrator(_repository.Object, _courseRepository.Object, SemesterLifecycle, CourseLifecycle);
+        _sut = new SemesterOrchestrator(
+            _repository.Object,
+            _courseRepository.Object,
+            SemesterLifecycle,
+            CourseLifecycle
+        );
 
-        _courseRepository.Setup(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default))
+        _courseRepository
+            .Setup(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync([]);
     }
 
     [Fact]
     public async Task CreateAsync_WithUniqueName_AddsSemesterAndReturnsDto()
     {
-        _repository.Setup(r => r.ExistsByNameAsync("Winter 2025/26", null, default))
+        _repository
+            .Setup(r => r.ExistsByNameAsync("Winter 2025/26", null, default))
             .ReturnsAsync(false);
 
-        var result = await _sut.CreateAsync(new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate));
+        var result = await _sut.CreateAsync(
+            new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate)
+        );
 
         Assert.Equal("Winter 2025/26", result.Name);
         _repository.Verify(r => r.AddAsync(It.IsAny<Semester>(), default), Times.Once);
@@ -44,11 +53,13 @@ public class SemesterOrchestratorTests
     [Fact]
     public async Task CreateAsync_WithDuplicateName_ThrowsDuplicateSemesterNameException()
     {
-        _repository.Setup(r => r.ExistsByNameAsync("Winter 2025/26", null, default))
+        _repository
+            .Setup(r => r.ExistsByNameAsync("Winter 2025/26", null, default))
             .ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<DuplicateSemesterNameException>(
-            () => _sut.CreateAsync(new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate)));
+        await Assert.ThrowsAsync<DuplicateSemesterNameException>(() =>
+            _sut.CreateAsync(new CreateSemesterRequest("Winter 2025/26", StartDate, EndDate))
+        );
 
         _repository.Verify(r => r.AddAsync(It.IsAny<Semester>(), default), Times.Never);
     }
@@ -59,8 +70,9 @@ public class SemesterOrchestratorTests
         var id = Guid.NewGuid();
         _repository.Setup(r => r.GetByIdAsync(id, default)).ReturnsAsync((Semester?)null);
 
-        await Assert.ThrowsAsync<SemesterNotFoundException>(
-            () => _sut.UpdateAsync(new UpdateSemesterRequest(id, "New Name", StartDate, EndDate)));
+        await Assert.ThrowsAsync<SemesterNotFoundException>(() =>
+            _sut.UpdateAsync(new UpdateSemesterRequest(id, "New Name", StartDate, EndDate))
+        );
     }
 
     [Fact]
@@ -70,10 +82,13 @@ public class SemesterOrchestratorTests
         semester = SemesterLifecycle.Archive(semester);
 
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
-        _repository.Setup(r => r.ExistsByNameAsync("New Name", semester.Id, default)).ReturnsAsync(false);
+        _repository
+            .Setup(r => r.ExistsByNameAsync("New Name", semester.Id, default))
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<SemesterArchivedException>(
-            () => _sut.UpdateAsync(new UpdateSemesterRequest(semester.Id, "New Name", StartDate, EndDate)));
+        await Assert.ThrowsAsync<SemesterArchivedException>(() =>
+            _sut.UpdateAsync(new UpdateSemesterRequest(semester.Id, "New Name", StartDate, EndDate))
+        );
     }
 
     [Fact]
@@ -111,13 +126,20 @@ public class SemesterOrchestratorTests
         var course2 = CourseLifecycle.Create("Databases", null, "#16a34a", semester.Id);
 
         _repository.Setup(r => r.GetByIdAsync(semester.Id, default)).ReturnsAsync(semester);
-        _courseRepository.Setup(r => r.GetBySemesterIdAsync(semester.Id, default))
+        _courseRepository
+            .Setup(r => r.GetBySemesterIdAsync(semester.Id, default))
             .ReturnsAsync([course1, course2]);
 
         await _sut.ArchiveAsync(semester.Id);
 
-        _courseRepository.Verify(r => r.Update(It.Is<Course>(c => c.Id == course1.Id && c.IsArchived)), Times.Once);
-        _courseRepository.Verify(r => r.Update(It.Is<Course>(c => c.Id == course2.Id && c.IsArchived)), Times.Once);
+        _courseRepository.Verify(
+            r => r.Update(It.Is<Course>(c => c.Id == course1.Id && c.IsArchived)),
+            Times.Once
+        );
+        _courseRepository.Verify(
+            r => r.Update(It.Is<Course>(c => c.Id == course2.Id && c.IsArchived)),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -133,7 +155,10 @@ public class SemesterOrchestratorTests
         await _sut.RestoreAsync(semester.Id);
 
         _courseRepository.Verify(r => r.Update(It.IsAny<Course>()), Times.Never);
-        _courseRepository.Verify(r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default), Times.Never);
+        _courseRepository.Verify(
+            r => r.GetBySemesterIdAsync(It.IsAny<Guid>(), default),
+            Times.Never
+        );
     }
 
     [Fact]

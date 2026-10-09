@@ -11,4 +11,5 @@ public sealed record AnkiCsvRow(
     string Back,
     IReadOnlyList<string> Tags,
     string? DeckName,
-    string? NoteType);
+    string? NoteType
+);

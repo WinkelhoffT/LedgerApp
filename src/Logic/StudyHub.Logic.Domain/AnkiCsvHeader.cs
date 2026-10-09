@@ -16,4 +16,5 @@ internal sealed record AnkiCsvHeader(
     int? NoteTypeColumn = null,
     int? TagsColumn = null,
     int? GuidColumn = null,
-    ImportDuplicateMode? DuplicateMode = null);
+    ImportDuplicateMode? DuplicateMode = null
+);

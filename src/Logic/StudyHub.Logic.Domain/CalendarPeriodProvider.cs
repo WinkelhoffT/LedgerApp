@@ -20,7 +20,9 @@ public sealed class CalendarPeriodProvider : ICalendarPeriodProvider
     }
 
     public DateOnly GetToday() =>
-        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, _timeZone));
+        DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, _timeZone)
+        );
 
     public CalendarPeriod GetMonth(int year, int month)
     {

@@ -4,9 +4,16 @@ using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Logic.Domain;
 
-public sealed partial class FlashcardLifecycle(IFlashcardValidator flashcardValidator, TimeProvider timeProvider) : IFlashcardLifecycle
+public sealed partial class FlashcardLifecycle(
+    IFlashcardValidator flashcardValidator,
+    TimeProvider timeProvider
+) : IFlashcardLifecycle
 {
-    public IReadOnlyList<Flashcard> Create(Guid deckId, IReadOnlyList<FlashcardDto> cards, Guid? sourceNoteId)
+    public IReadOnlyList<Flashcard> Create(
+        Guid deckId,
+        IReadOnlyList<FlashcardDto> cards,
+        Guid? sourceNoteId
+    )
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var created = new List<Flashcard>(cards.Count);
@@ -17,23 +24,26 @@ public sealed partial class FlashcardLifecycle(IFlashcardValidator flashcardVali
 
             // A new card's DueAt is its queue position. Cards created together share one timestamp,
             // so each gets one more tick to keep the order they were given in.
-            created.Add(new Flashcard(
-                Id: Guid.CreateVersion7(),
-                DeckId: deckId,
-                Front: content.Front,
-                Back: content.Back,
-                Tags: FormatTags(content.Tags),
-                SourceNoteId: sourceNoteId,
-                State: FlashcardState.New,
-                Step: 0,
-                DueAt: now.AddTicks(i),
-                IntervalDays: 0,
-                EaseFactor: FlashcardReviewProcessor.StartingEaseFactor,
-                Reps: 0,
-                Lapses: 0,
-                LastReviewedAt: null,
-                CreatedAt: now,
-                UpdatedAt: now));
+            created.Add(
+                new Flashcard(
+                    Id: Guid.CreateVersion7(),
+                    DeckId: deckId,
+                    Front: content.Front,
+                    Back: content.Back,
+                    Tags: FormatTags(content.Tags),
+                    SourceNoteId: sourceNoteId,
+                    State: FlashcardState.New,
+                    Step: 0,
+                    DueAt: now.AddTicks(i),
+                    IntervalDays: 0,
+                    EaseFactor: FlashcardReviewProcessor.StartingEaseFactor,
+                    Reps: 0,
+                    Lapses: 0,
+                    LastReviewedAt: null,
+                    CreatedAt: now,
+                    UpdatedAt: now
+                )
+            );
         }
 
         return created;
@@ -60,8 +70,7 @@ public sealed partial class FlashcardLifecycle(IFlashcardValidator flashcardVali
     // Anki separates tags with spaces, so whitespace inside a single tag becomes an underscore.
     private static string? FormatTags(IReadOnlyList<string> tags)
     {
-        var formatted = tags
-            .Select(tag => Whitespace().Replace(tag, "_"))
+        var formatted = tags.Select(tag => Whitespace().Replace(tag, "_"))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 

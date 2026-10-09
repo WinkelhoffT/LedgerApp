@@ -8,7 +8,13 @@ namespace StudyHub.Logic.Domain.Contract;
 /// </summary>
 public interface IDocumentLifecycle
 {
-    Document Create(string fileName, string contentType, byte[] content, Guid? courseId, Guid? semesterId);
+    Document Create(
+        string fileName,
+        string contentType,
+        byte[] content,
+        Guid? courseId,
+        Guid? semesterId
+    );
 
     Document Archive(Document document);
 

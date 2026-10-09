@@ -19,7 +19,9 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
     // Anki tries the delimiters in this order and takes the first one that occurs at all.
     private static readonly char[] DelimiterFallbackOrder = ['\t', '|', ';', ':', ',', ' '];
 
-    private static readonly Dictionary<string, char> DelimiterNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, char> DelimiterNames = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
         ["comma"] = ',',
         ["semicolon"] = ';',
@@ -29,29 +31,35 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
         ["colon"] = ':',
     };
 
-    private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+    private static readonly UTF8Encoding StrictUtf8 = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true
+    );
 
     public AnkiCsvParseResult Parse(byte[] content)
     {
         if (content.Length > ImportFlashcardsRequest.MaxFileSizeBytes)
         {
             throw new FlashcardImportException(
-                $"The file is larger than {ImportFlashcardsRequest.MaxFileSizeBytes / (1024 * 1024)} MB.");
+                $"The file is larger than {ImportFlashcardsRequest.MaxFileSizeBytes / (1024 * 1024)} MB."
+            );
         }
 
         var text = Decode(content);
         var (header, position, lineNumber) = ReadHeader(text);
         var delimiter = header.Delimiter ?? DetectDelimiter(text, position);
         var records = ReadRecords(text, position, lineNumber, delimiter);
-        var isHtml = header.IsHtml ?? records.Take(HtmlSampleRows).Any(record => record.Fields.Any(HtmlTag().IsMatch));
+        var isHtml =
+            header.IsHtml
+            ?? records.Take(HtmlSampleRows).Any(record => record.Fields.Any(HtmlTag().IsMatch));
 
         var columnLabels = header.ColumnsValue is null
             ? []
-            : ReadFields(header.ColumnsValue, 0, delimiter, out _).Select(label => label.Trim()).ToList();
+            : ReadFields(header.ColumnsValue, 0, delimiter, out _)
+                .Select(label => label.Trim())
+                .ToList();
 
-        var rows = records
-            .Select(record => ToRow(record, header, columnLabels, isHtml))
-            .ToList();
+        var rows = records.Select(record => ToRow(record, header, columnLabels, isHtml)).ToList();
 
         return new AnkiCsvParseResult(header.DuplicateMode, rows);
     }
@@ -121,17 +129,52 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
 
         return key.Trim().ToLowerInvariant() switch
         {
-            "separator" => ParseDelimiter(rawValue) is { } delimiter ? header with { Delimiter = delimiter } : header,
-            "html" => bool.TryParse(value, out var isHtml) ? header with { IsHtml = isHtml } : header,
+            "separator" => ParseDelimiter(rawValue) is { } delimiter
+                ? header with
+                {
+                    Delimiter = delimiter,
+                }
+                : header,
+            "html" => bool.TryParse(value, out var isHtml)
+                ? header with
+                {
+                    IsHtml = isHtml,
+                }
+                : header,
             "tags" => header with { Tags = SplitTags(value) },
             "columns" => header with { ColumnsValue = rawValue },
             "deck" => value.Length > 0 ? header with { DeckName = value } : header,
             "notetype" => value.Length > 0 ? header with { NoteType = value } : header,
-            "deck column" => ParseColumn(value) is { } column ? header with { DeckColumn = column } : header,
-            "notetype column" => ParseColumn(value) is { } column ? header with { NoteTypeColumn = column } : header,
-            "tags column" => ParseColumn(value) is { } column ? header with { TagsColumn = column } : header,
-            "guid column" => ParseColumn(value) is { } column ? header with { GuidColumn = column } : header,
-            "if matches" => ParseDuplicateMode(value) is { } mode ? header with { DuplicateMode = mode } : header,
+            "deck column" => ParseColumn(value) is { } column
+                ? header with
+                {
+                    DeckColumn = column,
+                }
+                : header,
+            "notetype column" => ParseColumn(value) is { } column
+                ? header with
+                {
+                    NoteTypeColumn = column,
+                }
+                : header,
+            "tags column" => ParseColumn(value) is { } column
+                ? header with
+                {
+                    TagsColumn = column,
+                }
+                : header,
+            "guid column" => ParseColumn(value) is { } column
+                ? header with
+                {
+                    GuidColumn = column,
+                }
+                : header,
+            "if matches" => ParseDuplicateMode(value) is { } mode
+                ? header with
+                {
+                    DuplicateMode = mode,
+                }
+                : header,
 
             // "#match scope:" is read but ignored, since StudyHub always matches within the target deck.
             // Unknown keys are ignored, as in Anki.
@@ -177,7 +220,12 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
         return ' ';
     }
 
-    private static List<AnkiCsvRecord> ReadRecords(string text, int position, int lineNumber, char delimiter)
+    private static List<AnkiCsvRecord> ReadRecords(
+        string text,
+        int position,
+        int lineNumber,
+        char delimiter
+    )
     {
         var records = new List<AnkiCsvRecord>();
 
@@ -200,7 +248,9 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
 
             if (records.Count > ImportFlashcardsRequest.MaxRows)
             {
-                throw new FlashcardImportException($"The file has more than {ImportFlashcardsRequest.MaxRows:N0} rows.");
+                throw new FlashcardImportException(
+                    $"The file has more than {ImportFlashcardsRequest.MaxRows:N0} rows."
+                );
             }
 
             position = SkipLineBreak(text, end);
@@ -219,7 +269,13 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
     // Reads one record (RFC 4180): quoted fields may contain the delimiter, line breaks and "" for a
     // quote. Like Anki's CSV reader it is lenient: text after a closing quote is kept as is, and an
     // unterminated quote runs to the end of the file. Returns at the line break ending the record.
-    private static List<string> ReadFields(string text, int position, char delimiter, out int end, ref int lineNumber)
+    private static List<string> ReadFields(
+        string text,
+        int position,
+        char delimiter,
+        out int end,
+        ref int lineNumber
+    )
     {
         var fields = new List<string>();
         var field = new StringBuilder();
@@ -245,7 +301,13 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
                         break;
                     }
 
-                    if (current == '\n' || (current == '\r' && (position + 1 == text.Length || text[position + 1] != '\n')))
+                    if (
+                        current == '\n'
+                        || (
+                            current == '\r'
+                            && (position + 1 == text.Length || text[position + 1] != '\n')
+                        )
+                    )
                     {
                         lineNumber++;
                     }
@@ -255,7 +317,11 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
                 }
             }
 
-            while (position < text.Length && text[position] != delimiter && text[position] is not ('\n' or '\r'))
+            while (
+                position < text.Length
+                && text[position] != delimiter
+                && text[position] is not ('\n' or '\r')
+            )
             {
                 field.Append(text[position]);
                 position++;
@@ -275,13 +341,20 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
         }
     }
 
-    private static AnkiCsvRow ToRow(AnkiCsvRecord record, AnkiCsvHeader header, IReadOnlyList<string> columnLabels, bool isHtml)
+    private static AnkiCsvRow ToRow(
+        AnkiCsvRecord record,
+        AnkiCsvHeader header,
+        IReadOnlyList<string> columnLabels,
+        bool isHtml
+    )
     {
         var deckIndex = header.DeckColumn - 1;
         var noteTypeIndex = header.NoteTypeColumn - 1;
         var guidIndex = header.GuidColumn - 1;
         var tagsIndex = header.TagsColumn - 1 ?? IndexOfLabel(columnLabels, "tags");
-        var metaColumns = new[] { deckIndex, noteTypeIndex, guidIndex, tagsIndex }.OfType<int>().ToHashSet();
+        var metaColumns = new[] { deckIndex, noteTypeIndex, guidIndex, tagsIndex }
+            .OfType<int>()
+            .ToHashSet();
 
         var (frontIndex, backIndex) = GetFieldIndexes(columnLabels, metaColumns);
 
@@ -296,19 +369,30 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
             ToHtml(GetField(record, backIndex), isHtml),
             tags,
             NullIfEmpty(GetField(record, deckIndex)) ?? header.DeckName,
-            NullIfEmpty(GetField(record, noteTypeIndex)) ?? header.NoteType);
+            NullIfEmpty(GetField(record, noteTypeIndex)) ?? header.NoteType
+        );
     }
 
     // Columns labelled Front and Back win; otherwise the first two columns that carry no deck,
     // note type, tags or GUID are the card's fields.
-    private static (int Front, int Back) GetFieldIndexes(IReadOnlyList<string> columnLabels, HashSet<int> metaColumns)
+    private static (int Front, int Back) GetFieldIndexes(
+        IReadOnlyList<string> columnLabels,
+        HashSet<int> metaColumns
+    )
     {
-        if (IndexOfLabel(columnLabels, "front") is { } front && IndexOfLabel(columnLabels, "back") is { } back)
+        if (
+            IndexOfLabel(columnLabels, "front") is { } front
+            && IndexOfLabel(columnLabels, "back") is { } back
+        )
         {
             return (front, back);
         }
 
-        var fieldColumns = Enumerable.Range(0, int.MaxValue).Where(index => !metaColumns.Contains(index)).Take(2).ToArray();
+        var fieldColumns = Enumerable
+            .Range(0, int.MaxValue)
+            .Where(index => !metaColumns.Contains(index))
+            .Take(2)
+            .ToArray();
         return (fieldColumns[0], fieldColumns[1]);
     }
 
@@ -333,7 +417,11 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
     private static string ToHtml(string field, bool isHtml) =>
         isHtml
             ? field
-            : LineBreaks().Replace(field.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;"), "<br>");
+            : LineBreaks()
+                .Replace(
+                    field.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;"),
+                    "<br>"
+                );
 
     private static IReadOnlyList<string> SplitTags(string value) =>
         value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
@@ -349,7 +437,8 @@ public sealed partial class AnkiCsvParser : IAnkiCsvParser
 
     private static int SkipLineBreak(string text, int lineEnd) =>
         lineEnd >= text.Length ? text.Length
-        : text[lineEnd] == '\r' && lineEnd + 1 < text.Length && text[lineEnd + 1] == '\n' ? lineEnd + 2
+        : text[lineEnd] == '\r' && lineEnd + 1 < text.Length && text[lineEnd + 1] == '\n'
+            ? lineEnd + 2
         : lineEnd + 1;
 
     [GeneratedRegex(@"</?[a-zA-Z][a-zA-Z0-9]*(\s[^<>]*)?/?>")]

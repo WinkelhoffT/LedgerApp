@@ -13,7 +13,10 @@ public sealed class FlashcardStudyOrchestrator(
     IStudyDayProvider studyDayProvider
 ) : IFlashcardStudyOrchestrator
 {
-    public async Task<StudyCardDto?> GetNextAsync(Guid deckId, CancellationToken cancellationToken = default)
+    public async Task<StudyCardDto?> GetNextAsync(
+        Guid deckId,
+        CancellationToken cancellationToken = default
+    )
     {
         var deck = await GetActiveDeckAsync(deckId, cancellationToken);
         return await GetNextCardAsync(deck, studyDayProvider.GetCurrent(), cancellationToken);
@@ -50,7 +53,10 @@ public sealed class FlashcardStudyOrchestrator(
         return await GetNextCardAsync(deck, today, cancellationToken);
     }
 
-    private async Task<FlashcardDeck> GetActiveDeckAsync(Guid deckId, CancellationToken cancellationToken)
+    private async Task<FlashcardDeck> GetActiveDeckAsync(
+        Guid deckId,
+        CancellationToken cancellationToken
+    )
     {
         var deck =
             await deckRepository.GetByIdAsync(deckId, cancellationToken)
@@ -59,13 +65,22 @@ public sealed class FlashcardStudyOrchestrator(
         return deck.IsArchived ? throw new FlashcardDeckArchivedException(deck.Id) : deck;
     }
 
-    private async Task<StudyCardDto?> GetNextCardAsync(FlashcardDeck deck, StudyDay today, CancellationToken cancellationToken)
+    private async Task<StudyCardDto?> GetNextCardAsync(
+        FlashcardDeck deck,
+        StudyDay today,
+        CancellationToken cancellationToken
+    )
     {
         var counts = await GetCountsAsync(deck, today, cancellationToken);
         var candidates = new StudyQueueCandidates(
             await flashcardRepository.GetFirstLearningCardAsync(deck.Id, cancellationToken),
-            await flashcardRepository.GetFirstReviewCardAsync(deck.Id, today.NextStart, cancellationToken),
-            await flashcardRepository.GetFirstNewCardAsync(deck.Id, cancellationToken));
+            await flashcardRepository.GetFirstReviewCardAsync(
+                deck.Id,
+                today.NextStart,
+                cancellationToken
+            ),
+            await flashcardRepository.GetFirstNewCardAsync(deck.Id, cancellationToken)
+        );
 
         if (studyQueueProvider.SelectNext(deck, candidates, counts, today) is not { } card)
         {
@@ -81,14 +96,31 @@ public sealed class FlashcardStudyOrchestrator(
             FlashcardMapper.SplitTags(card.Tags),
             card.State,
             counts,
-            reviewProcessor.PreviewIntervals(card, today));
+            reviewProcessor.PreviewIntervals(card, today)
+        );
     }
 
-    private async Task<FlashcardStudyCountsDto> GetCountsAsync(FlashcardDeck deck, StudyDay today, CancellationToken cancellationToken)
+    private async Task<FlashcardStudyCountsDto> GetCountsAsync(
+        FlashcardDeck deck,
+        StudyDay today,
+        CancellationToken cancellationToken
+    )
     {
-        var cardCounts = await flashcardRepository.GetCardCountsAsync(today.NextStart, deck.Id, cancellationToken);
-        var reviewCounts = await flashcardRepository.GetReviewCountsAsync(today.Start, deck.Id, cancellationToken);
+        var cardCounts = await flashcardRepository.GetCardCountsAsync(
+            today.NextStart,
+            deck.Id,
+            cancellationToken
+        );
+        var reviewCounts = await flashcardRepository.GetReviewCountsAsync(
+            today.Start,
+            deck.Id,
+            cancellationToken
+        );
 
-        return studyQueueProvider.GetCounts(deck, cardCounts.FirstOrDefault(), reviewCounts.FirstOrDefault());
+        return studyQueueProvider.GetCounts(
+            deck,
+            cardCounts.FirstOrDefault(),
+            reviewCounts.FirstOrDefault()
+        );
     }
 }

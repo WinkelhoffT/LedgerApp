@@ -9,11 +9,24 @@ namespace StudyHub.Logic.Domain.Contract;
 public interface IFlashcardDeckLifecycle
 {
     /// <exception cref="FlashcardValidationException">Name, owner or a daily limit breaks a deck rule.</exception>
-    FlashcardDeck Create(string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay);
+    FlashcardDeck Create(
+        string name,
+        Guid? courseId,
+        Guid? semesterId,
+        int newCardsPerDay,
+        int reviewsPerDay
+    );
 
     /// <exception cref="FlashcardDeckArchivedException">The deck is archived.</exception>
     /// <exception cref="FlashcardValidationException">Name, owner or a daily limit breaks a deck rule.</exception>
-    FlashcardDeck Update(FlashcardDeck deck, string name, Guid? courseId, Guid? semesterId, int newCardsPerDay, int reviewsPerDay);
+    FlashcardDeck Update(
+        FlashcardDeck deck,
+        string name,
+        Guid? courseId,
+        Guid? semesterId,
+        int newCardsPerDay,
+        int reviewsPerDay
+    );
 
     FlashcardDeck Archive(FlashcardDeck deck);
 

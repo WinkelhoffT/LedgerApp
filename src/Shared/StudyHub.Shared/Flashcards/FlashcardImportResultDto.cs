@@ -5,7 +5,8 @@ public sealed record FlashcardImportResultDto(
     int Updated,
     int SkippedDuplicates,
     IReadOnlyList<FlashcardImportFailureDto> Failures,
-    IReadOnlyList<ImportedFlashcardDeckDto> Decks)
+    IReadOnlyList<ImportedFlashcardDeckDto> Decks
+)
 {
     public int Failed => Failures.Count;
 }

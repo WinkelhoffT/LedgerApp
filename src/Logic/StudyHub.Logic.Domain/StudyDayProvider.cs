@@ -29,7 +29,10 @@ public sealed class StudyDayProvider : IStudyDayProvider
 
     public DateOnly GetDate(DateTime utc)
     {
-        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), _timeZone);
+        var local = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(utc, DateTimeKind.Utc),
+            _timeZone
+        );
 
         // Wall-clock arithmetic: before the start hour, the time still belongs to the previous day.
         return DateOnly.FromDateTime(local.AddHours(-_dayStartHour));

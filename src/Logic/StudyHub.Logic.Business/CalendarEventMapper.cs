@@ -9,7 +9,11 @@ internal static class CalendarEventMapper
 {
     /// <param name="course">The event's course, if it has one.</param>
     /// <param name="semester">The event's semester, if it has one.</param>
-    public static CalendarEventDto ToDto(CalendarEvent calendarEvent, Course? course, Semester? semester) =>
+    public static CalendarEventDto ToDto(
+        CalendarEvent calendarEvent,
+        Course? course,
+        Semester? semester
+    ) =>
         new(
             calendarEvent.Id,
             calendarEvent.Kind,
@@ -18,11 +22,14 @@ internal static class CalendarEventMapper
             calendarEvent.SemesterId,
             calendarEvent.Date,
             calendarEvent.StartTime,
-            calendarEvent is { StartTime: { } start, DurationMinutes: { } duration } ? start.AddMinutes(duration) : null,
+            calendarEvent is { StartTime: { } start, DurationMinutes: { } duration }
+                ? start.AddMinutes(duration)
+                : null,
             calendarEvent.DurationMinutes,
             calendarEvent.Location,
             course?.Name ?? semester?.Name,
             course?.Color,
             calendarEvent.CreatedAt,
-            calendarEvent.UpdatedAt);
+            calendarEvent.UpdatedAt
+        );
 }

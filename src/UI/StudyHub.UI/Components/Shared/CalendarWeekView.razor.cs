@@ -44,14 +44,24 @@ public partial class CalendarWeekView
     private static IEnumerable<CalendarEventEntryDto> GetTimedEvents(CalendarDayDto day) =>
         day.Events.Where(e => e.Event is { StartTime: not null, DurationMinutes: not null });
 
-    private string GetDayClass(DateOnly date) => string.Join(' ', new[]
-    {
-        date == Week.Today ? "today" : null,
-        date == SelectedDate ? "sel" : null,
-    }.Where(c => c is not null));
+    private string GetDayClass(DateOnly date) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                date == Week.Today ? "today" : null,
+                date == SelectedDate ? "sel" : null,
+            }.Where(c => c is not null)
+        );
 
     // Top and height in percent of the visible hours, left and width in percent of the day column.
-    private string GetBlockStyle(TimeOnly startTime, int durationMinutes, int lane, int laneCount, string color)
+    private string GetBlockStyle(
+        TimeOnly startTime,
+        int durationMinutes,
+        int lane,
+        int laneCount,
+        string color
+    )
     {
         var visibleMinutes = (double)(Week.EndHour - Week.StartHour) * MinutesPerHour;
         var startMinute = startTime.ToTimeSpan().TotalMinutes - Week.StartHour * MinutesPerHour;
@@ -59,10 +69,11 @@ public partial class CalendarWeekView
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"top:{startMinute / visibleMinutes * 100:0.###}%;" +
-            $"height:{durationMinutes / visibleMinutes * 100:0.###}%;" +
-            $"left:calc({lane * laneWidth:0.###}% + 2px);" +
-            $"width:calc({laneWidth:0.###}% - 4px);" +
-            $"--session-color:{color}");
+            $"top:{startMinute / visibleMinutes * 100:0.###}%;"
+                + $"height:{durationMinutes / visibleMinutes * 100:0.###}%;"
+                + $"left:calc({lane * laneWidth:0.###}% + 2px);"
+                + $"width:calc({laneWidth:0.###}% - 4px);"
+                + $"--session-color:{color}"
+        );
     }
 }

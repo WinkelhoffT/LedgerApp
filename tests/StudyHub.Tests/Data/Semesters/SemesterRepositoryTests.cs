@@ -70,7 +70,13 @@ public class SemesterRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new SemesterRepository(dbContext);
-        await repository.AddAsync(SemesterLifecycle.Create("Summer 2026", new DateOnly(2026, 4, 1), new DateOnly(2026, 9, 30)));
+        await repository.AddAsync(
+            SemesterLifecycle.Create(
+                "Summer 2026",
+                new DateOnly(2026, 4, 1),
+                new DateOnly(2026, 9, 30)
+            )
+        );
         await repository.AddAsync(SemesterLifecycle.Create("Winter 2025/26", StartDate, EndDate));
         await repository.SaveChangesAsync();
 

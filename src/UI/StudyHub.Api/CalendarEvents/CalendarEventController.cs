@@ -6,7 +6,8 @@ namespace StudyHub.Api.CalendarEvents;
 
 [ApiController]
 [Route("api/calendar-events")]
-public sealed class CalendarEventController(ICalendarEventOrchestrator eventOrchestrator) : ControllerBase
+public sealed class CalendarEventController(ICalendarEventOrchestrator eventOrchestrator)
+    : ControllerBase
 {
     [HttpPost]
     public Task<CalendarEventDto> CreateAsync(

@@ -4,22 +4,40 @@ using StudyHub.Shared.CalendarEvents;
 
 namespace StudyHub.Data;
 
-public sealed class CalendarEventRepository(ApplicationDbContext dbContext) : ICalendarEventRepository
+public sealed class CalendarEventRepository(ApplicationDbContext dbContext)
+    : ICalendarEventRepository
 {
-    public Task<CalendarEvent?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        dbContext.CalendarEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    public Task<CalendarEvent?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    ) =>
+        dbContext
+            .CalendarEvents.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyList<CalendarEvent>> GetByDateRangeAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default) =>
-        await InDateOrder(dbContext.CalendarEvents.AsNoTracking().Where(e => e.Date >= from && e.Date <= to))
+    public async Task<IReadOnlyList<CalendarEvent>> GetByDateRangeAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default
+    ) =>
+        await InDateOrder(
+                dbContext.CalendarEvents.AsNoTracking().Where(e => e.Date >= from && e.Date <= to)
+            )
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<CalendarEvent>> GetUpcomingAsync(DateOnly from, int count, CancellationToken cancellationToken = default) =>
+    public async Task<IReadOnlyList<CalendarEvent>> GetUpcomingAsync(
+        DateOnly from,
+        int count,
+        CancellationToken cancellationToken = default
+    ) =>
         await InDateOrder(dbContext.CalendarEvents.AsNoTracking().Where(e => e.Date >= from))
             .Take(count)
             .ToListAsync(cancellationToken);
 
-    public async Task AddAsync(CalendarEvent calendarEvent, CancellationToken cancellationToken = default) =>
-        await dbContext.CalendarEvents.AddAsync(calendarEvent, cancellationToken);
+    public async Task AddAsync(
+        CalendarEvent calendarEvent,
+        CancellationToken cancellationToken = default
+    ) => await dbContext.CalendarEvents.AddAsync(calendarEvent, cancellationToken);
 
     public void Update(CalendarEvent calendarEvent) =>
         dbContext.CalendarEvents.Update(calendarEvent);

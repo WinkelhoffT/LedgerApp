@@ -8,4 +8,5 @@ public sealed record Course(
     Guid SemesterId,
     bool IsArchived,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);

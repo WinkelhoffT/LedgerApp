@@ -8,5 +8,6 @@ public partial class Settings
     [Inject]
     private IPageHeaderStateHolder PageHeader { get; set; } = default!;
 
-    protected override void OnInitialized() => PageHeader.SetHeader("Settings", "Preferences & account");
+    protected override void OnInitialized() =>
+        PageHeader.SetHeader("Settings", "Preferences & account");
 }

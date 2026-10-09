@@ -12,6 +12,11 @@ public sealed class SemesterProgressCalculator : ISemesterProgressCalculator
         var remainingDays = totalDays - elapsedDays;
         var percentComplete = Math.Clamp(elapsedDays / (double)totalDays * 100, 0, 100);
 
-        return new Shared.Semesters.SemesterProgress(totalDays, elapsedDays, remainingDays, percentComplete);
+        return new Shared.Semesters.SemesterProgress(
+            totalDays,
+            elapsedDays,
+            remainingDays,
+            percentComplete
+        );
     }
 }

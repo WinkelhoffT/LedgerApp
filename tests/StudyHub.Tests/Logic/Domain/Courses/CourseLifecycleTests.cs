@@ -12,7 +12,12 @@ public class CourseLifecycleTests
     [Fact]
     public void Create_WithValidData_SetsProperties()
     {
-        var course = CourseLifecycle.Create("Algorithms", "Intro to algorithms", "#2563eb", SemesterId);
+        var course = CourseLifecycle.Create(
+            "Algorithms",
+            "Intro to algorithms",
+            "#2563eb",
+            SemesterId
+        );
 
         Assert.NotEqual(Guid.Empty, course.Id);
         Assert.Equal("Algorithms", course.Name);
@@ -28,7 +33,9 @@ public class CourseLifecycleTests
     [InlineData(null)]
     public void Create_WithoutName_ThrowsValidationException(string? name)
     {
-        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create(name!, null, "#2563eb", SemesterId));
+        Assert.Throws<CourseValidationException>(() =>
+            CourseLifecycle.Create(name!, null, "#2563eb", SemesterId)
+        );
     }
 
     [Fact]
@@ -36,19 +43,25 @@ public class CourseLifecycleTests
     {
         var name = new string('a', CreateCourseRequest.NameMaxLength + 1);
 
-        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create(name, null, "#2563eb", SemesterId));
+        Assert.Throws<CourseValidationException>(() =>
+            CourseLifecycle.Create(name, null, "#2563eb", SemesterId)
+        );
     }
 
     [Fact]
     public void Create_WithoutColor_ThrowsValidationException()
     {
-        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create("Algorithms", null, "", SemesterId));
+        Assert.Throws<CourseValidationException>(() =>
+            CourseLifecycle.Create("Algorithms", null, "", SemesterId)
+        );
     }
 
     [Fact]
     public void Create_WithoutSemesterId_ThrowsValidationException()
     {
-        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.Empty));
+        Assert.Throws<CourseValidationException>(() =>
+            CourseLifecycle.Create("Algorithms", null, "#2563eb", Guid.Empty)
+        );
     }
 
     [Fact]
@@ -57,7 +70,13 @@ public class CourseLifecycleTests
         var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
         var otherSemesterId = Guid.NewGuid();
 
-        course = CourseLifecycle.Update(course, "Data Structures", "Updated description", "#16a34a", otherSemesterId);
+        course = CourseLifecycle.Update(
+            course,
+            "Data Structures",
+            "Updated description",
+            "#16a34a",
+            otherSemesterId
+        );
 
         Assert.Equal("Data Structures", course.Name);
         Assert.Equal("Updated description", course.Description);
@@ -70,7 +89,9 @@ public class CourseLifecycleTests
     {
         var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
 
-        Assert.Throws<CourseValidationException>(() => CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", Guid.Empty));
+        Assert.Throws<CourseValidationException>(() =>
+            CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", Guid.Empty)
+        );
     }
 
     [Fact]
@@ -79,7 +100,9 @@ public class CourseLifecycleTests
         var course = CourseLifecycle.Create("Algorithms", null, "#2563eb", SemesterId);
         course = CourseLifecycle.Archive(course);
 
-        Assert.Throws<CourseArchivedException>(() => CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", SemesterId));
+        Assert.Throws<CourseArchivedException>(() =>
+            CourseLifecycle.Update(course, "Data Structures", null, "#16a34a", SemesterId)
+        );
     }
 
     [Fact]

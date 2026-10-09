@@ -16,7 +16,8 @@ public sealed class SemesterLifecycle : ISemesterLifecycle
             EndDate: ValidateEndDate(startDate, endDate),
             IsArchived: false,
             CreatedAt: now,
-            UpdatedAt: now);
+            UpdatedAt: now
+        );
     }
 
     public Semester Update(Semester semester, string name, DateOnly startDate, DateOnly endDate)
@@ -38,12 +39,20 @@ public sealed class SemesterLifecycle : ISemesterLifecycle
     public Semester Archive(Semester semester) =>
         semester.IsArchived
             ? semester
-            : semester with { IsArchived = true, UpdatedAt = DateTime.UtcNow };
+            : semester with
+            {
+                IsArchived = true,
+                UpdatedAt = DateTime.UtcNow,
+            };
 
     public Semester Restore(Semester semester) =>
         !semester.IsArchived
             ? semester
-            : semester with { IsArchived = false, UpdatedAt = DateTime.UtcNow };
+            : semester with
+            {
+                IsArchived = false,
+                UpdatedAt = DateTime.UtcNow,
+            };
 
     private static string ValidateName(string name)
     {
@@ -55,7 +64,9 @@ public sealed class SemesterLifecycle : ISemesterLifecycle
 
         if (trimmedName.Length > CreateSemesterRequest.NameMaxLength)
         {
-            throw new SemesterValidationException($"Semester name must not exceed {CreateSemesterRequest.NameMaxLength} characters.");
+            throw new SemesterValidationException(
+                $"Semester name must not exceed {CreateSemesterRequest.NameMaxLength} characters."
+            );
         }
 
         return trimmedName;
@@ -65,7 +76,9 @@ public sealed class SemesterLifecycle : ISemesterLifecycle
     {
         if (endDate < startDate)
         {
-            throw new SemesterValidationException("Semester end date must not be before the start date.");
+            throw new SemesterValidationException(
+                "Semester end date must not be before the start date."
+            );
         }
 
         return endDate;

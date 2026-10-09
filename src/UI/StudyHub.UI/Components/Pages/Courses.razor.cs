@@ -28,9 +28,7 @@ public partial class Courses
     private CourseDto? EditingCourse { get; set; }
 
     private IReadOnlyList<CourseDto> VisibleCourses =>
-        CourseList is null
-            ? []
-            : CourseList.Where(c => ShowArchived || !c.IsArchived).ToList();
+        CourseList is null ? [] : CourseList.Where(c => ShowArchived || !c.IsArchived).ToList();
 
     protected override async Task OnInitializedAsync()
     {

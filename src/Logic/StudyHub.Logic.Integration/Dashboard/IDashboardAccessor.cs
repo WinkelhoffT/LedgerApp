@@ -11,11 +11,15 @@ namespace StudyHub.Logic.Integration.Dashboard;
 /// </summary>
 public interface IDashboardAccessor
 {
-    Task<SemesterProgressDto> GetSemesterProgressAsync(CancellationToken cancellationToken = default);
+    Task<SemesterProgressDto> GetSemesterProgressAsync(
+        CancellationToken cancellationToken = default
+    );
 
     Task<FlashcardsDueDto> GetFlashcardsDueAsync(CancellationToken cancellationToken = default);
 
     Task<CalendarDayDto> GetSessionsTodayAsync(CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingEventsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingEventsAsync(
+        CancellationToken cancellationToken = default
+    );
 }

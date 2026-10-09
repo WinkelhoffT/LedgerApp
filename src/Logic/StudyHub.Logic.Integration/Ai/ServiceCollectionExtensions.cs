@@ -11,9 +11,14 @@ public static class ServiceCollectionExtensions
     /// the UI never talks to the Anthropic API. A missing <c>Anthropic:ApiKey</c> does not fail startup -
     /// it surfaces as <c>AiNotConfiguredException</c> when a feature is used.
     /// </summary>
-    public static IServiceCollection AddStudyHubAi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddStudyHubAi(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
-        services.Configure<AnthropicOptions>(configuration.GetSection(AnthropicOptions.SectionName));
+        services.Configure<AnthropicOptions>(
+            configuration.GetSection(AnthropicOptions.SectionName)
+        );
 
         services.AddSingleton<IAiModelCatalog, ConfiguredAiModelCatalog>();
         services.AddSingleton<IFlashcardGenerator, ClaudeFlashcardGenerator>();

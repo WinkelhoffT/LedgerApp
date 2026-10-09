@@ -9,5 +9,8 @@ public interface IFlashcardStudyAccessor
     Task<StudyCardDto?> GetNextAsync(Guid deckId, CancellationToken cancellationToken = default);
 
     /// <returns>The next card after this answer, or <c>null</c> when the deck is finished for now.</returns>
-    Task<StudyCardDto?> AnswerAsync(AnswerFlashcardRequest request, CancellationToken cancellationToken = default);
+    Task<StudyCardDto?> AnswerAsync(
+        AnswerFlashcardRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

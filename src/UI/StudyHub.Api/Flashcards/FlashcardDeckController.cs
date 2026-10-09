@@ -66,7 +66,10 @@ public sealed class FlashcardDeckController(
     ) => deckCardOrchestrator.UpdateCardAsync(request with { Id = cardId }, cancellationToken);
 
     [HttpDelete("cards/{cardId:guid}")]
-    public async Task<NoContentResult> DeleteCardAsync(Guid cardId, CancellationToken cancellationToken)
+    public async Task<NoContentResult> DeleteCardAsync(
+        Guid cardId,
+        CancellationToken cancellationToken
+    )
     {
         await deckCardOrchestrator.DeleteCardAsync(cardId, cancellationToken);
         return NoContent();
@@ -84,7 +87,12 @@ public sealed class FlashcardDeckController(
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, cancellationToken);
 
-        var request = new ImportFlashcardsRequest(file.FileName, buffer.ToArray(), targetDeckId, duplicateMode);
+        var request = new ImportFlashcardsRequest(
+            file.FileName,
+            buffer.ToArray(),
+            targetDeckId,
+            duplicateMode
+        );
         return await transferOrchestrator.ImportAsync(request, cancellationToken);
     }
 
