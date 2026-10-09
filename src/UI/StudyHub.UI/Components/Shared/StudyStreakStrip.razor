@@ -1,0 +1,9 @@
+@using StudyHub.UI.Analytics
+
+<div class="streak-days" role="img" aria-label="@AnalyticsFormatter.FormatStreakWeekSummary(Days)">
+    @foreach (var day in Days)
+    {
+        <div class="streak-day @(day.Minutes > 0 ? "on" : null) @(day.IsToday ? "today" : null)"
+             title="@(day.IsFuture ? null : AnalyticsFormatter.FormatDayTitle(day))" aria-hidden="true">@AnalyticsFormatter.FormatWeekdayLetter(day.Date)</div>
+    }
+</div>

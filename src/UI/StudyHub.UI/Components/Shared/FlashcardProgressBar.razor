@@ -1,0 +1,10 @@
+@using StudyHub.UI.Analytics
+
+<div class="fc-progress" role="img" aria-label="@AnalyticsFormatter.FormatFlashcardProgress(Progress)" style="--course-color:@Color">
+    @if (Progress.Total > 0)
+    {
+        <span class="fc-seg fc-mature" style="width:@AnalyticsFormatter.GetShare(Progress.Mature, Progress.Total)" title="Mature: @Progress.Mature"></span>
+        <span class="fc-seg fc-young" style="width:@AnalyticsFormatter.GetShare(Progress.Young, Progress.Total)" title="Young: @Progress.Young"></span>
+        <span class="fc-seg fc-learning" style="width:@AnalyticsFormatter.GetShare(Progress.Learning, Progress.Total)" title="Learning: @Progress.Learning"></span>
+    }
+</div>

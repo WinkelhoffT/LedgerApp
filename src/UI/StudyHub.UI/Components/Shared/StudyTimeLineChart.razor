@@ -1,0 +1,29 @@
+@using StudyHub.UI.Analytics
+
+<div class="line-chart-wrap" role="img" aria-label="@AnalyticsFormatter.FormatWeeksSummary(Weeks)">
+    <svg class="line-chart" viewBox="0 0 @AnalyticsFormatter.ToSvg(Width) @AnalyticsFormatter.ToSvg(Height)" aria-hidden="true">
+        <defs>
+            <linearGradient id="@_gradientId" x1="0" y1="0" x2="0" y2="1">
+                <stop class="lc-area-top" offset="0%" />
+                <stop class="lc-area-bottom" offset="100%" />
+            </linearGradient>
+        </defs>
+        <path d="@AnalyticsFormatter.GetAreaPath(Points, Height - VerticalPadding)" fill="url(#@_gradientId)" />
+        <path class="lc-line" d="@AnalyticsFormatter.GetLinePath(Points)" />
+        @for (var i = 0; i < Points.Count; i++)
+        {
+            <circle class="lc-point" cx="@AnalyticsFormatter.ToSvg(Points[i].X)" cy="@AnalyticsFormatter.ToSvg(Points[i].Y)" r="4">
+                <title>@AnalyticsFormatter.FormatWeekTitle(Weeks[i])</title>
+            </circle>
+        }
+    </svg>
+    <div class="line-chart-labels" style="--lc-columns:@Weeks.Count" aria-hidden="true">
+        @for (var i = 0; i < Weeks.Count; i++)
+        {
+            <span class="lcl" title="@AnalyticsFormatter.FormatWeekTitle(Weeks[i])">
+                <span class="lcl-val">@AnalyticsFormatter.FormatHours(Weeks[i].Minutes)</span>
+                <span class="lcl-week">@AnalyticsFormatter.FormatWeekLabel(Weeks[i], i == Weeks.Count - 1)</span>
+            </span>
+        }
+    </div>
+</div>

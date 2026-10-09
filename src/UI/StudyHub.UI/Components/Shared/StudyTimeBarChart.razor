@@ -1,0 +1,15 @@
+@using StudyHub.UI.Analytics
+
+<div class="bars" role="img" aria-label="@AnalyticsFormatter.FormatWeekSummary(Days)">
+    @foreach (var day in Days)
+    {
+        <div class="bar-col @(day.IsFuture ? "is-future" : null)" title="@(day.IsFuture ? null : AnalyticsFormatter.FormatDayTitle(day))">
+            <span class="bar-val">@(day.IsFuture ? null : AnalyticsFormatter.FormatHours(day.Minutes))</span>
+            <div class="bar-track">
+                <div class="bar @(day.Minutes > 0 ? "has-value" : null) @(day.IsToday ? "today" : null)"
+                     style="height:@AnalyticsFormatter.GetBarHeight(day.Minutes, MaxMinutes)"></div>
+            </div>
+            <span class="bar-label @(day.IsToday ? "today" : null)">@AnalyticsFormatter.FormatShortWeekday(day.Date)</span>
+        </div>
+    }
+</div>
