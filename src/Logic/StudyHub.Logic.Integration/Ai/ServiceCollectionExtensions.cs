@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         );
 
         services.AddSingleton<IAiModelCatalog, ConfiguredAiModelCatalog>();
+        services.AddSingleton<ClaudeStructuredOutputProcessor>();
         services.AddSingleton<IFlashcardGenerator, ClaudeFlashcardGenerator>();
 
         return services;

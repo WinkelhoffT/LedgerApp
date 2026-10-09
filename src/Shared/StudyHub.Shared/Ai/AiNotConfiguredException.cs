@@ -1,4 +1,4 @@
-namespace StudyHub.Shared.Flashcards;
+namespace StudyHub.Shared.Ai;
 
 public sealed class AiNotConfiguredException()
     : Exception(

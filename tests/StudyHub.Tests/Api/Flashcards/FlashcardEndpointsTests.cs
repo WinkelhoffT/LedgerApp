@@ -207,10 +207,7 @@ public class FlashcardEndpointsTests
                 g.GenerateAsync(It.IsAny<FlashcardGenerationInput>(), It.IsAny<CancellationToken>())
             )
             .ThrowsAsync(
-                new FlashcardGenerationFailedException(
-                    FlashcardGenerationFailureReason.Refused,
-                    "declined"
-                )
+                new AiGenerationFailedException(AiGenerationFailureReason.Refused, "declined")
             );
         using var factory = CreateFactory(generator.Object);
         using var client = factory.CreateClient();
@@ -223,7 +220,7 @@ public class FlashcardEndpointsTests
 
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
         Assert.Equal(
-            nameof(FlashcardGenerationFailureReason.Refused),
+            nameof(AiGenerationFailureReason.Refused),
             await GetProblemValueAsync(response, "reason")
         );
     }
@@ -242,7 +239,7 @@ public class FlashcardEndpointsTests
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal(
-            FlashcardErrorCodes.AiNotConfigured,
+            AiErrorCodes.AiNotConfigured,
             await GetProblemValueAsync(response, "errorCode")
         );
     }

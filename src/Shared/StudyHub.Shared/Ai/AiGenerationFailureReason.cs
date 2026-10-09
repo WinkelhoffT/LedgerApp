@@ -1,6 +1,6 @@
-namespace StudyHub.Shared.Flashcards;
+namespace StudyHub.Shared.Ai;
 
-public enum FlashcardGenerationFailureReason
+public enum AiGenerationFailureReason
 {
     Unknown,
     Refused,

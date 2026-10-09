@@ -54,16 +54,16 @@ public sealed class FlashcardAccessor(HttpClient httpClient) : IFlashcardAccesso
             FlashcardErrorCodes.FlashcardValidationFailed => new FlashcardValidationException(
                 problemDetails?.Detail ?? "Flashcard validation failed."
             ),
-            FlashcardErrorCodes.FlashcardGenerationFailed => new FlashcardGenerationFailedException(
-                Enum.TryParse<FlashcardGenerationFailureReason>(
+            AiErrorCodes.AiGenerationFailed => new AiGenerationFailedException(
+                Enum.TryParse<AiGenerationFailureReason>(
                     GetString(problemDetails, "reason"),
                     out var reason
                 )
                     ? reason
-                    : FlashcardGenerationFailureReason.Unknown,
+                    : AiGenerationFailureReason.Unknown,
                 problemDetails?.Detail ?? "Flashcard generation failed."
             ),
-            FlashcardErrorCodes.AiNotConfigured => new AiNotConfiguredException(),
+            AiErrorCodes.AiNotConfigured => new AiNotConfiguredException(),
             NoteErrorCodes.NoteNotFound => new NoteNotFoundException(
                 GetGuid(problemDetails, "noteId")
             ),

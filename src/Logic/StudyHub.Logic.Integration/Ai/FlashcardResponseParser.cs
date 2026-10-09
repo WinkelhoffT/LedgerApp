@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StudyHub.Shared.Ai;
 using StudyHub.Shared.Flashcards;
 
 namespace StudyHub.Logic.Integration.Ai;
@@ -21,13 +22,13 @@ public static class FlashcardResponseParser
         switch (stopReason)
         {
             case "refusal":
-                throw new FlashcardGenerationFailedException(
-                    FlashcardGenerationFailureReason.Refused,
+                throw new AiGenerationFailedException(
+                    AiGenerationFailureReason.Refused,
                     "Claude declined to generate flashcards for this note."
                 );
             case "max_tokens":
-                throw new FlashcardGenerationFailedException(
-                    FlashcardGenerationFailureReason.Truncated,
+                throw new AiGenerationFailedException(
+                    AiGenerationFailureReason.Truncated,
                     "The response was cut off before all flashcards were complete. Try fewer cards."
                 );
         }
@@ -62,10 +63,10 @@ public static class FlashcardResponseParser
             .ToList();
     }
 
-    private static FlashcardGenerationFailedException InvalidResponse(
+    private static AiGenerationFailedException InvalidResponse(
         string message,
         Exception? inner = null
-    ) => new(FlashcardGenerationFailureReason.InvalidResponse, message, inner);
+    ) => new(AiGenerationFailureReason.InvalidResponse, message, inner);
 
     private sealed record ResponseBody(IReadOnlyList<ResponseCard?>? Cards);
 
