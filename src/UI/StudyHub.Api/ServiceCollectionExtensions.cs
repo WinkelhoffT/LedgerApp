@@ -41,6 +41,24 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Binds <see cref="CalendarOptions"/> and validates it at startup, so a misconfigured time zone
+    /// fails fast instead of on the first calendar request.
+    /// </summary>
+    public static IServiceCollection AddStudyHubCalendar(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<CalendarOptions>()
+            .Bind(configuration.GetSection(CalendarOptions.SectionName))
+            .Validate(options => IsKnownTimeZone(options.TimeZone), "Calendar:TimeZone must be a known IANA time zone id.")
+            .ValidateOnStart();
+
+        // The Domain's CalendarPeriodProvider takes the plain options object, keeping Domain free of the Options package.
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<CalendarOptions>>().Value);
+
+        return services;
+    }
+
     private static bool IsKnownTimeZone(string? timeZoneId) =>
         !string.IsNullOrWhiteSpace(timeZoneId) && TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _);
 

@@ -1,0 +1,39 @@
+@using StudyHub.UI.Calendar
+
+<div class="cal-grid">
+    @foreach (var weekday in Month.Days.Take(7))
+    {
+        <div class="cal-dow">@CalendarFormatter.FormatShortWeekday(weekday.Date)</div>
+    }
+
+    @foreach (var day in Month.Days)
+    {
+        var chips = GetChips(day);
+        var pastClass = day.Date < Month.Today ? "is-past" : null;
+        <div class="cal-cell @GetCellClass(day)" @onclick="() => OnDaySelected.InvokeAsync(day.Date)">
+            <button class="cal-num" type="button" aria-label="@CalendarFormatter.FormatDate(day.Date)"
+                    aria-pressed="@(day.Date == SelectedDate ? "true" : "false")" aria-current="@(day.Date == Month.Today ? "date" : null)">
+                @day.Date.Day
+            </button>
+            @foreach (var item in chips.Events)
+            {
+                <button class="cal-ev is-event @pastClass" type="button"
+                        style="--session-color:@CalendarFormatter.GetColor(item.Event)" aria-label="@CalendarFormatter.FormatEventLabel(item.Event)">
+                    <CalendarEventIcon Kind="item.Event.Kind" Size="11" />
+                    <span class="cal-ev-text">@CalendarFormatter.FormatEventChipTime(item.Event) @item.Event.Title</span>
+                </button>
+            }
+            @foreach (var item in chips.Sessions)
+            {
+                <button class="cal-ev @pastClass" type="button"
+                        style="--session-color:@CalendarFormatter.GetColor(item.Session)" aria-label="@CalendarFormatter.FormatSessionLabel(item.Session)">
+                    @CalendarFormatter.FormatTime(item.Session.StartTime) @item.Session.Title
+                </button>
+            }
+            @if (chips.Hidden > 0)
+            {
+                <span class="cal-more">+@chips.Hidden more</span>
+            }
+        </div>
+    }
+</div>

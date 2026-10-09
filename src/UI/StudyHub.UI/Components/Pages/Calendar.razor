@@ -1,5 +1,77 @@
 @page "/calendar"
+@using StudyHub.UI.Calendar
 
 <PageTitle>Calendar</PageTitle>
 
-<p>Calendar — coming soon.</p>
+<div class="cal-toolbar">
+    <div class="cal-period">@PeriodTitle</div>
+    <div class="cal-nav">
+        <button class="icon-btn" type="button" aria-label="@(IsWeek ? "Previous week" : "Previous month")" @onclick="ShowPrevious">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="@(IsWeek ? "Next week" : "Next month")" @onclick="ShowNext">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+    </div>
+    <button class="btn btn-outline btn-sm" type="button" @onclick="ShowToday">Today</button>
+    <div class="cal-view-toggle" role="group" aria-label="Calendar view">
+        <button class="btn @(IsWeek ? null : "active")" type="button" aria-pressed="@(IsWeek ? "false" : "true")" @onclick="() => ShowView(week: false)">Month</button>
+        <button class="btn @(IsWeek ? "active" : null)" type="button" aria-pressed="@(IsWeek ? "true" : "false")" @onclick="() => ShowView(week: true)">Week</button>
+    </div>
+    <button class="btn btn-outline cal-add" type="button" disabled="@(Today is null)" @onclick="AddEventForSelectedDay">
+        <CalendarEventIcon Kind="StudyHub.Shared.CalendarEvents.CalendarEventKind.Exam" Size="15" />
+        Add exam or deadline
+    </button>
+    <button class="btn btn-primary" type="button" disabled="@(Today is null)" @onclick="AddSessionForSelectedDay">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        Add session
+    </button>
+</div>
+
+@if (LegendCourses.Count > 0)
+{
+    <div class="cal-legend" aria-label="Courses in this period">
+        @foreach (var course in LegendCourses)
+        {
+            <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:@course.Color"></span>@course.Name</span>
+        }
+    </div>
+}
+
+@if (ErrorMessage is not null)
+{
+    <div class="form-error page-error">@ErrorMessage</div>
+}
+
+@if (Today is not { } today)
+{
+    <p class="placeholder-hint">Loading calendar…</p>
+}
+else
+{
+    <div class="cal-layout">
+        <div class="card cal-main">
+            @if (IsWeek)
+            {
+                <CalendarWeekView Week="Week!" SelectedDate="SelectedDate" OnDaySelected="SelectDay"
+                                  OnSessionSelected="OpenEdit" OnEventSelected="OpenEventEdit"
+                                  OnSlotSelected="slot => OpenCreate(slot.Date, slot.StartTime)" />
+            }
+            else
+            {
+                <CalendarMonthView Month="Month!" SelectedDate="SelectedDate" OnDaySelected="SelectDay" />
+            }
+        </div>
+
+        <CalendarDayPanel Date="SelectedDate" Today="today" Sessions="SelectedDay?.Sessions ?? []" Events="SelectedDay?.Events ?? []"
+                          OnSessionSelected="OpenEdit" OnEventSelected="OpenEventEdit"
+                          OnAddSession="AddSessionForSelectedDay" OnAddEvent="AddEventForSelectedDay" />
+    </div>
+}
+
+<StudySessionFormDialog IsOpen="IsDialogOpen" EditingSession="EditingSession"
+                        NewSessionDate="NewSessionDate" NewSessionStartTime="NewSessionStartTime"
+                        OnClose="CloseDialog" OnSaved="session => HandleSavedAsync(session.Date)" OnDeleted="HandleDeletedAsync" />
+
+<CalendarEventFormDialog IsOpen="IsEventDialogOpen" EditingEvent="EditingEvent" NewEventDate="NewEventDate"
+                         OnClose="CloseEventDialog" OnSaved="calendarEvent => HandleSavedAsync(calendarEvent.Date)" OnDeleted="HandleDeletedAsync" />

@@ -1,0 +1,37 @@
+@using StudyHub.UI.Calendar
+
+@{
+    RenderFragment content =
+        @<text>
+            <span class="event-card-head">
+                <span class="event-kind"><CalendarEventIcon Kind="Event.Kind" /> @CalendarFormatter.FormatKind(Event.Kind)</span>
+                <span class="sc-time">@CalendarFormatter.FormatEventTime(Event)</span>
+            </span>
+            <span class="sc-title">@Event.Title</span>
+            @if (Event.OwnerName is not null)
+            {
+                <span class="sc-sub">@Event.OwnerName</span>
+            }
+            @if (Event.Location is not null)
+            {
+                <span class="sc-sub sc-location">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                    @Event.Location
+                </span>
+            }
+        </text>;
+}
+
+@if (OnSelected.HasDelegate)
+{
+    <button class="session-card event-card session-card-button @PastClass" type="button" style="--session-color:@CalendarFormatter.GetColor(Event)"
+            aria-label="@($"Edit {CalendarFormatter.FormatEventLabel(Event)}")" @onclick="() => OnSelected.InvokeAsync(Event)">
+        @content
+    </button>
+}
+else
+{
+    <div class="session-card event-card @PastClass" style="--session-color:@CalendarFormatter.GetColor(Event)">
+        @content
+    </div>
+}

@@ -17,6 +17,63 @@ namespace StudyHub.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
+            modelBuilder.Entity("StudyHub.Shared.CalendarEvents.CalendarEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SemesterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("SemesterId");
+
+                    b.ToTable("CalendarEvents", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CalendarEvents_AtMostOneParent", "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_CalendarEvents_Duration", "(\"DurationMinutes\" IS NULL OR (\"DurationMinutes\" >= 5 AND \"DurationMinutes\" <= 720))");
+
+                            t.HasCheckConstraint("CK_CalendarEvents_DurationNeedsStart", "(\"DurationMinutes\" IS NULL OR \"StartTime\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("StudyHub.Shared.Courses.Course", b =>
                 {
                     b.Property<Guid>("Id")
@@ -371,6 +428,71 @@ namespace StudyHub.Data.Migrations
                     b.ToTable("Semesters", (string)null);
                 });
 
+            modelBuilder.Entity("StudyHub.Shared.StudySessions.StudySession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SemesterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("SemesterId");
+
+                    b.ToTable("StudySessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StudySessions_AtMostOneParent", "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_StudySessions_Duration", "(\"DurationMinutes\" >= 5 AND \"DurationMinutes\" <= 720)");
+                        });
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.CalendarEvents.CalendarEvent", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("StudyHub.Shared.Courses.Course", b =>
                 {
                     b.HasOne("StudyHub.Shared.Semesters.Semester", null)
@@ -470,6 +592,19 @@ namespace StudyHub.Data.Migrations
                         .HasForeignKey("TargetNoteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("StudyHub.Shared.StudySessions.StudySession", b =>
+                {
+                    b.HasOne("StudyHub.Shared.Courses.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("StudyHub.Shared.Semesters.Semester", null)
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618
         }
