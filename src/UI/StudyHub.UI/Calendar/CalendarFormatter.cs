@@ -45,14 +45,22 @@ public static class CalendarFormatter
     /// <summary><c>90 min</c>.</summary>
     public static string FormatDuration(int minutes) => $"{minutes} min";
 
-    /// <summary>Screen-reader label of a chip or block: <c>Graph review, 09:00 – 10:30, Algorithms</c>.</summary>
+    /// <summary>Screen-reader label of a chip or block: <c>Graph review, 09:00 – 10:30, Algorithms, done</c>.</summary>
     public static string FormatSessionLabel(StudySessionDto session) =>
         string.Join(
             ", ",
-            new[] { session.Title, FormatTimeRange(session), session.OwnerName }.Where(part =>
-                !string.IsNullOrEmpty(part)
-            )
+            new[]
+            {
+                session.Title,
+                FormatTimeRange(session),
+                session.OwnerName,
+                session.IsCompleted ? "done" : null,
+            }.Where(part => !string.IsNullOrEmpty(part))
         );
+
+    /// <summary><c>Done · 75 min</c>, with the actual duration.</summary>
+    public static string FormatDone(StudySessionDto session) =>
+        $"Done · {FormatDuration(session.ActualDurationMinutes ?? session.DurationMinutes)}";
 
     /// <summary>The CSS color of a session: its course color, otherwise the accent color.</summary>
     public static string GetColor(StudySessionDto session) => session.Color ?? "var(--accent)";

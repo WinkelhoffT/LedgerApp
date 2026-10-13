@@ -1,0 +1,23 @@
+@using StudyHub.Shared.Analytics
+@using StudyHub.UI.Analytics
+
+<div class="heatmap-wrap" role="img" aria-label="@AnalyticsFormatter.FormatHeatmapSummary(Days)">
+    <div class="heatmap" aria-hidden="true">
+        @foreach (var day in Days.Take(7))
+        {
+            <span class="heat-dow">@AnalyticsFormatter.FormatWeekdayLetter(day.Date)</span>
+        }
+        @foreach (var day in Days)
+        {
+            <div class="heat-cell @GetCellClass(day)" title="@(day.IsFuture ? null : AnalyticsFormatter.FormatHeatmapTitle(day))"></div>
+        }
+    </div>
+    <div class="heat-legend" aria-hidden="true">
+        <span>Less</span>
+        @for (var level = 0; level <= StudyHeatmapDayDto.MaxLevel; level++)
+        {
+            <span class="heat-cell level-@level"></span>
+        }
+        <span>More</span>
+    </div>
+</div>

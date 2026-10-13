@@ -1,0 +1,48 @@
+@using StudyHub.UI.Analytics
+
+@if (Overview is null)
+{
+    <p class="placeholder-hint">Loading course progress…</p>
+}
+else if (!Overview.HasActiveSemester)
+{
+    <div class="hero-empty">
+        <div class="empty-state-title">No active semester</div>
+        <div class="empty-state-text">Create and activate a semester to see your courses' progress here.</div>
+        <a class="btn btn-primary" href="semesters">Create Semester</a>
+    </div>
+}
+else if (Overview.Courses.Count == 0)
+{
+    <div class="hero-empty">
+        <div class="empty-state-title">No courses yet</div>
+        <div class="empty-state-text">Add courses to @Overview.SemesterName to see their progress here.</div>
+        <a class="btn btn-primary" href="courses">Add a course</a>
+    </div>
+}
+else
+{
+    <div class="fc-legend" aria-hidden="true">
+        <span class="fc-legend-item"><span class="fc-seg fc-mature"></span>Mature</span>
+        <span class="fc-legend-item"><span class="fc-seg fc-young"></span>Young</span>
+        <span class="fc-legend-item"><span class="fc-seg fc-learning"></span>Learning</span>
+        <span class="fc-legend-item"><span class="fc-seg fc-new"></span>New</span>
+    </div>
+    @foreach (var course in Overview.Courses)
+    {
+        <div class="progress-legend-item" style="--course-color:@course.Color">
+            <span class="pli-dot" aria-hidden="true"></span>
+            <div class="pli-bar">
+                <div class="pli-name">
+                    <span>@course.Name</span>
+                    <span>@AnalyticsFormatter.FormatLearned(course.Flashcards)</span>
+                </div>
+                <FlashcardProgressBar Progress="course.Flashcards" Color="@course.Color" />
+                <div class="pli-meta">
+                    <span>@AnalyticsFormatter.FormatDuration(course.StudyMinutes) studied this semester</span>
+                    <span>@AnalyticsFormatter.FormatExamResults(course)</span>
+                </div>
+            </div>
+        </div>
+    }
+}

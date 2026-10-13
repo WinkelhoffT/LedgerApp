@@ -64,12 +64,12 @@ else
         </div>
 
         <CalendarDayPanel Date="SelectedDate" Today="today" Sessions="SelectedDay?.Sessions ?? []" Events="SelectedDay?.Events ?? []"
-                          OnSessionSelected="OpenEdit" OnEventSelected="OpenEventEdit"
+                          OnSessionSelected="OpenEdit" OnSessionCompleted="session => HandleSavedAsync(session.Date)" OnEventSelected="OpenEventEdit"
                           OnAddSession="AddSessionForSelectedDay" OnAddEvent="AddEventForSelectedDay" />
     </div>
 }
 
-<StudySessionFormDialog IsOpen="IsDialogOpen" EditingSession="EditingSession"
+<StudySessionFormDialog IsOpen="IsDialogOpen" EditingSession="EditingSession" Today="Today"
                         NewSessionDate="NewSessionDate" NewSessionStartTime="NewSessionStartTime"
                         OnClose="CloseDialog" OnSaved="session => HandleSavedAsync(session.Date)" OnDeleted="HandleDeletedAsync" />
 

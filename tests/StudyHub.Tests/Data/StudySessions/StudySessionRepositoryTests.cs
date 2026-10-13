@@ -25,6 +25,8 @@ public class StudySessionRepositoryTests
             startTime,
             60,
             null,
+            null,
+            null,
             DateTime.UtcNow,
             DateTime.UtcNow
         );

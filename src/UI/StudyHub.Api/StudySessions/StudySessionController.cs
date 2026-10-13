@@ -29,4 +29,17 @@ public sealed class StudySessionController(IStudySessionOrchestrator sessionOrch
         await sessionOrchestrator.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
+
+    [HttpPut("{id:guid}/completion")]
+    public Task<StudySessionDto> CompleteAsync(
+        Guid id,
+        CompleteStudySessionRequest request,
+        CancellationToken cancellationToken
+    ) => sessionOrchestrator.CompleteAsync(id, request, cancellationToken);
+
+    [HttpDelete("{id:guid}/completion")]
+    public Task<StudySessionDto> ResetCompletionAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    ) => sessionOrchestrator.ResetCompletionAsync(id, cancellationToken);
 }

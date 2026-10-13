@@ -694,6 +694,12 @@ namespace StudyHub.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ActualDurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("CourseId")
                         .HasColumnType("TEXT");
 
@@ -734,7 +740,11 @@ namespace StudyHub.Data.Migrations
 
                     b.ToTable("StudySessions", null, t =>
                         {
+                            t.HasCheckConstraint("CK_StudySessions_ActualDuration", "(\"ActualDurationMinutes\" IS NULL OR (\"ActualDurationMinutes\" >= 5 AND \"ActualDurationMinutes\" <= 720))");
+
                             t.HasCheckConstraint("CK_StudySessions_AtMostOneParent", "(\"CourseId\" IS NULL OR \"SemesterId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_StudySessions_Completion", "((\"CompletedAt\" IS NULL AND \"ActualDurationMinutes\" IS NULL) OR (\"CompletedAt\" IS NOT NULL AND \"ActualDurationMinutes\" IS NOT NULL))");
 
                             t.HasCheckConstraint("CK_StudySessions_Duration", "(\"DurationMinutes\" >= 5 AND \"DurationMinutes\" <= 720)");
                         });

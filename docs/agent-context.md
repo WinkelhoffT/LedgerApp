@@ -13,7 +13,10 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   future Options/configuration classes.
 - `src/Data/StudyHub.Data`: `ApplicationDbContext`, EF Core migrations, and the repository
   implementations (`CourseRepository`, `SemesterRepository`, `DocumentRepository`) plus their DI
-  registration (`ServiceCollectionExtensions.AddStudyHubDataRepositories`).
+  registration (`ServiceCollectionExtensions.AddStudyHubDataRepositories`). Besides the aggregate
+  repositories there is one read-model repository, `IStudyAnalyticsRepository`/
+  `StudyAnalyticsRepository` (query only, LAY-9): projections over sessions, flashcard answers,
+  decks and practice exam attempts that the analytics orchestrators read.
 - `src/Logic/StudyHub.Logic.Domain`: domain entities (`Course`, `Semester`, `Document`,
   `SemesterProgress`), repository contracts (`ICourseRepository`, `ISemesterRepository`,
   `IDocumentRepository`), and domain services that encode a business rule too specific to inline
@@ -30,7 +33,8 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
   `IDashboardAccessor`, and for flashcards `IFlashcardAccessor` (generation),
   `IFlashcardDeckAccessor`, `IFlashcardStudyAccessor`, `IFlashcardTransferAccessor`, for the
   calendar `ICalendarAccessor`, `IStudySessionAccessor`, `ICalendarEventAccessor`, and for practice
-  exams `IPracticeExamGenerationAccessor`, `IPracticeExamAccessor`, `IPracticeExamAttemptAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
+  exams `IPracticeExamGenerationAccessor`, `IPracticeExamAccessor`, `IPracticeExamAttemptAccessor`,
+  and for the Analytics page `IAnalyticsAccessor`), plus the project's own `ServiceCollectionExtensions.AddStudyHubIntegration`
   for HttpClient/DI registration. Depends only on `StudyHub.Shared` — never on `Logic.Business` or
   `Logic.Domain` (LAY-7 in `docs/agent-rule-catalog.md`). Also home of AI provider adapters:
   `Ai/` holds `IFlashcardGenerator`/`ClaudeFlashcardGenerator` and
@@ -46,7 +50,8 @@ Normative enforcement remains in `CLAUDE.md` and `docs/agent-rule-catalog.md`.
 - `src/UI/StudyHub.Api`: ASP.NET Core backend host. Controllers (`SemesterController`,
   `CourseController`, `DocumentController`, `DashboardController`, `FlashcardDeckController`,
   `FlashcardStudyController`, `CalendarController`, `StudySessionController`,
-  `CalendarEventController`, `PracticeExamController`, `PracticeExamAttemptController`, …) call a
+  `CalendarEventController`, `PracticeExamController`, `PracticeExamAttemptController`,
+  `AnalyticsController`, …) call a
   Business orchestrator;
   `*ExceptionHandler` classes map Business/Domain exceptions to `ProblemDetails`
   (`Ai/AiExceptionHandler` maps the AI failures of every AI feature).
@@ -97,8 +102,22 @@ and courses.
   optional location), linked to at most one of a `Course` or a `Semester` (or to neither). Date and
   start are local wall-clock values (`DateOnly`/`TimeOnly`), and a session ends on the day it
   starts. Unlike the aggregates, a session is deleted for real. Rules live in
-  `IStudySessionLifecycle` (Domain); tracking (done, actual duration) is not implemented yet (see
-  `docs/plans/calendar-plan.md`).
+  `IStudySessionLifecycle` (Domain).
+- Session completion: a session of today or earlier (calendar time zone) is marked as done with an
+  actual duration (`CompletedAt`, `ActualDurationMinutes`, both set or both null); "done" can be
+  undone, and a done session cannot move to a future date (`IStudySessionLifecycle.Complete`,
+  `ResetCompletion`; see `docs/plans/analytics-plan.md`).
+- Study time: built by `IStudyTimeProcessor` (Domain) from completed sessions (actual duration),
+  flashcard answers (time since the previous answer, at most 60 s, as Anki's "time taken") and
+  submitted practice exam attempts (start to submission, at most twice the exam's duration).
+  Overlapping time counts once, for the activity that started first. It is counted per study day
+  (`IStudyDayProvider`, 04:00 Europe/Berlin) over the last 365 study days and never stored.
+- Learning streak: consecutive study days with study time (`IStudyStreakProvider`); the current
+  streak ends today, or yesterday while today has no study time yet.
+- Course progress: per course of the active semester, its flashcards in Anki's buckets (new,
+  learning, young, mature from a 21-day interval), the latest and best practice exam result and
+  the study time since the semester start (`ICourseProgressProcessor`); not combined into one
+  percentage.
 - Calendar: the month view shows whole Monday-to-Sunday weeks, the week view an ISO 8601 week
   (`ICalendarPeriodProvider`, `Calendar` options for the time zone that decides "today");
   `ICalendarLaneProcessor` places overlapping sessions and timed exams of a day side by side.

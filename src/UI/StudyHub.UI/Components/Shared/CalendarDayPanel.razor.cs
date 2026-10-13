@@ -23,6 +23,10 @@ public partial class CalendarDayPanel
     [Parameter]
     public EventCallback<StudySessionDto> OnSessionSelected { get; set; }
 
+    /// <summary>A session was marked as done from its card.</summary>
+    [Parameter]
+    public EventCallback<StudySessionDto> OnSessionCompleted { get; set; }
+
     [Parameter]
     public EventCallback<CalendarEventDto> OnEventSelected { get; set; }
 

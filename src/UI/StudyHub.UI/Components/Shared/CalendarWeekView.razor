@@ -77,7 +77,13 @@
                     <button class="cal-block @pastClass @(isCompact ? "is-compact" : null)" type="button"
                             style="@GetBlockStyle(item.Session.StartTime, item.Session.DurationMinutes, item.Lane, item.LaneCount, CalendarFormatter.GetColor(item.Session))"
                             aria-label="@($"Edit {CalendarFormatter.FormatSessionLabel(item.Session)}")" @onclick="() => OnSessionSelected.InvokeAsync(item.Session)">
-                        <span class="cal-block-title">@item.Session.Title</span>
+                        <span class="cal-block-title">
+                            @if (item.Session.IsCompleted)
+                            {
+                                <DoneIcon Size="11" />
+                            }
+                            @item.Session.Title
+                        </span>
                         <span class="cal-block-meta">@(isCompact ? CalendarFormatter.FormatTime(item.Session.StartTime) : CalendarFormatter.FormatTimeRange(item.Session))</span>
                         @if (item.Session.Location is not null && !isCompact)
                         {

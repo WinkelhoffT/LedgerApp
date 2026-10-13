@@ -415,7 +415,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(s => s.SemesterId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Mirror the rules in StudySessionLifecycle; the same-day rule stays in the Domain only.
+            // Mirror the rules in StudySessionLifecycle; the same-day rule and "not in the future"
+            // stay in the Domain only.
             builder.ToTable(t =>
             {
                 t.HasCheckConstraint(
@@ -425,6 +426,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 t.HasCheckConstraint(
                     "CK_StudySessions_Duration",
                     $"(\"DurationMinutes\" >= {StudySession.MinDurationMinutes} AND \"DurationMinutes\" <= {StudySession.MaxDurationMinutes})"
+                );
+                t.HasCheckConstraint(
+                    "CK_StudySessions_Completion",
+                    "((\"CompletedAt\" IS NULL AND \"ActualDurationMinutes\" IS NULL) OR (\"CompletedAt\" IS NOT NULL AND \"ActualDurationMinutes\" IS NOT NULL))"
+                );
+                t.HasCheckConstraint(
+                    "CK_StudySessions_ActualDuration",
+                    $"(\"ActualDurationMinutes\" IS NULL OR (\"ActualDurationMinutes\" >= {StudySession.MinDurationMinutes} AND \"ActualDurationMinutes\" <= {StudySession.MaxDurationMinutes}))"
                 );
             });
         });

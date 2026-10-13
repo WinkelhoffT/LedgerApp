@@ -46,6 +46,34 @@ public sealed class StudySessionAccessor(HttpClient httpClient) : IStudySessionA
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task<StudySessionDto> CompleteAsync(
+        Guid id,
+        CompleteStudySessionRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var response = await httpClient.PutAsJsonAsync(
+            $"api/study-sessions/{id}/completion",
+            request,
+            cancellationToken
+        );
+        await EnsureSuccessAsync(response, cancellationToken);
+        return (await response.Content.ReadFromJsonAsync<StudySessionDto>(cancellationToken))!;
+    }
+
+    public async Task<StudySessionDto> ResetCompletionAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var response = await httpClient.DeleteAsync(
+            $"api/study-sessions/{id}/completion",
+            cancellationToken
+        );
+        await EnsureSuccessAsync(response, cancellationToken);
+        return (await response.Content.ReadFromJsonAsync<StudySessionDto>(cancellationToken))!;
+    }
+
     private static async Task EnsureSuccessAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken

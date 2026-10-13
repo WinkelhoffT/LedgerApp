@@ -27,6 +27,10 @@
             {
                 <button class="cal-ev @pastClass" type="button"
                         style="--session-color:@CalendarFormatter.GetColor(item.Session)" aria-label="@CalendarFormatter.FormatSessionLabel(item.Session)">
+                    @if (item.Session.IsCompleted)
+                    {
+                        <DoneIcon Size="10" />
+                    }
                     @CalendarFormatter.FormatTime(item.Session.StartTime) @item.Session.Title
                 </button>
             }

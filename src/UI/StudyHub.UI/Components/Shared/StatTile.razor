@@ -1,0 +1,13 @@
+<div class="card stat">
+    <div class="stat-top">
+        <div class="stat-icon"><StatIcon Kind="Icon" /></div>
+        @if (Delta is not null)
+        {
+            <span class="stat-delta @DeltaClass">@Delta</span>
+        }
+    </div>
+    <div>
+        <div class="stat-val">@Value</div>
+        <div class="stat-label">@Label</div>
+    </div>
+</div>

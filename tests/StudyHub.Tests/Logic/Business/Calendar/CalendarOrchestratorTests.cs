@@ -62,6 +62,8 @@ public class CalendarOrchestratorTests
             new TimeOnly(hour, 0),
             durationMinutes,
             null,
+            null,
+            null,
             Now,
             Now
         );

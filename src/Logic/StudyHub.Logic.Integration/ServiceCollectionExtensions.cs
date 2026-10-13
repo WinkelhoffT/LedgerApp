@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StudyHub.Logic.Integration.Analytics;
 using StudyHub.Logic.Integration.Calendar;
 using StudyHub.Logic.Integration.CalendarEvents;
 using StudyHub.Logic.Integration.Courses;
@@ -59,6 +60,9 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = apiBaseAddress
         );
         services.AddHttpClient<IPracticeExamAttemptAccessor, PracticeExamAttemptAccessor>(client =>
+            client.BaseAddress = apiBaseAddress
+        );
+        services.AddHttpClient<IAnalyticsAccessor, AnalyticsAccessor>(client =>
             client.BaseAddress = apiBaseAddress
         );
 

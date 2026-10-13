@@ -22,6 +22,9 @@ internal static class StudySessionMapper
             session.Location,
             course?.Name ?? semester?.Name,
             course?.Color,
+            session.CompletedAt is not null,
+            session.CompletedAt,
+            session.ActualDurationMinutes,
             session.CreatedAt,
             session.UpdatedAt
         );

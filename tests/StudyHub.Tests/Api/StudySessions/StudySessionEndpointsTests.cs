@@ -23,9 +23,15 @@ public class StudySessionEndpointsTests
             "Library"
         );
 
-    private static async Task<StudySessionDto> CreateSessionAsync(HttpClient client)
+    private static async Task<StudySessionDto> CreateSessionAsync(
+        HttpClient client,
+        CreateStudySessionRequest? request = null
+    )
     {
-        var response = await client.PostAsJsonAsync("api/study-sessions", CreateRequest());
+        var response = await client.PostAsJsonAsync(
+            "api/study-sessions",
+            request ?? CreateRequest()
+        );
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<StudySessionDto>())!;
     }
@@ -155,5 +161,99 @@ public class StudySessionEndpointsTests
         Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, second.StatusCode);
         Assert.Equal(StudySessionErrorCodes.StudySessionNotFound, await GetErrorCodeAsync(second));
+    }
+
+    [Fact]
+    public async Task Complete_MarksTheSessionAsDoneAndDeleteCompletionUndoesIt()
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+        var session = await CreateSessionAsync(client);
+
+        var completeResponse = await client.PutAsJsonAsync(
+            $"api/study-sessions/{session.Id}/completion",
+            new CompleteStudySessionRequest(75)
+        );
+        completeResponse.EnsureSuccessStatusCode();
+        var completed = (await completeResponse.Content.ReadFromJsonAsync<StudySessionDto>())!;
+
+        var resetResponse = await client.DeleteAsync($"api/study-sessions/{session.Id}/completion");
+        resetResponse.EnsureSuccessStatusCode();
+        var reset = (await resetResponse.Content.ReadFromJsonAsync<StudySessionDto>())!;
+
+        Assert.True(completed.IsCompleted);
+        Assert.NotNull(completed.CompletedAt);
+        Assert.Equal(75, completed.ActualDurationMinutes);
+        Assert.False(reset.IsCompleted);
+        Assert.Null(reset.CompletedAt);
+        Assert.Null(reset.ActualDurationMinutes);
+    }
+
+    [Fact]
+    public async Task Complete_AFutureSession_Returns400WithErrorCode()
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+        var session = await CreateSessionAsync(
+            client,
+            CreateRequest() with
+            {
+                Date = new DateOnly(2099, 1, 1),
+            }
+        );
+
+        var response = await client.PutAsJsonAsync(
+            $"api/study-sessions/{session.Id}/completion",
+            new CompleteStudySessionRequest(60)
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(
+            StudySessionErrorCodes.StudySessionValidationFailed,
+            await GetErrorCodeAsync(response)
+        );
+    }
+
+    [Theory]
+    [InlineData(StudySession.MinDurationMinutes - 1)]
+    [InlineData(StudySession.MaxDurationMinutes + 1)]
+    public async Task Complete_WithActualDurationOutOfRange_Returns400WithErrorCode(int minutes)
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+        var session = await CreateSessionAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"api/study-sessions/{session.Id}/completion",
+            new CompleteStudySessionRequest(minutes)
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(
+            StudySessionErrorCodes.StudySessionValidationFailed,
+            await GetErrorCodeAsync(response)
+        );
+    }
+
+    [Fact]
+    public async Task Completion_OfAnUnknownSession_Returns404WithErrorCode()
+    {
+        using var factory = InMemoryApiFactory.Create();
+        using var client = factory.CreateClient();
+        var id = Guid.NewGuid();
+
+        var complete = await client.PutAsJsonAsync(
+            $"api/study-sessions/{id}/completion",
+            new CompleteStudySessionRequest(60)
+        );
+        var reset = await client.DeleteAsync($"api/study-sessions/{id}/completion");
+
+        Assert.Equal(HttpStatusCode.NotFound, complete.StatusCode);
+        Assert.Equal(
+            StudySessionErrorCodes.StudySessionNotFound,
+            await GetErrorCodeAsync(complete)
+        );
+        Assert.Equal(HttpStatusCode.NotFound, reset.StatusCode);
+        Assert.Equal(StudySessionErrorCodes.StudySessionNotFound, await GetErrorCodeAsync(reset));
     }
 }

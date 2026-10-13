@@ -30,6 +30,10 @@ public partial class StudySessionFormDialog
     [Parameter]
     public StudySessionDto? EditingSession { get; set; }
 
+    /// <summary>Today in the calendar time zone; a session of today or earlier can be marked as done.</summary>
+    [Parameter]
+    public DateOnly? Today { get; set; }
+
     /// <summary>Prefilled date of a new session.</summary>
     [Parameter]
     public DateOnly NewSessionDate { get; set; }
@@ -59,6 +63,10 @@ public partial class StudySessionFormDialog
 
     private string? Location { get; set; }
 
+    private bool IsDone { get; set; }
+
+    private int ActualDurationMinutes { get; set; }
+
     private bool IsSaving { get; set; }
 
     private bool IsConfirmingDelete { get; set; }
@@ -70,6 +78,9 @@ public partial class StudySessionFormDialog
     private IReadOnlyList<SemesterDto> Semesters { get; set; } = [];
 
     private bool _loaded;
+
+    // A session that is done keeps the controls when moved to the future, so "done" is undone on purpose.
+    private bool ShowsCompletion => Date <= Today || EditingSession?.IsCompleted == true;
 
     // Archived courses and semesters are offered only when the session is already linked to one.
     private IEnumerable<CourseDto> SelectableCourses =>
@@ -108,6 +119,8 @@ public partial class StudySessionFormDialog
         StartTime = EditingSession?.StartTime ?? NewSessionStartTime;
         DurationMinutes = EditingSession?.DurationMinutes ?? StudySession.DefaultDurationMinutes;
         Location = EditingSession?.Location;
+        IsDone = EditingSession?.IsCompleted == true;
+        ActualDurationMinutes = EditingSession?.ActualDurationMinutes ?? DurationMinutes;
 
         Courses = await CourseAccessor.GetAllAsync();
         Semesters = await SemesterAccessor.GetAllAsync();
@@ -116,35 +129,85 @@ public partial class StudySessionFormDialog
     private Task SubmitAsync() =>
         RunAsync(async () =>
         {
-            var courseId = GetOwnerId(CoursePrefix);
-            var semesterId = GetOwnerId(SemesterPrefix);
-            var saved = EditingSession is null
-                ? await SessionAccessor.CreateAsync(
-                    new CreateStudySessionRequest(
-                        Title,
-                        courseId,
-                        semesterId,
-                        Date,
-                        StartTime,
-                        DurationMinutes,
-                        Location
-                    )
-                )
-                : await SessionAccessor.UpdateAsync(
-                    new UpdateStudySessionRequest(
-                        EditingSession.Id,
-                        Title,
-                        courseId,
-                        semesterId,
-                        Date,
-                        StartTime,
-                        DurationMinutes,
-                        Location
-                    )
-                );
-
+            var saved = EditingSession is null ? await CreateAsync() : await UpdateAsync();
             await OnSaved.InvokeAsync(saved);
         });
+
+    // A new session that cannot be marked as done is removed again, so a retry does not add it twice.
+    private async Task<StudySessionDto> CreateAsync()
+    {
+        var created = await SessionAccessor.CreateAsync(
+            new CreateStudySessionRequest(
+                Title,
+                GetOwnerId(CoursePrefix),
+                GetOwnerId(SemesterPrefix),
+                Date,
+                StartTime,
+                DurationMinutes,
+                Location
+            )
+        );
+        if (!WantsDone)
+        {
+            return created;
+        }
+
+        try
+        {
+            return await SessionAccessor.CompleteAsync(
+                created.Id,
+                new CompleteStudySessionRequest(ActualDurationMinutes)
+            );
+        }
+        catch
+        {
+            await SessionAccessor.DeleteAsync(created.Id);
+            throw;
+        }
+    }
+
+    // "Done" is undone before the update, so the session may move to a future date.
+    private async Task<StudySessionDto> UpdateAsync()
+    {
+        var session = EditingSession!;
+        if (session.IsCompleted && !WantsDone)
+        {
+            await SessionAccessor.ResetCompletionAsync(session.Id);
+        }
+
+        var updated = await SessionAccessor.UpdateAsync(
+            new UpdateStudySessionRequest(
+                session.Id,
+                Title,
+                GetOwnerId(CoursePrefix),
+                GetOwnerId(SemesterPrefix),
+                Date,
+                StartTime,
+                DurationMinutes,
+                Location
+            )
+        );
+
+        return
+            WantsDone
+            && (!session.IsCompleted || session.ActualDurationMinutes != ActualDurationMinutes)
+            ? await SessionAccessor.CompleteAsync(
+                session.Id,
+                new CompleteStudySessionRequest(ActualDurationMinutes)
+            )
+            : updated;
+    }
+
+    private bool WantsDone => ShowsCompletion && IsDone;
+
+    // Ticking "Done" starts from the planned duration, unless the session already had an actual one.
+    private void HandleDoneChanged()
+    {
+        if (IsDone && EditingSession?.ActualDurationMinutes is null)
+        {
+            ActualDurationMinutes = DurationMinutes;
+        }
+    }
 
     private Task DeleteAsync() =>
         RunAsync(async () =>

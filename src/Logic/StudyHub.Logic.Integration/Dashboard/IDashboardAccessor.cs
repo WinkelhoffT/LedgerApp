@@ -1,3 +1,4 @@
+using StudyHub.Shared.Analytics;
 using StudyHub.Shared.Calendar;
 using StudyHub.Shared.CalendarEvents;
 using StudyHub.Shared.Dashboard;
@@ -22,4 +23,7 @@ public interface IDashboardAccessor
     Task<IReadOnlyList<UpcomingCalendarEventDto>> GetUpcomingEventsAsync(
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>The study time statistics of the Analytics page, of which the Dashboard shows this week.</summary>
+    Task<StudyTimeStatisticsDto> GetStudyTimeAsync(CancellationToken cancellationToken = default);
 }

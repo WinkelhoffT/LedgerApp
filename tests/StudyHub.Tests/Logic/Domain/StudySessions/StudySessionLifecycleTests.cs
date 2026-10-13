@@ -1,4 +1,5 @@
 using StudyHub.Logic.Domain;
+using StudyHub.Shared.Configuration;
 using StudyHub.Shared.StudySessions;
 using StudyHub.Tests.Fakes;
 
@@ -16,7 +17,10 @@ public class StudySessionLifecycleTests
 
     public StudySessionLifecycleTests()
     {
-        _sut = new StudySessionLifecycle(_timeProvider);
+        _sut = new StudySessionLifecycle(
+            _timeProvider,
+            new CalendarPeriodProvider(new CalendarOptions(), _timeProvider)
+        );
     }
 
     [Fact]
@@ -33,6 +37,8 @@ public class StudySessionLifecycleTests
         Assert.Equal(7, session.Id.Version);
         Assert.Equal(Now, session.CreatedAt);
         Assert.Equal(Now, session.UpdatedAt);
+        Assert.Null(session.CompletedAt);
+        Assert.Null(session.ActualDurationMinutes);
     }
 
     [Theory]
@@ -192,6 +198,168 @@ public class StudySessionLifecycleTests
 
         Assert.Throws<StudySessionValidationException>(() =>
             _sut.Update(session, "Graph review", null, null, Date, new TimeOnly(23, 30), 60, null)
+        );
+    }
+
+    [Fact]
+    public void Complete_StoresTheActualDurationAndWhenTheSessionWasDone()
+    {
+        var session = _sut.Create("Graph review", CourseId, null, Date, Nine, 60, null);
+        _timeProvider.UtcNow = Now.AddHours(1);
+
+        var completed = _sut.Complete(session, 75);
+
+        Assert.Equal(Now.AddHours(1), completed.CompletedAt);
+        Assert.Equal(75, completed.ActualDurationMinutes);
+        Assert.Equal(60, completed.DurationMinutes);
+        Assert.Equal(Now.AddHours(1), completed.UpdatedAt);
+    }
+
+    [Fact]
+    public void Complete_APastSession_Succeeds()
+    {
+        var session = _sut.Create("Graph review", null, null, Date.AddDays(-3), Nine, 60, null);
+
+        Assert.Equal(60, _sut.Complete(session, 60).ActualDurationMinutes);
+    }
+
+    [Fact]
+    public void Complete_AFutureSession_Throws()
+    {
+        var session = _sut.Create("Graph review", null, null, Date.AddDays(1), Nine, 60, null);
+
+        Assert.Throws<StudySessionValidationException>(() => _sut.Complete(session, 60));
+    }
+
+    [Fact]
+    public void Complete_UsesTheCalendarTimeZoneForToday()
+    {
+        // 22:30 UTC is already 00:30 of the next day in Berlin.
+        _timeProvider.UtcNow = new DateTime(2026, 10, 8, 22, 30, 0, DateTimeKind.Utc);
+        var session = _sut.Create("Night review", null, null, Date.AddDays(1), Nine, 60, null);
+
+        Assert.NotNull(_sut.Complete(session, 60).CompletedAt);
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(720)]
+    public void Complete_WithActualDurationAtTheLimits_Succeeds(int actualDurationMinutes)
+    {
+        var session = _sut.Create("Graph review", null, null, Date, TimeOnly.MinValue, 60, null);
+
+        Assert.Equal(
+            actualDurationMinutes,
+            _sut.Complete(session, actualDurationMinutes).ActualDurationMinutes
+        );
+    }
+
+    [Theory]
+    [InlineData(4)]
+    [InlineData(721)]
+    public void Complete_WithActualDurationOutOfRange_Throws(int actualDurationMinutes)
+    {
+        var session = _sut.Create("Graph review", null, null, Date, TimeOnly.MinValue, 60, null);
+
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Complete(session, actualDurationMinutes)
+        );
+    }
+
+    [Fact]
+    public void Complete_EndingAtMidnight_Succeeds()
+    {
+        var session = _sut.Create("Late review", null, null, Date, new TimeOnly(23, 0), 30, null);
+
+        Assert.Equal(60, _sut.Complete(session, 60).ActualDurationMinutes);
+    }
+
+    [Fact]
+    public void Complete_EndingAfterMidnight_Throws()
+    {
+        var session = _sut.Create("Late review", null, null, Date, new TimeOnly(23, 30), 30, null);
+
+        Assert.Throws<StudySessionValidationException>(() => _sut.Complete(session, 60));
+    }
+
+    [Fact]
+    public void Complete_ASessionThatIsDone_ChangesTheDurationButKeepsWhenItWasDone()
+    {
+        var session = _sut.Complete(
+            _sut.Create("Graph review", null, null, Date, Nine, 60, null),
+            60
+        );
+        _timeProvider.UtcNow = Now.AddHours(2);
+
+        var changed = _sut.Complete(session, 90);
+
+        Assert.Equal(Now, changed.CompletedAt);
+        Assert.Equal(90, changed.ActualDurationMinutes);
+        Assert.Equal(Now.AddHours(2), changed.UpdatedAt);
+    }
+
+    [Fact]
+    public void ResetCompletion_MakesTheSessionPlannedOnlyAgain()
+    {
+        var session = _sut.Complete(
+            _sut.Create("Graph review", null, null, Date, Nine, 60, null),
+            60
+        );
+        _timeProvider.UtcNow = Now.AddHours(1);
+
+        var reset = _sut.ResetCompletion(session);
+
+        Assert.Null(reset.CompletedAt);
+        Assert.Null(reset.ActualDurationMinutes);
+        Assert.Equal(Now.AddHours(1), reset.UpdatedAt);
+    }
+
+    [Fact]
+    public void Update_ASessionThatIsDone_KeepsTheCompletion()
+    {
+        var session = _sut.Complete(
+            _sut.Create("Graph review", null, null, Date, Nine, 60, null),
+            75
+        );
+
+        var updated = _sut.Update(
+            session,
+            "Exam planning",
+            null,
+            null,
+            Date.AddDays(-1),
+            new TimeOnly(14, 0),
+            45,
+            null
+        );
+
+        Assert.Equal(Now, updated.CompletedAt);
+        Assert.Equal(75, updated.ActualDurationMinutes);
+    }
+
+    [Fact]
+    public void Update_MovingASessionThatIsDoneToTheFuture_Throws()
+    {
+        var session = _sut.Complete(
+            _sut.Create("Graph review", null, null, Date, Nine, 60, null),
+            60
+        );
+
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Update(session, "Graph review", null, null, Date.AddDays(1), Nine, 60, null)
+        );
+    }
+
+    [Fact]
+    public void Update_MovingASessionThatIsDoneSoItsActualDurationEndsAfterMidnight_Throws()
+    {
+        var session = _sut.Complete(
+            _sut.Create("Graph review", null, null, Date, Nine, 30, null),
+            120
+        );
+
+        Assert.Throws<StudySessionValidationException>(() =>
+            _sut.Update(session, "Graph review", null, null, Date, new TimeOnly(23, 0), 30, null)
         );
     }
 }
